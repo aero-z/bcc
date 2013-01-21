@@ -1,7 +1,21 @@
 package scanner
 
 object Scanner {
+	
     
-    
-    val comment = """(// )""".r
+	def checkEncoding(code: String) = code.toList.forall(ch => ch < 128 && ch >= 0)
+	
+	val identifiers = """[a-zA-Z$_]([a-zA-Z0-9$_])*"""
+
+
+
+
+
+
+
+
+
+
+
+
 }
