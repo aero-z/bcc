@@ -1,4 +1,4 @@
-.cache
+
 
 *.class
 *.log
@@ -13,3 +13,6 @@ project/plugins/project/
 
 # Scala-IDE specific
 .scala_dependencies
+
+/bin
+/.cache
