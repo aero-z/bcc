@@ -31,3 +31,7 @@ case class ScopingToken(str: String) extends Token(str: String) {
 case class LiteralToken(str: String) extends Token(str: String) {
   
 }
+
+case class SemiColonToken(str: String) extends Token(str: String)
+
+case class LineReturnToken(str: String) extends Token(str: String)

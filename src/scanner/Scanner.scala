@@ -18,17 +18,22 @@ object Scanner {
                         map(x => s"(\\A$x)").
                         reduce((x, y) => s"$x|$y").r
 
-                        
+                     val space = "\\A[ \t]+".r
                      val parenthesis = "\\A[\\(\\)\\[\\]\\{\\}]".r
                      val semicolon = "\\A;".r
                      val lineReturn = "\\A\n".r
-                        def scanAcc(code: String, acc: List[Token]): List[Token] = code match{
+                        def scanAcc(code: String, acc: List[Token]): List[Token] = {
+            println(acc)
+            code match{
+                            case space(s) => scanAcc(code.replaceFirst(s, ""), acc)
                             case parenthesis(s) => scanAcc(code.replaceFirst(s, ""), ScopingToken(s)::acc)
+                            case lineReturn(s) => scanAcc(code.replaceFirst(s, ""), LineReturnToken(s)::acc)
                             case semicolon(s) => scanAcc(code.replaceFirst(s, ""), SemiColonToken(s):: acc)
                             case keywords(s) => scanAcc(code.replaceFirst(s, ""), KeywordToken(s)::acc)
                             case identifiers(s) => scanAcc(code.replaceFirst(s, ""), IdentifierToken(s)::acc)
-                            case _ => ???
-        }
+                            case x => println(x)
+                            ???
+        }}
         scanAcc(code, Nil).reverse
     }
 
