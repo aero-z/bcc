@@ -4,7 +4,6 @@ object Scanner {
 
     def checkEncoding(code: String) = code.toList.forall(ch => ch < 128 && ch >= 0)
     def scan(code : String): List[Token] = {
-       
         val identifiers = "\\A[a-zA-Z$_]([a-zA-Z0-9$_])*".r
                 val keywords = List("abstract", "assert", "boolean", "break", "byte", "case", "catch",
                         "char", "class", "const", "continue", "default", "do", "double", "else", "enum",
@@ -45,19 +44,20 @@ object Scanner {
 	   * (?s). matches everything including line breaks
 	   * * is the greedy version (maximum match)
 	   * *? is the reluctant (non-greedy) version (minimum match)
+	   * "Û" is no longer in the range of 7-bit ascii characters so we can use it as a splipoint because it occurs nowhere else in the inplut file
 	   */
-		code.replaceAll("""(".*?")""", """$1dirtyhack""").split("""(?=(".*?"))|((?<=")dirtyhack)|(//.*(?m)$)|(/\*(?s).*?\*/)""").toList //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
+		code.replaceAll("""(".*?")|(//.*(?m)$)|(/\*(?s).*?\*/)""", """Û$1Û""").split("""Û""").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
 	}
 	
 	def isString(line:String):Boolean = {
-		line.matches("""(".*")""")
+		line.matches("""(?:".*")""")
 	}
 	
 	def addSpace(line:String): String = {
 		//add space around special characters so they are easier to parse
 		//this could be done in a cleaner way using "lookahead" and "lookbehind"
 		if (isString(line)) line
-		else line.replaceAll("""(\+\+|\-\-|<=|>=|==|!=|\|\||[\+\-\*/^\|&?!=<>\(\)\[\]\{\}\.])""", """ $1 """)
+		else line.replaceAll("""(\+\+|\-\-|<=|>=|==|!=|\|\||[\+\-\*/^\|&?!=<>\(\)\[\]\{\}\.,;:])""", """ $1 """)
 	}
 	
 	def splitCode(line:String):List[String] = {
@@ -65,11 +65,9 @@ object Scanner {
 		if (isString(line)) List(line)
 		else line.replaceAll("""(^\s+)|(\s+$)""", "").split("""[\s\t\n\r\f\a\e]+""").filter(_ != "").toList
 	}
-	/*TODO: maybe needed later
+	
 	def addLineNumbers(code:String):String = {
-	  code.replaceAll("("," ( ")
-	  .replaceAll("."," ( ")
-	//  code//.split("""(?m)$""").toList.foldLeft(z:String)((x,y)=>x+y)
+	  var counter = 0;
+	  code.replaceAll("((?m)^.*(?m)$)",(counter = counter+1).toString()+" $1")
 	}
-	*/
 }

@@ -3,8 +3,7 @@ package scanner
 import org.scalatest.FunSuite
 
 class CedricTest extends FunSuite {
-	test("Let's try to remove comments"){
-	  val test = """
+  val test = """
 		some(code);
 	    while(happy>cedric){dont annoy me}
 	    /*multi line comment
@@ -22,20 +21,24 @@ class CedricTest extends FunSuite {
 	    "and more string /*thing which do not make send*/ look"
 	    happy.code(takes(me.home))
       """
-	  val dbComments = test.replaceAll("""(".*?")""", """$1deadbeef""")
-    println("DIRTYHACK:")
-    println(dbComments)
-    val noComments = Scanner.removeCommentsExtractStrings(dbComments)
-    println("NO COMMENTS:")
-    noComments.foreach(println(_)) 
-    val withSpace = noComments.map(Scanner.addSpace(_))
-    println()
-    println("WITH SPACE:")
-    withSpace.foreach(println(_))
-    val finished = withSpace.flatMap(Scanner.splitCode(_))
-    println()
-    println("ALL DONE:")
-    finished.foreach(println(_))
-
+    
+	test("add line numbers") {
+	  	println(Scanner.addLineNumbers(test))
+	}
+  
+	test("Let's try to remove comments") {
+	    println("CODE:")
+	    println(test)
+	    val noComments = Scanner.removeCommentsExtractStrings(test)
+	    println("NO COMMENTS:")
+	    noComments.foreach(println(_)) 
+	    val withSpace = noComments.map(Scanner.addSpace(_))
+	    println()
+	    println("WITH SPACE:")
+	    withSpace.foreach(println(_))
+	    val finished = withSpace.flatMap(Scanner.splitCode(_))
+	    println()
+	    println("ALL DONE:")
+	    finished.foreach(println(_))
 	}
 }
