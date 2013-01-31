@@ -67,7 +67,7 @@ object Scanner {
         val string = "^\"(?s).*\"$".r
         val boolean = "true|fasle".r
         val char = "'.'".r
-        
+        //Stupid comment for stupid commit
 
         list.map{
             _ match{
