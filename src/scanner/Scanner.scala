@@ -23,9 +23,9 @@ object Scanner {
 	   * (?s). matches everything including line breaks
 	   * * is the greedy version (maximum match)
 	   * *? is the reluctant (non-greedy) version (minimum match)
-	   * "Û" is no longer in the range of 7-bit ascii characters so we can use it as a splipoint because it occurs nowhere else in the inplut file
+	   * "â‚¬" is no longer in the range of 7-bit ascii characters so we can use it as a splipoint because it occurs nowhere else in the inplut file
 	   */
-		code.replaceAll("""(".*?")|(//.*(?m)$)|(/\*(?s).*?\*/)""", """Û$1Û""").split("""Û""").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
+		code.replaceAll("""(".*?")|(//.*(?m)$)|(/\*(?s).*?\*/)""", """\0$1\0""").split("""\0""").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
 	}
 	
 	def isString(line:String):Boolean = {
