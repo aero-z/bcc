@@ -61,22 +61,27 @@ object Scanner {
                 "throw", "throws", "transient", "try", "void", "volatile", "while");
                 
 
-        val parenthesis = "[\\(\\)\\[\\]\\{\\}]".r;
         val semicolon = ";".r;
-        val integer = "(?:[1-9][\\d_]*)?\\d".r
-        val string = "^\"(?s).*\"$".r
-        val boolean = "true|fasle".r
-        val char = "'.'".r
-        //Stupid comment for stupid commit
-
+        val integer = "(?:[1-9][\\d_]*)?\\d".r;
+        val string = "^\"(?s).*\"$".r;
+        val boolean = "true|false".r;
+        val char = "'.'".r;
+        val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
+        val operators = List("=", ">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
+        
+        
+        
+        
         list.map{
             _ match{
                 case x if keywords contains x => KeywordToken(x)
                 case identifiers(id) => IdentifierToken(id)
-                case parenthesis(prt) => ScopingToken(prt)
                 case semicolon(sm) => SemiColonToken(sm)
                 case integer(intlit) => IntegerToken(intlit)
                 case string(str) => StringToken(str)
+                case x if delimiters contains x => ScopingToken(x)
+                case x if operators contains x => OperatorToken(x)
+                case x => throw new TokenException(x)
             }
         }
     }

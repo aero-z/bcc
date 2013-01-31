@@ -41,4 +41,9 @@ class CedricTest extends FunSuite {
 	    println("ALL DONE:")
 	    finished.foreach(println(_))
 	}
+	
+	test("Here we go for the categorization"){
+	    Scanner.checkEncoding(test)
+	    
+	}
 }
