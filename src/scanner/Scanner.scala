@@ -63,8 +63,11 @@ object Scanner {
 
         val parenthesis = "[\\(\\)\\[\\]\\{\\}]".r;
         val semicolon = ";".r;
-        val lineReturn = "\n".r;
-        val integer = "[1-9]".r
+        val integer = "(?:[1-9][\\d_]*)?\\d".r
+        val string = "^\"(?s).*\"$".r
+        val boolean = "true|fasle".r
+        val char = "'.'".r
+        
 
         list.map{
             _ match{
@@ -72,7 +75,8 @@ object Scanner {
                 case identifiers(id) => IdentifierToken(id)
                 case parenthesis(prt) => ScopingToken(prt)
                 case semicolon(sm) => SemiColonToken(sm)
-                
+                case integer(intlit) => IntegerToken(intlit)
+                case string(str) => StringToken(str)
             }
         }
     }
