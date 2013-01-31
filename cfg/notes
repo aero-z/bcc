@@ -1,0 +1,2 @@
+Execute the parse table generator:
+java -classpath bin contrib.Jlalr1 < cfg/Joos1W.cfg > cfg/Joos1W.lr1
