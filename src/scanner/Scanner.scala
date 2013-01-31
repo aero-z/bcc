@@ -60,17 +60,19 @@ object Scanner {
                 "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
                 "throw", "throws", "transient", "try", "void", "volatile", "while");
                 
-        val space = "[ \t]+".r;
+
         val parenthesis = "[\\(\\)\\[\\]\\{\\}]".r;
         val semicolon = ";".r;
         val lineReturn = "\n".r;
-                       
+        val integer = "[1-9]".r
 
         list.map{
             _ match{
-                case x if keywords contains x => ???
-                case identifiers(id) => ???
-                case parenthesis(prt) => ???
+                case x if keywords contains x => KeywordToken(x)
+                case identifiers(id) => IdentifierToken(id)
+                case parenthesis(prt) => ScopingToken(prt)
+                case semicolon(sm) => SemiColonToken(sm)
+                
             }
         }
     }

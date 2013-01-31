@@ -4,6 +4,7 @@ class Token(str: String) {
 
 }
 
+
 /**
  * Java keyword tokens
  */
@@ -28,10 +29,10 @@ case class ScopingToken(str: String) extends Token(str: String) {
 /**
  * Represents literals like string and number constants
  */
-case class LiteralToken(str: String) extends Token(str: String) {
-  
-}
+class LiteralToken(str: String) extends Token(str: String) 
 
 case class SemiColonToken(str: String) extends Token(str: String)
 
 case class LineReturnToken(str: String) extends Token(str: String)
+
+case class IntegerToken(str : String) extends LiteralToken(str: String)
