@@ -60,17 +60,23 @@ object Scanner {
                 "public", "return", "short", "static", "strictfp", "super", "switch", "synchronized", "this",
                 "throw", "throws", "transient", "try", "void", "volatile", "while");
                 
-        val space = "[ \t]+".r;
+
         val parenthesis = "[\\(\\)\\[\\]\\{\\}]".r;
         val semicolon = ";".r;
-        val lineReturn = "\n".r;
-                       
+        val integer = "(?:[1-9][\\d_]*)?\\d".r
+        val string = "^\"(?s).*\"$".r
+        val boolean = "true|fasle".r
+        val char = "'.'".r
+        //Stupid comment for stupid commit
 
         list.map{
             _ match{
-                case x if keywords contains x => ???
-                case identifiers(id) => ???
-                case parenthesis(prt) => ???
+                case x if keywords contains x => KeywordToken(x)
+                case identifiers(id) => IdentifierToken(id)
+                case parenthesis(prt) => ScopingToken(prt)
+                case semicolon(sm) => SemiColonToken(sm)
+                case integer(intlit) => IntegerToken(intlit)
+                case string(str) => StringToken(str)
             }
         }
     }

@@ -2,9 +2,7 @@ package scanner
 
 import org.scalatest.FunSuite
 
-
-
-class ScannerRegex extends FunSuite{
+class ScannerRegex extends FunSuite {
 //    test("Let's try to remove comments"){
 //        val helloWithComment = 
 //"""public class HelloWorld {

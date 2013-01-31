@@ -1,6 +1,0 @@
-package scanner
-
-object Categorizer {
-
-    
-}
