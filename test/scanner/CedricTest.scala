@@ -43,7 +43,7 @@ class CedricTest extends FunSuite {
 	}
 	
 	test("Here we go for the categorization"){
-	    Scanner.checkEncoding(test)
-	    
+	    assert (Scanner.checkEncoding(test))
+	    Scanner.categorize(Scanner.generateTokens(test)).foreach(println)
 	}
 }
