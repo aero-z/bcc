@@ -40,4 +40,4 @@ case class StringToken(str : String) extends LiteralToken(str)
 case class OperatorToken(str: String) extends Token(str)
 
 
-class TokenException(cause : String) extends Exception
+case class TokenException(errorMsg: String, cause : String) extends Exception(errorMsg)

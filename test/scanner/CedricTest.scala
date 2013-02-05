@@ -44,6 +44,12 @@ class CedricTest extends FunSuite {
 	
 	test("Here we go for the categorization"){
 	    assert (Scanner.checkEncoding(test))
+	    try{
 	    Scanner.categorize(Scanner.generateTokens(test)).foreach(println)
+	    }catch{
+	        case TokenException(eM, _) => println(eM) 
+	                fail()
+	    }
 	}
+	
 }
