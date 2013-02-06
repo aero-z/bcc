@@ -51,7 +51,7 @@ object Scanner {
 	}
 
     def categorize(list : List[String]): List[Token] = {
-        val identifiers = "[a-zA-Z\\$_][a-zA-Z0-9\\$_]*".r;
+        val identifiers = "([a-zA-Z\\$_][a-zA-Z0-9\\$_]*)".r;
 
         val keywords = List("abstract", "assert", "boolean", "break", "byte", "case", "catch",
                 "char", "class", "const", "continue", "default", "do", "double", "else", "enum",
@@ -61,22 +61,27 @@ object Scanner {
                 "throw", "throws", "transient", "try", "void", "volatile", "while");
                 
 
-        val parenthesis = "[\\(\\)\\[\\]\\{\\}]".r;
-        val semicolon = ";".r;
-        val integer = "(?:[1-9][\\d_]*)?\\d".r
-        val string = "^\"(?s).*\"$".r
-        val boolean = "true|fasle".r
-        val char = "'.'".r
-        //Stupid comment for stupid commit
-
+        val semicolon = "(;)".r;
+        val integer = "((?:[1-9][\\d_]*)?\\d)".r;
+        val string = "(^\"(?s).*\"$)".r;
+        val boolean = "(true|false)".r;
+        val char = "('.')".r;
+        val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
+        val operators = List("=", ">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
+        
+        
+        
+        
         list.map{
             _ match{
                 case x if keywords contains x => KeywordToken(x)
                 case identifiers(id) => IdentifierToken(id)
-                case parenthesis(prt) => ScopingToken(prt)
                 case semicolon(sm) => SemiColonToken(sm)
                 case integer(intlit) => IntegerToken(intlit)
                 case string(str) => StringToken(str)
+                case x if delimiters contains x => ScopingToken(x)
+                case x if operators contains x => OperatorToken(x)
+                case x => throw TokenException(s"Cannot categorize $x",x)
             }
         }
     }
