@@ -7,14 +7,16 @@ abstract class Action
 case class ShiftAction() extends Action
 case class ReduceAction(rule: Rule) extends Action
 
-trait Dfa {
-  type State = Int
-  
+class Dfa {
+    type State = Int
+
+    
   def delta(q: State, i: Symbol): (State, Action)
   val q0 = 0
 }
 
 object Dfa {
+
   def fromFile(file: Source): Dfa = {
     
     //def extractTerminals(lines:List[String]) = lines.map(_ => ???)

@@ -41,7 +41,7 @@ case class StringToken(str : String) extends LiteralToken(str)
 
 case class OperatorToken(str: String) extends Token(str)
 
-case class EndToken() extends Token("$")
+case class EndToken() extends Token("$")//TODO talk about that
 
 
 case class TokenException(errorMsg: String, cause : String) extends Exception(errorMsg)
