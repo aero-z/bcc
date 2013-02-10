@@ -1,6 +1,8 @@
 package scanner
 
-class Token(str: String)
+import parser.Symbol
+
+class Token(str: String) extends Symbol
 
 
 /**

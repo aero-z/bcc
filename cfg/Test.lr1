@@ -1,41 +1,43 @@
 4
-0
-1
-+
-*
-3
+(
+)
+{
+}
+2
 S
 E
-B
 S
-6
+5
 S E
-E E * B
-E E + B
-E B
-B 0
-B 1
-9
-22
-2 + reduce 3
-2 * reduce 3
-4 + reduce 5
-4 * reduce 5
-0 E shift 1
-0 B shift 2
-7 B shift 3
-6 1 shift 4
-3 * reduce 2
-5 * reduce 4
-3 + reduce 2
-6 0 shift 5
-5 + reduce 4
-0 1 shift 4
-0 0 shift 5
-1 * shift 6
-7 0 shift 5
-7 1 shift 4
-1 + shift 7
-6 B shift 8
-8 + reduce 1
-8 * reduce 1
+E ( E )
+E ( )
+E { E }
+E { }
+10
+26
+6 ) shift 1
+3 ) shift 2
+1 } reduce 1
+3 ( shift 3
+0 ( shift 3
+5 E shift 4
+9 } reduce 3
+1 ( reduce 1
+1 ) reduce 1
+3 { shift 5
+3 E shift 6
+2 ) reduce 2
+7 ( reduce 0
+2 ( reduce 2
+9 ( reduce 3
+5 { shift 5
+9 ) reduce 3
+0 E shift 7
+5 } shift 8
+0 { shift 5
+8 ( reduce 4
+4 } shift 9
+8 ) reduce 4
+2 } reduce 2
+5 ( shift 3
+8 } reduce 4
