@@ -4,14 +4,14 @@ import scala.io.Source
 
 abstract class Action
   
-case class ShiftAction() extends Action
+case class ShiftAction(state: Int) extends Action
 case class ReduceAction(rule: Rule) extends Action
 
 class Dfa {
     type State = Int
 
     
-  def delta(q: State, i: Symbol): (State, Action)
+  def delta(q: State, i: Symbol): Action
   val q0 = 0
 }
 
