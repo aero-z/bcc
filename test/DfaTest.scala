@@ -4,7 +4,8 @@ import scala.io.Source
 object DfaTest {
 
   def main(args: Array[String]): Unit = {
-    Dfa.fromFile(Source.fromFile("cfg/simple.lr1"))
+    val dfa = Dfa.fromFile(Source.fromFile("cfg/simple.lr1"))
+    dfa.delta(dfa.q0, ???)
   }
 
 }

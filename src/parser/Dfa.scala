@@ -6,10 +6,10 @@ abstract class Action
   
 case class ShiftAction(state: Int) extends Action
 case class ReduceAction(rule: Rule) extends Action
+case class ErrorAction() extends Action
 
-class Dfa {
-    type State = Int
-
+trait Dfa {
+  type State = Int
     
   def delta(q: State, i: Symbol): Action
   val q0 = 0
@@ -32,35 +32,35 @@ object Dfa {
 
     val lines3 = lines2.drop(numnt+2)
     val numrules = Integer.parseInt(lines3.head)
+    
+    // TODO: read in rules or get rules from some other place
 
     val lines4 = lines3.drop(numrules+1)
     val numstates = Integer.parseInt(lines4.head)
     val numtrans = Integer.parseInt(lines4.tail.head)
-    
-    //val lines5 = lines4.drop(numtrans+2)
-    
-    val state = ("""(\w+) (\w+) (\w+) (\w+)""").r; // NOT working!
+        
+    val state = ("""(\d+) (\S+) (\S+) (\d+)""").r;
     val t = lines4.drop(2).map(_ match {
       case state(state, symbol, action, nextState) => (state.toInt, symbol, action, nextState.toInt);
-      case _ => println _
+      case _ => throw new RuntimeException("syntax error in LR1 file")
     })
     
-    println("hoi")
     t.foreach(println _)
     
-    /*new Dfa {
+    new Dfa {
       def delta(q: State, i: Symbol) = {
-        t.find(_ match {
-          case (q, i, a, n) => true
-          case _ => false
-        }) match {
-          case Some((_, _, a, n)) => (a, n) 
-          case None => ???
+        t.find(x => x._1 == q && x._2 == i) match {
+          case Some((_, _, actionStr, int)) => {
+            actionStr match {
+	            case "reduce" => ReduceAction(???) // TODO
+	            case "shift" => ShiftAction(int)
+	            case _ => throw new RuntimeException("syntax error in LR1 file")
+            }
+          }
+          case None => ErrorAction()
         }
       }
     }
-    */
-    ???
   }
 }
 
