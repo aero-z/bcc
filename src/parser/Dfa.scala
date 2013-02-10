@@ -24,17 +24,23 @@ object Dfa {
     val numt = Integer.parseInt(lines.head)
     //val terminals = extractTerminals(lines.tail.take(numt))
 
-    val lines2 = lines.tail.drop(numt)
+    val lines2 = lines.drop(numt+1)
     val numnt = Integer.parseInt(lines2.head)
     //val nonterminals = extractNonTerminals(lines2.tail.take(numnt))
 
-    val lines3 = lines2.tail.drop(numnt+1)
-    val numstates = Integer.parseInt(lines3.head)
-    val numtrans = Integer.parseInt(lines3.tail.head)
+    val lines3 = lines2.drop(numnt+2)
+    val numrules = Integer.parseInt(lines3.head)
+
+    val lines4 = lines3.drop(numrules+1)
+    val numstates = Integer.parseInt(lines4.head)
+    val numtrans = Integer.parseInt(lines4.tail.head)
     
-    val state = ("""(\w+) (\w+) (\w+) (\w+)""").r;
-    val t = lines.map(_ match {
+    //val lines5 = lines4.drop(numtrans+2)
+    
+    val state = ("""(\w+) (\w+) (\w+) (\w+)""").r; // NOT working!
+    val t = lines4.drop(2).map(_ match {
       case state(state, symbol, action, nextState) => (state.toInt, symbol, action, nextState.toInt);
+      case _ => println _
     })
     
     println("hoi")
