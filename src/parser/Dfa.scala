@@ -45,11 +45,18 @@ object Dfa {
       case _ => throw new RuntimeException("syntax error in LR1 file")
     })
     
-    t.foreach(println _)
+    // NOTE: possible optimization: make a map (State, Symbol) => Action
+    
+    def symbolRepr(s: Symbol) {
+      s match {
+        //case Identifier() => "id"
+        case _ => throw new RuntimeException("syntax error in LR1 file")
+      }
+    }
     
     new Dfa {
       def delta(q: State, i: Symbol) = {
-        t.find(x => x._1 == q && x._2 == i) match {
+        t.find(x => x._1 == q && x._2 == symbolRepr(i)) match {
           case Some((_, _, actionStr, int)) => {
             actionStr match {
 	            case "reduce" => ReduceAction(???) // TODO
