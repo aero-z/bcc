@@ -6,10 +6,10 @@ class Token(str: String) extends Symbol
 
 object Token {
   def fromString(str:String): Token = str match {
-    case "keyword" => KeywordToken("noname")
-    case "identifier" => IdentifierToken("noname")
-    case "separator" => SeparatorToken("noname")
-    case "scope" => ...
+    case "if" => KeywordToken("if")
+    case "id" => IdentifierToken("noname")
+    case ";" => SemiColonToken(";")
+    case "scope" => ???
   }
 }
 
