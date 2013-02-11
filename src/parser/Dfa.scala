@@ -20,6 +20,8 @@ object Dfa {
 
   def fromFile(file: Source): Dfa = {
     
+    val syntaxErrException = new RuntimeException("syntax error in LR1 file")
+    
     //def extractTerminals(lines:List[String]) = lines.map(_ => ???)
     //def extractNonTerminals(lines:List[String]) = lines.map(_ => ???)
 
@@ -43,7 +45,7 @@ object Dfa {
     val state = ("""(\d+) (\S+) (\S+) (\d+)""").r;
     val t = lines4.drop(2).map(_ match {
       case state(state, symbol, action, nextState) => (state.toInt, symbol, action, nextState.toInt);
-      case _ => throw new RuntimeException("syntax error in LR1 file")
+      case _ => throw syntaxErrException
     })
     
     // NOTE: possible optimization: make a map (State, Symbol) => Action
@@ -51,7 +53,7 @@ object Dfa {
     def symbolRepr(s: Symbol) {
       s match {
         //case Identifier() => "id"
-        case _ => throw new RuntimeException("syntax error in LR1 file")
+        case _ => throw syntaxErrException
       }
     }
     
@@ -62,7 +64,7 @@ object Dfa {
             actionStr match {
 	            case "reduce" => ReduceAction(???) // TODO
 	            case "shift" => ShiftAction(int)
-	            case _ => throw new RuntimeException("syntax error in LR1 file")
+	            case _ => throw syntaxErrException
             }
           }
           case None => ErrorAction()
