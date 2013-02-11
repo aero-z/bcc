@@ -2,7 +2,7 @@ package parser
 
 import scanner.Token
 
-class Symbol
+trait Symbol
 
-case class TerminalSymbol(token: Token)  extends Symbol
-case class NonTerminalSymbol(id: String) extends Symbol
+abstract class NonTerminalSymbol extends Symbol
+
