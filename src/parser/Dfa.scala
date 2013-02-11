@@ -15,6 +15,7 @@ trait Dfa {
   val q0 = 0
 }
 
+
 object Dfa {
 
   def fromFile(file: Source): Dfa = {
