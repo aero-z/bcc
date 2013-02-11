@@ -2,6 +2,14 @@ package scanner
 
 class Token(str: String)
 
+object Token {
+  def fromString(str:String): Token = str match {
+    case "keyword" => KeywordToken("noname")
+    case "identifier" => IdentifierToken("noname")
+    case "separator" => SeparatorToken("noname")
+    case "scope" => ...
+  }
+}
 
 /**
  * Java keyword tokens
