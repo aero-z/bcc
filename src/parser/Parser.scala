@@ -17,8 +17,8 @@ object Parser {
             }
             ???
         }
-        def reduce(stack: List[(Symbol, dfa.State)], rule : Class[Rule] ): (List[(Symbol, dfa.State)], Symbol) = {
-            ???
+        def reduce(stack: List[(Symbol, dfa.State)], rule : Rule ): (List[(Symbol, dfa.State)], Symbol) = {
+            (stack drop(rule.numOfSym), NonTerminalSymbol(rule.nonTerminalSymbol, stack take(rule.numOfSym) map(_._1)))
         }
         parseRec(List((null, 0)), input)
     }

@@ -6,4 +6,4 @@ import scanner.IdentifierToken
 
 trait Symbol
 
-class NonTerminalSymbol(str: String, reducedSymbol: List[Symbol]) extends Symbol
+case class NonTerminalSymbol(str: String, reducedSymbol: List[Symbol]) extends Symbol
