@@ -82,6 +82,6 @@ object Scanner {
                 case x if operators contains x => OperatorToken(x)
                 case x => throw TokenException(s"Cannot categorize $x",x)
             }
-        }
+        } :+ EndToken()
     }
 }
