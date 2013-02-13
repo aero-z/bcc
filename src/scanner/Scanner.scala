@@ -1,6 +1,11 @@
 package scanner
 
 object Scanner {
+  
+	def scan(code: String): List[Token] = {
+	  if (!checkEncoding(code)) throw new RuntimeException("bad encoding") // TODO
+	  categorize(generateTokens(code))
+	}
 
     def checkEncoding(code: String) ={
         code.

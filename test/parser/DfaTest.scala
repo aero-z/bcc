@@ -61,7 +61,6 @@ E identifier
     dfa.delta(0, NonTerminalSymbol("E", Nil)) match { // repetition
       case ShiftAction(state) => assert(state === 4)
     }
-    // TODO how does this go on
     
     assert(dfa.delta(dfa.q0, OperatorToken("+")).isInstanceOf[ErrorAction])
   }

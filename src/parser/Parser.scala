@@ -3,19 +3,23 @@ package parser
 import scanner.Token
 import scanner.EndToken
 
+class ParseException(str: String) extends Exception(str)
+
 object Parser {
 
-    def parse(input: List[Token]): Symbol = {
-        val dfa = Dfa.fromFile(null); //TODO remove this hack...
+    def parse(input: List[Token], dfa: Dfa): Symbol = {
         def parseRec(stack: List[(Symbol, Dfa.State)], input: List[Symbol]): Symbol = {
-            input match {
-                case NonTerminalSymbol("S", _) :: Nil => input head
-                case _ => dfa.delta(stack.head._2, input.head) match {
-                    case ShiftAction(state) => parseRec((input.head, state) :: stack, input.tail)
-                    case ReduceAction(rule) =>
-                        val (stackRemain, newSymbol) = reduce(stack, rule);
-                        parseRec(stackRemain, newSymbol :: input)
-                }
+            dfa.delta(stack.head._2, input.head) match {
+	            case ShiftAction(state) =>
+	            	input.head match {
+	            	  case EndToken() => assert(stack.size == 1); stack.head._1
+	            	  case _ =>	parseRec((input.head, state) :: stack, input.tail)
+	            	}
+	            case ReduceAction(rule) =>
+	                val (stackRemain, newSymbol) = reduce(stack, rule);
+	                parseRec(stackRemain, newSymbol :: input)
+	            case ErrorAction() =>
+	                throw new ParseException("invalid input")
             }
         }
         def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {
