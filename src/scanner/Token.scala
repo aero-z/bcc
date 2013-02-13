@@ -32,20 +32,18 @@ case class IdentifierToken(str: String) extends Token {
 }
 
 /**
- * Separators token
- */
-
-abstract class SeparatorToken extends Token
-
-/**
  * Tokens for scoping purposes, like { and (
  */
-case class ScopingToken(str: String) extends SeparatorToken {
+case class ScopingToken(str: String) extends Token {
   val typeStr = str
 }
 
-case class SemiColonToken() extends SeparatorToken {
+case class SemiColonToken() extends Token {
   val typeStr = ";"
+}
+
+case class AssignmentToken() extends Token {
+  val typeStr = "="
 }
 
 
@@ -53,10 +51,10 @@ case class SemiColonToken() extends SeparatorToken {
  * Represents literals like string and number constants
  */
 class LiteralToken extends Token {
-  val typeStr = "PrimitiveType"
+  val typeStr = "literal"
 }
 
-case class IntegerToken(int: Integer) extends LiteralToken
+case class IntegerToken(int: Int) extends LiteralToken
 
 case class StringToken(str: String) extends LiteralToken
 
