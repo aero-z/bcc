@@ -33,6 +33,7 @@ organizeimports.expandcollapse=expand
 organizeimports.groups=java$scala$org$com
 organizeimports.scalapackage=false
 organizeimports.wildcards=scalaz$scalaz.Scalaz
+scala.compiler.additionalParams=-feature
 scala.compiler.useProjectSettings=true
 stopBuildOnError=true
 target=jvm-1.6

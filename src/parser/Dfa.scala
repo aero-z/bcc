@@ -4,19 +4,18 @@ import scala.io.Source
 
 abstract class Action
   
-case class ShiftAction(state: Int) extends Action
+case class ShiftAction(state: Dfa.State) extends Action
 case class ReduceAction(rule: Rule) extends Action
 case class ErrorAction() extends Action
 
 trait Dfa {
-  type State = Int
     
-  def delta(q: State, i: Symbol): Action
+  def delta(q: Dfa.State, i: Symbol): Action
   val q0 = 0
 }
 
-
-object Dfa {
+package object Dfa {
+  type State = Int
 
   def fromFile(file: Source): Dfa = {
     
@@ -37,6 +36,11 @@ object Dfa {
     val numrules = Integer.parseInt(lines3.head)
     
     // TODO: read in rules or get rules from some other place
+    
+    val rulesRaw = lines3.drop(1).take(numrules).map(
+        _.split("\\s+")
+    )
+    val rules = rulesRaw.map(l => Rule(l.head, l.size-1)).to[Vector]
 
     val lines4 = lines3.drop(numrules+1)
     val numstates = Integer.parseInt(lines4.head)
@@ -62,7 +66,7 @@ object Dfa {
         t.find(x => x._1 == q && x._2 == symbolRepr(i)) match {
           case Some((_, _, actionStr, int)) => {
             actionStr match {
-	            case "reduce" => ReduceAction(???) // TODO
+	            case "reduce" => ReduceAction(rules(int))
 	            case "shift" => ShiftAction(int)
 	            case _ => throw syntaxErrException
             }
