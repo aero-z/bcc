@@ -1,6 +1,7 @@
 package parser
 
 import scala.io.Source
+import scanner.Token
 
 abstract class Action
   
@@ -50,14 +51,20 @@ package object Dfa {
     val t = lines4.drop(2).map(_ match {
       case state(state, symbol, action, nextState) => (state.toInt, symbol, action, nextState.toInt);
       case _ => throw syntaxErrException
-    })
+    })    
     
     // NOTE: possible optimization: make a map (State, Symbol) => Action
     
-    def symbolRepr(s: Symbol) {
+    def symbolRepr(s: Symbol) = {
       s match {
-        //case Identifier() => "id"
-        case _ => throw syntaxErrException
+        //TODO
+        case NonTerminalSymbol(str, _) => str
+        case x => {
+          if (x.isInstanceOf[Token]) {
+            x.asInstanceOf[Token].typeStr
+          }
+          else throw syntaxErrException
+        }
       }
     }
     

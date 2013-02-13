@@ -75,8 +75,8 @@ object Scanner {
             _ match{
                 case x if keywords contains x => KeywordToken(x)
                 case identifiers(id) => IdentifierToken(id)
-                case semicolon(sm) => SemiColonToken(sm)
-                case integer(intlit) => IntegerToken(intlit)
+                case semicolon(sm) => SemiColonToken()
+                case integer(intlit) => IntegerToken(Integer.parseInt(intlit))
                 case string(str) => StringToken(str)
                 case x if delimiters contains x => ScopingToken(x)
                 case x if operators contains x => OperatorToken(x)
