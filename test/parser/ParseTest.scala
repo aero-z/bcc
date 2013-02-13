@@ -8,6 +8,7 @@ import scanner.IntegerToken
 import scanner.SemiColonToken
 import scanner.OperatorToken
 import scanner.EndToken
+import scanner.SemiColonToken
 
 class ParseTest extends FunSuite {
   test("simple grammar test") {
@@ -75,5 +76,17 @@ assignment identifier = expression
         IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), SemiColonToken(),
         EndToken());
     val parseTree = Parser.parse(tokens, dfa)
+    parseTree match {
+      case NonTerminalSymbol("block", block1) => block1 match {
+        case NonTerminalSymbol("block", block2) :: NonTerminalSymbol("statement", statement2) :: Nil => {
+          block2 match {
+            case NonTerminalSymbol("statement", statement1) :: Nil => statement1 match {
+              case NonTerminalSymbol("assignment", assignment1) :: SemiColonToken() :: Nil =>
+                // TODO the order is messed up
+            }
+          }
+        }
+      }
+    }
   }
 }
