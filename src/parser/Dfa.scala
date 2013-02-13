@@ -15,7 +15,7 @@ trait Dfa {
   val q0 = 0
 }
 
-package object Dfa {
+object Dfa {
   type State = Int
 
   def fromFile(file: Source): Dfa = {

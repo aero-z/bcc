@@ -12,7 +12,7 @@ object Parser {
             dfa.delta(stack.head._2, input.head) match {
 	            case ShiftAction(state) =>
 	            	input.head match {
-	            	  case EndToken() => assert(stack.size == 1); stack.head._1
+	            	  case EndToken() => assert(stack.size == 2); stack.head._1
 	            	  case _ =>	parseRec((input.head, state) :: stack, input.tail)
 	            	}
 	            case ReduceAction(rule) =>

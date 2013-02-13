@@ -9,6 +9,7 @@ import scanner.SemiColonToken
 import scanner.OperatorToken
 import scanner.EndToken
 
+
 class ParseTest extends FunSuite {
   test("simple grammar test") {
     val dfa = Dfa.fromFile(Source.fromString(
@@ -75,5 +76,6 @@ assignment identifier = expression
         IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), SemiColonToken(),
         EndToken());
     val parseTree = Parser.parse(tokens, dfa)
+    print(parseTree)
   }
 }
