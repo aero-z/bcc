@@ -10,6 +10,7 @@ import scanner.OperatorToken
 import scanner.EndToken
 import scanner.SemiColonToken
 
+
 class ParseTest extends FunSuite {
   test("simple grammar test") {
     val dfa = Dfa.fromFile(Source.fromString(
