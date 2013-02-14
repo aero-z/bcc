@@ -19,7 +19,7 @@ object Joosc {
     	val parseTree = Parser.parse(Scanner.scan(file.mkString), dfa)
     } catch {
       case e: ParseException => 
-        Console.err.println("Parse error")
+        Console.err.println("Parse error"+e)
         System.exit(42)
     }
   }
