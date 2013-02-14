@@ -71,14 +71,15 @@ object Scanner {
         val boolean = "(true|false)".r;
         val char = "('.')".r;
         val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
-        val operators = List("=", ">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
-        
+        val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
+        val assignment = "=".r
         
         
         
         list.map{
             _ match{
                 case x if keywords contains x => KeywordToken(x)
+                case assignment(eq) => AssignmentToken()
                 case identifiers(id) => IdentifierToken(id)
                 case semicolon(sm) => SemiColonToken()
                 case integer(intlit) => IntegerToken(Integer.parseInt(intlit))
