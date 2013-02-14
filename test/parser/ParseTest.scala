@@ -5,16 +5,14 @@ import scala.io.Source
 import scanner.IdentifierToken
 import scanner.AssignmentToken
 import scanner.IntegerToken
-import scanner.SemiColonToken
 import scanner.OperatorToken
 import scanner.EndToken
-import scanner.SemiColonToken
-import scanner.SemiColonToken
 import scanner.AssignmentToken
 import scanner.IntegerToken
 import scanner.OperatorToken
 import scanner.IntegerToken
 import scanner.IdentifierToken
+import scanner.ScopingToken
 
 
 class ParseTest extends FunSuite {
@@ -79,8 +77,8 @@ assignment identifier = expression
 3 identifier shift 14
 """
         ))
-    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5), SemiColonToken(),
-        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), SemiColonToken(),
+    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5), ScopingToken(";"),
+        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), ScopingToken(";"),
         EndToken())
     val parseTree = Parser.parse(tokens, dfa)
         
@@ -94,7 +92,7 @@ assignment identifier = expression
               IntegerToken(5) ::
               Nil) ::
             Nil) ::
-          SemiColonToken() ::
+          ScopingToken(";") ::
           Nil) ::
         NonTerminalSymbol("block",
           NonTerminalSymbol("statement",
@@ -109,10 +107,11 @@ assignment identifier = expression
                 IntegerToken(2) ::
                 Nil) ::
               Nil) ::
-            SemiColonToken() ::
+            ScopingToken(";") ::
           Nil) ::
         Nil) ::
-      Nil) =>
+      Nil) => 
+      case _ => fail
     }
   }
 }
