@@ -1,9 +1,11 @@
 SOURCES = `find src -name *.scala`
 ZIPFILE = bcc.zip
-ZIPCONTENT = $(SOURCES) cfg/Joos1W.lr1
+ZIPCONTENT = $(SOURCES) cfg/Joos1W.lr1 joosc Makefile
+BINDIR = bin
 
 all:
-	scalac -d bin $(SOURCES)
+	mkdir -p $(BINDIR)
+	scalac -d $(BINDIR) $(SOURCES)
 zip:
 	zip $(ZIPFILE) $(ZIPCONTENT)
 clean:
