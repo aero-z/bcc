@@ -79,12 +79,18 @@ assignment identifier = expression
 3 identifier shift 14
 """
         ))
-    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5), SemiColonToken(),
-        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), SemiColonToken(),
-        EndToken())
+    //val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5), SemiColonToken(),
+    //    IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), SemiColonToken(),
+    //    EndToken())
+    val code = "x = 5 ; y = x + 2 ;"
+    val tokens = scanner.Scanner.scan(code)
+   
+    tokens.foreach(x => println( x.getClass().toString()))
     val parseTree = Parser.parse(tokens, dfa)
-        
-    parseTree match {
+    Parser.printTree(parseTree)
+    println("----AST----")
+    Parser.printTree(Parser.createAST(parseTree))
+     parseTree match {
       case NonTerminalSymbol("block",
         NonTerminalSymbol("statement",
           NonTerminalSymbol("assignment",

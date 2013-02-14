@@ -72,7 +72,7 @@ object Scanner {
         val char = "('.')".r;
         val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
         val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
-        val assignment = "=".r
+        val assignment = "(=)".r
         
         
         

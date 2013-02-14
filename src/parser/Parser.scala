@@ -13,9 +13,12 @@ object Parser {
 	            case ShiftAction(state) =>
 	            	input.head match {
 	            	  case EndToken() => assert(stack.length == 2); stack.head._1
-	            	  case _ =>	parseRec((input.head, state) :: stack, input.tail)
+	            	  case x =>	
+	            	    println("shift: "+x) //TESTING
+	            	    parseRec((input.head, state) :: stack, input.tail)
 	            	}
 	            case ReduceAction(rule) =>
+	                println(rule.nonTerminalSymbol)
 	                val (stackRemain, newSymbol) = reduce(stack, rule);
 	                parseRec(stackRemain, newSymbol :: input)
 	            case ErrorAction() =>
@@ -23,6 +26,7 @@ object Parser {
             }
         }
         def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {
+            
             (stack drop (rule.numOfSym), NonTerminalSymbol(rule.nonTerminalSymbol, stack take (rule.numOfSym) reverseMap (_._1)))
         }
         parseRec(List((null, 0)), input)
@@ -38,5 +42,13 @@ object Parser {
         )
       }
       printRec("", List(symbol))
+    }
+    
+    def createAST(symbol:Symbol):Symbol = symbol match {
+      case NonTerminalSymbol(name, list) =>
+        val newlist = list.map(createAST(_))
+        if (newlist.length == 1) newlist.head
+        else NonTerminalSymbol(name, newlist)
+      case x => x
     }
 }
