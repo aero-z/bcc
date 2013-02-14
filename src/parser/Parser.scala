@@ -27,4 +27,16 @@ object Parser {
         }
         parseRec(List((null, 0)), input)
     }
+    
+    def printTree(symbol:Symbol) {
+      def printRec(delim:String, tree:List[Symbol]) {
+        tree.foreach(
+          _ match {
+          	case NonTerminalSymbol(name, list) => println(delim+name); printRec(delim+"    ", list)
+          	case x => println(delim+x)
+          }   
+        )
+      }
+      printRec("", List(symbol))
+    }
 }
