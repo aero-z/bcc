@@ -1,0 +1,3 @@
+#! /bin/sh
+
+scala -cp bin main.Joosc $1

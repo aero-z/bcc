@@ -83,7 +83,7 @@ assignment identifier = expression
         IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), SemiColonToken(),
         EndToken())
     val parseTree = Parser.parse(tokens, dfa)
-    
+        
     parseTree match {
       case NonTerminalSymbol("block",
         NonTerminalSymbol("statement",
