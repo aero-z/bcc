@@ -5,10 +5,6 @@ import scala.util.Random
 
 abstract class Token extends Symbol {
   def typeStr(): String
-  override val hashCode = Random.nextInt
-  def printDot() : Unit ={
-      println(s"""${hashCode.toString}[label="$typeStr"]""")
-  }
 }
 
 /*
