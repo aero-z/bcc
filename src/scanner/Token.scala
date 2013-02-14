@@ -64,7 +64,7 @@ case class OperatorToken(str: String) extends Token {
 }
 
 case class EndToken() extends Token {
-  val typeStr = "$"
+  val typeStr = "EOF"
 }
 
 case class TokenException(errorMsg: String, cause: String) extends Exception(errorMsg)
