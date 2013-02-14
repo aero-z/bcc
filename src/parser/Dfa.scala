@@ -41,7 +41,7 @@ object Dfa {
     val rulesRaw = lines3.drop(1).take(numrules).map(
         _.split("\\s+")
     )
-    val rules = rulesRaw.map(l => Rule(l.head, l.size-1)).to[Vector]
+    val rules = rulesRaw.map(l => Rule(l.head, l.length-1)).to[Vector]
 
     val lines4 = lines3.drop(numrules+1)
     val numstates = Integer.parseInt(lines4.head)
