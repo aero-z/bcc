@@ -8,7 +8,7 @@ import parser._
 class Newtest extends FunSuite{
   val myCode = """class Foo {
   public void foo() {
-     println("hello")
+     println("hello");
   }
  }"""
   test("Everything") {
