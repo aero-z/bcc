@@ -21,20 +21,20 @@ trait AST {
 }
 
 trait Node {
- def accept()
-  override def toString():String
+ //def accept()
+  //override def toString():String
 }
-case class EmptyNode() extends Node {
-  def toString = ""
+case class EmptyNode extends Node {
+  //def toString = ""
 }
 case class EndNode(info:String) extends Node
 case class BlockNode(list:List[Node]) extends Node
 case class AssignmentNode(leftNode:Node, rightNode:Node) extends Node
 case class IfNode(condition:Node, thenblock:Node, elseBlock:Node) extends Node {
- def toString = "if ( "+condition.toString+" ) "+thenblock.toString()+" "+elseBlock.toString()
+  //def toString = "if ( "+condition.toString+" ) "+thenblock.toString()+" "+elseBlock.toString()
 }
 case class WhileNode(condition:Node, block:Node) extends Node {
-  def toString() = "while ( "+condition.toString+" ) "+block.toString 
+  //def toString() = "while ( "+condition.toString+" ) "+block.toString 
 }
 case class OperationNode(leftSide:Node, operator:String, rightSide:Node) extends Node
 
