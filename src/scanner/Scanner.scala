@@ -32,11 +32,11 @@ object Scanner {
 	   * *? is the reluctant (non-greedy) version (minimum match)
 	   */
         // TODO: this string won't be correctly parsed: "\""
-        code.replaceAll("""(".*?")|(//.*(?m)$)|(/\*(?s).*?\*/)""", "\0$1\0").split("\0").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
+        code.replaceAll("""(".*?")|('.*?')|(//.*(?m)$)|(/\*(?s).*?\*/)""", "\0$1\0").split("\0").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
     }
 
     def isString(line: String): Boolean = {
-        line.matches("""(?:".*")""")
+        line.matches("""(?:".*")|(?:'.*')""")
     }
 
     def addSpace(line: String): String = {
@@ -70,7 +70,7 @@ object Scanner {
         val integer = "((?:[1-9][\\d_]*)?\\d)".r;
         val string = "(^\"(?s).*\"$)".r;
         val boolean = "(true|false)".r;
-        val char = "('.')".r;
+        val char = "(^'.*'$)".r;
         val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
         val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
         val assignment = "(=)".r
