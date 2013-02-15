@@ -9,7 +9,7 @@ class Newtest extends FunSuite{
   val myCode = """
  final abstract class Foo {
   public void foo() {
-   println("hello");
+   (pink);
  }"""
   test("Everything") {
 	println("BEGIN TEST")

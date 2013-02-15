@@ -21,7 +21,7 @@ object Parser {
 	                val (stackRemain, newSymbol) = reduce(stack, rule);
 	                parseRec(stackRemain, newSymbol :: input)
 	            case ErrorAction() =>
-	                throw new CompilerError("invalid input")
+	                throw new CompilerError(s"invalid input: ${input.head} state: ${stack.head._2}")
             }
         }
         def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {
