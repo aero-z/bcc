@@ -10,7 +10,6 @@ class Newtest extends FunSuite{
  final abstract class Foo {
   public void foo() {
    println("hello");
-  }
  }"""
   test("Everything") {
 	println("BEGIN TEST")
