@@ -7,11 +7,24 @@ import parser._
 
 class Newtest extends FunSuite{
   val myCode = """
-  abstract class Foo {
-  public void foo() {
-      red(pink);
+public class J1_1_AmbiguousName_AccessResultFromMethod{
+
+    public int i;
+
+    public J1_1_AmbiguousName_AccessResultFromMethod(int j){
+    i = j;
+    }
+
+    public J1_1_AmbiguousName_AccessResultFromMethod inc(){
+    return new J1_1_AmbiguousName_AccessResultFromMethod(i+1);
+    }
+
+    public static int test(){
+    return new J1_1_AmbiguousName_AccessResultFromMethod(120).inc().inc().inc().i;
+    }
+
 }
- }"""
+"""
   test("Everything") {
 	println("BEGIN TEST")
     val tokens = Scanner.scan(myCode)
@@ -22,6 +35,5 @@ class Newtest extends FunSuite{
 	val parseTree = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
-	assert(Weeder.check(parseTree))
   }
 }
