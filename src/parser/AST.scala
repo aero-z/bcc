@@ -41,11 +41,6 @@ case class WhileNode(condition:Node, block:Node) extends Node {
 case class OperationNode(leftSide:Node, operator:String, rightSide:Node) extends Node
 
 object AST {
-  
-  def buildAST(symbol:Symbol):Node = {
-    reduceSimpleBranches(toNode(Symbol))
-  }
-  
 	val ifstatement = "(IfThenElseStatement|IfThenElseStatementNoShortIf)".r //the same after parsing
 	val whilestatement = "(WhileStatement|WhileStatementNoShortIf)".r
 	val operations = "(MultiplicativeExpression|AdditiveExpression|RelationalExpression|EqualityExpression|CondOrExpression|CondAndExpression)".r
@@ -57,10 +52,11 @@ object AST {
 	  case NonTerminalSymbol(operations(_), List(_,_,_)) => OperationNode(toNode(list(1)), list(2), toNode(list(3)))
 	  case NonTerminalSymbol(name, list) => BlockNode(list.map(toNode(_)))
 	  case x => EndNode(x.toString())
+	  case stuff => EndNode(stuff.toString())
 	}
     
 	def reducdeSimpleBranches(node:Node):Node = node match {
-	  case BlockNode(x::Nil) => reduceSimpleBranches(x)
+	  case BlockNode(List(_)) =>
 	  case BlockNode(x) => BlockNodes(x.map(reduceSimpleBranches(_)))
 	}
 	
@@ -70,17 +66,5 @@ object AST {
         if (newlist.length == 1) newlist.head
         else NonTerminalSymbol(name, List(_, _, _))
       case x => x
-    }
-    
-    def printTree(node:Node) {
-      def printRec(delim:String, tree:List[Symbol]) {
-        tree.foreach(
-          _ match {
-          	case NonTerminalSymbol(name, list) => println(delim+name); printRec(delim+"    ", list)
-          	case x => println(delim+x)
-          }   
-        )
-      }
-      printRec("", List(symbol))
     }
 }
