@@ -12,7 +12,7 @@ object Joosc {
   val errCodeParseErr = 42
   
   def compile(source: Source): Int = {
-    val dfa = Dfa.fromFile(Source.fromFile("cfg/Joos1W.lr1"))
+    val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
     try {
     	val parseTree = Parser.parse(Scanner.scan(source.mkString), dfa)
     } catch {
