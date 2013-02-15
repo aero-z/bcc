@@ -51,9 +51,9 @@ case class AssignmentToken() extends Token {
  */
 
 
-case class IntegerToken(int: Int) extends Token {
+case class IntegerToken(intLit: String) extends Token {
     def typeStr = "integerLiteral"
-    override def toString() = int.toString
+    override def toString() = intLit
 }
 
 case class StringToken(str: String) extends Token{
