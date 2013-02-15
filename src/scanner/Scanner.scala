@@ -43,7 +43,7 @@ object Scanner {
         //add space around special characters so they are easier to parse
         //this could be done in a cleaner way using "lookahead" and "lookbehind"
         if (isString(line)) line
-        else line.replaceAll("""(\+\+|\-\-|&&|<=|>=|==|!=|\|\||[\+\-\*/^\|&?!=<>\(\)\[\]\{\}\.,;:])""", """ $1 """)
+        else line.replaceAll("""(\+\+|\-\-|&&|<=|>=|==|!=|\|\||[\+\-\*/^\|&?!=<>\(\)\[\]\{\}\.,;:%])""", """ $1 """)
     }
 
     def splitCode(line: String): List[String] = {
@@ -86,7 +86,7 @@ object Scanner {
                 case char(chr) => CharacterToken(chr.charAt(1))
                 case x if delimiters contains x => ScopingToken(x)
                 case x if operators contains x => OperatorToken(x)
-                case x => throw TokenException(s"Cannot categorize $x", x)
+                case x => throw new CompilerError(s"Cannot categorize $x")
             }
         } :+ EndToken()
     }

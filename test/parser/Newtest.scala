@@ -7,9 +7,10 @@ import parser._
 
 class Newtest extends FunSuite{
   val myCode = """
- final abstract class Foo {
+  abstract class Foo {
   public void foo() {
-   (pink);
+      red(pink);
+}
  }"""
   test("Everything") {
 	println("BEGIN TEST")
