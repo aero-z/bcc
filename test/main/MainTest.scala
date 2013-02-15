@@ -9,17 +9,19 @@ class MainTest extends FunSuite {
 """
   [ } this is shit
 """)
-    val ret = Joosc.compile(code)
+    val ret = Joosc.check(code)
     assert(ret === Joosc.errCodeParseErr)
   }
   
   test("simple code") {
     val code = Source.fromString(
 """
-  public class Foo {
+ class Foo {
+  public void foo() {
+   println("hello");
   }
-""")
-    val ret = Joosc.compile(code)
+ }""")
+    val ret = Joosc.check(code)
     assert(ret === Joosc.errCodeSuccess)
   }
 }

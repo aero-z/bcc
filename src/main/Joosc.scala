@@ -5,21 +5,28 @@ import scanner.Scanner
 import parser.Parser
 import parser.Dfa
 import parser.ParseException
+import parser.Weeder
 
 object Joosc {
   
   val errCodeSuccess = 0
   val errCodeParseErr = 42
   
-  def compile(source: Source): Int = {
-    val dfa = Dfa.fromFile(Source.fromFile("cfg/Joos1W.lr1"))
+  def check(source: Source): Int = {
+    val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
+    val parseTree =
     try {
-    	val parseTree = Parser.parse(Scanner.scan(source.mkString), dfa)
+    	Parser.parse(Scanner.scan(source.mkString), dfa)
     } catch {
       case e: ParseException => 
-        Console.err.println("Parse error")
+        Console.err.println("Syntax error while parsing")
         return errCodeParseErr
     }
+    if (Weeder.check(parseTree) == false) {
+        Console.err.println("Syntax error while weeding")
+        return errCodeParseErr
+    }
+      
     errCodeSuccess
   }
 
@@ -29,7 +36,7 @@ object Joosc {
       System.exit(1)
     }
     val file = Source.fromFile(args(0))
-    val ret = compile(file)
+    val ret = check(file)
     System.exit(ret)
   }
 
