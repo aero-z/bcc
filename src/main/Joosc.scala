@@ -6,6 +6,7 @@ import parser.Parser
 import parser.Dfa
 import parser.Weeder
 import java.io.IOException
+import main.Logger.debug
 
 class CompilerError(str: String) extends Exception(str)
 
@@ -19,10 +20,16 @@ object Joosc {
     val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
     val parseTree =
     try {
-    	Parser.parse(Scanner.scan(source.mkString), dfa)
+      val tokens = Scanner.scan(source.mkString)
+      debug("=== Printing tokens ===")
+      tokens.foreach(debug(_))
+      val parseTree = Parser.parse(tokens, dfa)
+      debug("=== Printing parse tree ===")
+      Parser.printTree(parseTree)
+      parseTree
     } catch {
       case e: CompilerError => 
-        Console.err.println("Syntax error while parsing")
+        Console.err.println("Syntax error while parsing: "+e.getMessage())
         return errCodeParseErr
     }
     if (Weeder.check(parseTree) == false) {
