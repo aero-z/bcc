@@ -14,9 +14,7 @@ trait AbstractNode {
 
 class TypeChecking extends (Visitor) {
   def visit(node:IfNode) {}
-  def visit(node:IfNode) {}
 }
-*/
 
 trait AST {
 	val root:Node
@@ -49,22 +47,22 @@ object AST {
 	  case NonTerminalSymbol(ifstatement(_), list) => IfNode(toNode(list(3)), toNode(list(5)), toNode(list(7)))
 	  case NonTerminalSymbol(whilestatement(_), list) => WhileNode(toNode(list(3)), toNode(list(5)))
 	  case NonTerminalSymbol("Assignment", list) => AssignmentNode(toNode(list(1)), toNode(list(3)))
-	  case NonTerminalSymbol(operations(_), List(_,_,_)) => OperationNode(toNode(list(1)), list(2), toNode(list(3)))
+	  case NonTerminalSymbol(operations(_), list @ List(_,_,_)) => OperationNode(toNode(list(1)), list(2).toString, toNode(list(3)))
 	  case NonTerminalSymbol(name, list) => BlockNode(list.map(toNode(_)))
 	  case x => EndNode(x.toString())
 	  case stuff => EndNode(stuff.toString())
 	}
     
-	def reducdeSimpleBranches(node:Node):Node = node match {
-	  case BlockNode(List(_)) =>
-	  case BlockNode(x) => BlockNodes(x.map(reduceSimpleBranches(_)))
+	def reduceSimpleBranches(node:Node):Node = node match {
+	  case BlockNode(head :: Nil) => reduceSimpleBranches(head)
+	  case BlockNode(list) => BlockNode(list.map(reduceSimpleBranches(_)))
 	}
 	
     def reducdeSimpleSymbolBranches(symbol:Symbol):Symbol = symbol match {
       case NonTerminalSymbol(name, list) =>
         val newlist = list.map(reducdeSimpleSymbolBranches(_))
         if (newlist.length == 1) newlist.head
-        else NonTerminalSymbol(name, List(_, _, _))
+        else NonTerminalSymbol(name, newlist)
       case x => x
     }
 }
