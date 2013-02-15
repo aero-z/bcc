@@ -73,7 +73,7 @@ object Scanner {
         val boolean = "(true|false)".r;
         val char = "('.*')".r;
         val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
-        val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
+        val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%", "|", "&", "^");
         val assignment = "(=)".r
         list.map {
             _ match {
