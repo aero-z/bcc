@@ -69,9 +69,9 @@ object Scanner {
             "throw", "throws", "transient", "try", "void", "volatile", "while");
 
         val integer = "((?:[1-9][\\d_]*)?\\d)".r;
-        val string = "(^\"(?s).*\"$)".r;
+        val string = "(\"(?s).*\")".r;
         val boolean = "(true|false)".r;
-        val char = "(^'.*'$)".r;
+        val char = "('.*')".r;
         val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
         val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
         val assignment = "(=)".r
@@ -84,7 +84,7 @@ object Scanner {
                 case identifiers(id) => IdentifierToken(id)
                 case integer(intlit) => IntegerToken(intlit)
                 case string(str) => StringToken(str.substring(1, str.length() - 1))
-                case char(chr) => CharacterToken(chr.charAt(1))
+                case char(chr) => CharacterToken(chr)
                 case x if delimiters contains x => ScopingToken(x)
                 case x if operators contains x => OperatorToken(x)
                 case x => throw new CompilerError(s"Cannot categorize $x")

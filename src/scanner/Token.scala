@@ -65,9 +65,9 @@ case class BooleanToken(bool: Boolean) extends Token{
     def typeStr = bool.toString
 }
 
-case class CharacterToken(char : Char) extends Token{
+case class CharacterToken(string : String) extends Token{
     def typeStr = "characterLiteral"
-    override def toString() = char.toString
+    override def toString() = string
 }
 
 case class OperatorToken(str: String) extends Token {
