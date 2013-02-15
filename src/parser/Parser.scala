@@ -2,8 +2,7 @@ package parser
 
 import scanner.Token
 import scanner.EndToken
-
-class ParseException(str: String) extends Exception(str)
+import main.CompilerError
 
 object Parser {
 
@@ -22,7 +21,7 @@ object Parser {
 	                val (stackRemain, newSymbol) = reduce(stack, rule);
 	                parseRec(stackRemain, newSymbol :: input)
 	            case ErrorAction() =>
-	                throw new ParseException("invalid input")
+	                throw new CompilerError("invalid input")
             }
         }
         def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {

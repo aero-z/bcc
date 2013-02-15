@@ -4,8 +4,9 @@ import scala.io.Source
 import scanner.Scanner
 import parser.Parser
 import parser.Dfa
-import parser.ParseException
 import parser.Weeder
+
+class CompilerError(str: String) extends Exception(str)
 
 object Joosc {
   
@@ -18,7 +19,7 @@ object Joosc {
     try {
     	Parser.parse(Scanner.scan(source.mkString), dfa)
     } catch {
-      case e: ParseException => 
+      case e: CompilerError => 
         Console.err.println("Syntax error while parsing")
         return errCodeParseErr
     }

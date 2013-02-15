@@ -1,9 +1,11 @@
 package scanner
 
+import main.CompilerError
+
 object Scanner {
 
     def scan(code: String): List[Token] = {
-        if (!checkEncoding(code)) throw new RuntimeException("bad encoding") // TODO
+        if (!checkEncoding(code)) throw new CompilerError("bad encoding") // TODO
         categorize(generateTokens(code))
     }
 

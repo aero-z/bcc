@@ -1,4 +1,4 @@
-package javaCode;
+package javaCodee;
 
 public class SimpleClass{
 }

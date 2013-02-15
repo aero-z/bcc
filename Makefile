@@ -1,6 +1,6 @@
 SOURCES = `find src -name *.scala`
 ZIPFILE = bcc.zip
-ZIPCONTENT = $(SOURCES) cfg/Joos1W.lr1 joosc Makefile
+ZIPCONTENT = $(SOURCES) cfg/grammar.lr1 joosc Makefile
 BINDIR = bin
 
 all:
