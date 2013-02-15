@@ -5,6 +5,9 @@ import scanner.EndToken
 import main.CompilerError
 
 object Parser {
+  
+	val debugEnabled = false
+	def debug(a: Any) = if (debugEnabled) println(a)
 
     def parse(input: List[Token], dfa: Dfa): Symbol = {
         def parseRec(stack: List[(Symbol, Dfa.State)], input: List[Symbol]): Symbol = {
@@ -13,15 +16,15 @@ object Parser {
 	            	input.head match {
 	            	  case EndToken() => assert(stack.length == 2); stack.head._1
 	            	  case x =>	
-	            	    println("shift: "+x) //TESTING
+	            	    debug("shift: "+x) //TESTING
 	            	    parseRec((input.head, state) :: stack, input.tail)
 	            	}
 	            case ReduceAction(rule) =>
-	                println(rule.nonTerminalSymbol)
+	                debug(rule.nonTerminalSymbol)
 	                val (stackRemain, newSymbol) = reduce(stack, rule);
 	                parseRec(stackRemain, newSymbol :: input)
 	            case ErrorAction() =>
-	                throw new CompilerError("invalid input")
+	                throw new CompilerError(s"invalid input: ${input.head} state: ${stack.head._2}")
             }
         }
         def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {

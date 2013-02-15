@@ -31,6 +31,7 @@ object Scanner {
 	   * * is the greedy version (maximum match)
 	   * *? is the reluctant (non-greedy) version (minimum match)
 	   */
+        // TODO: this string won't be correctly parsed: "\""
         code.replaceAll("""(".*?")|(//.*(?m)$)|(/\*(?s).*?\*/)""", "\0$1\0").split("\0").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
     }
 
@@ -42,7 +43,7 @@ object Scanner {
         //add space around special characters so they are easier to parse
         //this could be done in a cleaner way using "lookahead" and "lookbehind"
         if (isString(line)) line
-        else line.replaceAll("""(\+\+|\-\-|<=|>=|==|!=|\|\||[\+\-\*/^\|&?!=<>\(\)\[\]\{\}\.,;:])""", """ $1 """)
+        else line.replaceAll("""(\+\+|\-\-|&&|<=|>=|==|!=|\|\||[\+\-\*/^\|&?!=<>\(\)\[\]\{\}\.,;:])""", """ $1 """)
     }
 
     def splitCode(line: String): List[String] = {
