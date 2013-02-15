@@ -28,7 +28,7 @@ class MethodDeclFinderPass extends CFileVisitor {
         val tokens = Scanner.scan(code)
         tokens.foreach(x => println(s"${x.getClass()} ${x.typeStr}"))
         println("SCANNING DONE")
-        val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/eclipse.lr1")))
+        val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/grammar.lr1")))
         println("BUILDING DFA DONE")
         val parseTree = Parser.parse(tokens, dfa)
         println("BUILDING PARSETREE DONE")
