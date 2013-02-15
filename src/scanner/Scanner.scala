@@ -2,6 +2,7 @@ package scanner
 
 import main.CompilerError
 
+
 object Scanner {
 
     def scan(code: String): List[Token] = {
@@ -74,14 +75,14 @@ object Scanner {
         val delimiters = List("{", "}", "[", "]", "(", ")", ";", ",", ".");
         val operators = List(">", "<", "!", "==", "<=", ">=", "!=", "&&", "||", "+", "-", "*", "/", "%");
         val assignment = "(=)".r
-        list.map{
-            _ match{
+        list.map {
+            _ match {
                 case x if keywords contains x => KeywordToken(x)
                 case "null" => NullToken()
                 case boolean(bool) => BooleanToken(bool.toBoolean)
                 case assignment(eq) => AssignmentToken()
                 case identifiers(id) => IdentifierToken(id)
-                case integer(intlit) => IntegerToken(intlit.toInt)
+                case integer(intlit) => IntegerToken(intlit)
                 case string(str) => StringToken(str.substring(1, str.length() - 1))
                 case char(chr) => CharacterToken(chr.charAt(1))
                 case x if delimiters contains x => ScopingToken(x)

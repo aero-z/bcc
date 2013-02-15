@@ -77,8 +77,8 @@ assignment identifier = expression
 3 identifier shift 14
 """
         ))
-    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5), ScopingToken(";"),
-        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2), ScopingToken(";"),
+    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5.toString ), ScopingToken(";"),
+        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2.toString), ScopingToken(";"),
         EndToken())
     tokens.foreach(x => println(x.getClass))
     val parseTree = Parser.parse(tokens, dfa)
