@@ -14,7 +14,7 @@ object Parser {
 	            	input.head match {
 	            	  case EndToken() => assert(stack.length == 2); stack.head._1
 	            	  case x =>	
-	            	    println(s"shift: $x") //TESTING
+	            	    println("shift: "+x) //TESTING
 	            	    parseRec((input.head, state) :: stack, input.tail)
 	            	}
 	            case ReduceAction(rule) =>
@@ -22,7 +22,7 @@ object Parser {
 	                val (stackRemain, newSymbol) = reduce(stack, rule);
 	                parseRec(stackRemain, newSymbol :: input)
 	            case ErrorAction() =>
-	                throw new ParseException(s"invalid input, state: ${stack.head._2} input: ${input.head}")
+	                throw new ParseException("invalid input")
             }
         }
         def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {
