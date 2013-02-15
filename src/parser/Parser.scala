@@ -43,12 +43,4 @@ object Parser {
       }
       printRec("", List(symbol))
     }
-    
-    def createAST(symbol:Symbol):Symbol = symbol match {
-      case NonTerminalSymbol(name, list) =>
-        val newlist = list.map(createAST(_))
-        if (newlist.length == 1) newlist.head
-        else NonTerminalSymbol(name, newlist)
-      case x => x
-    }
 }
