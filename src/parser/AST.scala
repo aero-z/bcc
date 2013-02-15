@@ -46,6 +46,8 @@ object AST {
 	  case NonTerminalSymbol("IfThenStatement", list) => IfNode(toNode(list(3)), toNode(list(5)), EmptyNode())
 	  case NonTerminalSymbol(ifstatement(_), list) => IfNode(toNode(list(3)), toNode(list(5)), toNode(list(7)))
 	  case NonTerminalSymbol(whilestatement(_), list) => WhileNode(toNode(list(3)), toNode(list(5)))
+	  case NonTerminalSymbol("Assignment", list) => Assignment
+	  case NonTerminalSymbol("Happy", list) => Assignment
 	  
 	  case NonTerminalSymbol(name, list) => BlockNode(list.map(toNode(_)))
 	  case x => EndNode(x.toString())
