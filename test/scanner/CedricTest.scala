@@ -51,5 +51,4 @@ class CedricTest extends FunSuite {
 	                fail()
 	    }
 	}
-	
 }

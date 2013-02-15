@@ -4,6 +4,7 @@ import parser.Symbol
 
 abstract class Token extends Symbol {
   def typeStr(): String
+  override def toString():String = typeStr
 }
 
 /*
@@ -28,7 +29,8 @@ case class KeywordToken(keyword: String) extends Token {
  * Identifiers like fields and method names
  */
 case class IdentifierToken(str: String) extends Token {
-  def typeStr = "identifier" 
+  def typeStr = "identifier"
+  override def toString() = str
 }
 
 /**
@@ -51,10 +53,12 @@ case class AssignmentToken() extends Token {
 
 case class IntegerToken(int: Int) extends Token {
     def typeStr = "integerLiteral"
+    override def toString() = int.toString
 }
 
 case class StringToken(str: String) extends Token{
     def typeStr = "stringLiteral"
+    override def toString() = str
 }
 
 case class BooleanToken(bool: Boolean) extends Token{
@@ -63,6 +67,7 @@ case class BooleanToken(bool: Boolean) extends Token{
 
 case class CharacterToken(char : Char) extends Token{
     def typeStr = "characterLiteral"
+    override def toString() = char.toString
 }
 
 case class OperatorToken(str: String) extends Token {

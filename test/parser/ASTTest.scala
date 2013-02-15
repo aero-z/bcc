@@ -1,12 +1,31 @@
 package parser
 
-class ASTTest {
-    val code = "x = 5 ; y = x + 2 ;"
-    val tokens = scanner.Scanner.scan(code)
-   
-    tokens.foreach(x => println( x.getClass().toString()))
-    
-    println("----AST----")
-   // Parser.printTree(AST.createAST(parseTree))
+import scala.io.Source
+import org.scalatest.FunSuite
+import scanner._
+import parser._
 
+class ASTTest extends FunSuite {
+  val myCode = """
+ abstract public static class Foo {
+  public void foo() {
+   println("hello");
+    if (var == 5) { method(shit);}
+ }
+}"""
+  test("AST-test") {
+	println("BEGIN TEST")
+    val tokens = Scanner.scan(myCode)
+	tokens.foreach(x => println(x.getClass()))
+	println("SCANNING DONE")
+	val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/grammar.cfg")))
+	println("BUILDING DFA DONE")
+	val parseTree:Symbol = Parser.parse(tokens, dfa)
+	println("BUILDING PARSETREE DONE")
+	Parser.printTree(parseTree)
+    println("BUILDING AST TREE")
+    //val node = AST.toNode(parseTree)
+   val ast = AST.creteAST(parseTree)
+   Parser.printTree(ast)
+  }
 }
