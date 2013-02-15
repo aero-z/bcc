@@ -6,12 +6,11 @@ import scanner._
 import parser._
 
 class Newtest extends FunSuite{
-  val myCode = """public class myClass {
-	public void easy() {
-	    int x;
-	    x = 5 + 6;
-	}
-}"""
+  val myCode = """Êpublic class Foo {
+ Ê Êpublic void foo() {
+ Ê Ê Êprintln("hello")
+ Ê Ê}
+ Ê}"""
   test("Everything") {
     val tokens = Scanner.scan(myCode)
 	tokens.foreach(x => println(x.getClass()))

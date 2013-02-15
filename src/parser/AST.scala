@@ -22,22 +22,32 @@ trait AST {
 	val root:Node
 }
 
-class Node {
+trait Node {
   def accept()
+  override def toString():String
 }
-case class EmptyNode() extends Node
+case class EmptyNode() extends Node {
+  def toString = ""
+}
 case class EndNode(info:String) extends Node
 case class BlockNode(list:List[Node]) extends Node
 case class Assignment(leftNode:Node, rightNode:Node) extends Node
-case class IfNode(condition:Node, thenblock:Node, elseblock:Node) extends Node
-case class WhileNode(condition:Node, block:Node) extends Node
+case class IfNode(condition:Node, thenblock:Node, elseBlock:Node) extends Node {
+  def toString = "if ( "+condition.toString+" ) "+thenblock.toString()+" "+elseBlock.toString()
+}
+case class WhileNode(condition:Node, block:Node) extends Node {
+  def toString() = "while ( "+condition.toString+" ) "+block.toString 
+}
 
 object AST {
+	val ifstatement = "(IfThenElseStatement|IfThenElseStatementNoShortIf)".r //the same after parsing
+	val whilestatement = "(WhileStatement|WhileStatementNoShortIf)".r
 	def toNode(symbol:Symbol):Node = symbol match {
 	  case NonTerminalSymbol("IfThenStatement", list) => IfNode(toNode(list(3)), toNode(list(5)), EmptyNode())
-	  case NonTerminalSymbol("IfThenStatement", list) => IfNode(toNode(list(3)), toNode(list(5)), toNode(list(7)))
+	  case NonTerminalSymbol(ifstatement(_), list) => IfNode(toNode(list(3)), toNode(list(5)), toNode(list(7)))
+	  case NonTerminalSymbol(whilestatement(_), list) => WhileNode(toNode(list(3)), toNode(list(5)))
+	  
 	  case NonTerminalSymbol(name, list) => BlockNode(list.map(toNode(_)))
-	    
 	  case x => EndNode(x.toString())
 	}
     
