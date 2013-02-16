@@ -147,7 +147,7 @@ ClassDeclaration class identifier { }
       case x => x
     }
     
-    val recursiv = "(Modifiers|Interfaces|ClassBodyDeclarations|ImportDeclarations|TypeDeclarations|InterfaceBodyDeclarations|ParameterDefs|Parameters|Statements|TypeDeclarations)".r 
+    val recursiv = "(Modifiers)".r//|Interfaces|ClassBodyDeclarations|ImportDeclarations|TypeDeclarations|InterfaceBodyDeclarations|ParameterDefs|Parameters|Statements|TypeDeclarations)".r 
     def parametersToList(symbol:Symbol):Symbol = symbol match {
       case NonTerminalSymbol(name @ recursiv(_), tree) => NonTerminalSymbol(name, listFromTree(tree))
       case NonTerminalSymbol(name, list) => NonTerminalSymbol(name, list.map(parametersToList(_)))
