@@ -38,8 +38,12 @@ object Weeder {
   /*
   def everyNode(ast:Symbol):Boolean = {
     def
-    ast match = {}
-* check int range//case NonTerminalSymbol(
+    ast match = {
+      case NonTerminalSymbol("Assignment", NonTerminalSymbol("Assignment"=>, AssignmentToken(),
+    }
+//check int range//case NonTerminalSymbol(
+    
+//cast not in double (( ))
   }*/
     
   def recCheck(ast:Symbol): Boolean = {
@@ -129,7 +133,6 @@ A formal parameter of a method must not have an initializer.
 No multidimensional array types or array creation expressions are allowed.
 A method or constructor must not contain explicit this() or super() calls.
 * 
-* cast not in double (( ))
 * check char -> count = 1
    */
 
