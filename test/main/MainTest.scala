@@ -25,7 +25,6 @@ class MainTest extends FunSuite {
     assert(ret === Joosc.errCodeSuccess)
   }
   
-  /*
   test("invalid escape seq") {
     val code = Source.fromString(
 """
@@ -37,7 +36,18 @@ class MainTest extends FunSuite {
     val ret = Joosc.check(code)
     assert(ret === Joosc.errCodeParseErr)
   }
-  */
+  
+  test("quote in string") {
+    val code = Source.fromString(
+"""
+ class Foo {
+  public void foo() {
+   println("he\"llo");
+  }
+ }""")
+    val ret = Joosc.check(code)
+    assert(ret === Joosc.errCodeSuccess)
+  }
   
   test("invalid ascii char") {
     val code = Source.fromString(

@@ -13,13 +13,13 @@ class DfaTest extends FunSuite {
 """3
 identifier
 +
-$
+EOF
 2
 S
 E
 S
 3
-S E $
+S E EOF
 E E + identifier
 E identifier
 6
@@ -29,10 +29,10 @@ E identifier
 5 + reduce 2
 1 + reduce 1
 3 identifier reduce 0
-4 $ shift 3
+4 EOF shift 3
 0 E shift 4
-1 $ reduce 1
-5 $ reduce 2
+1 EOF reduce 1
+5 EOF reduce 2
 0 identifier shift 5
 """
         ))

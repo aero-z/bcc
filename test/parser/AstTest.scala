@@ -5,12 +5,12 @@ import org.scalatest.FunSuite
 import scanner._
 import parser._
 
-class ASTTest extends FunSuite {
+class AstTest extends FunSuite {
   val myCode = """
  abstract public static class Foo {
   public void foo() {
    println("hello");
-    if (var == 5) { method(shit);}
+    if (var == 5) { method(shit); }
  }
 }"""
   test("AST-test") {
@@ -18,14 +18,15 @@ class ASTTest extends FunSuite {
     val tokens = Scanner.scan(myCode)
 	tokens.foreach(x => println(x.getClass()))
 	println("SCANNING DONE")
-	val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/grammar.cfg")))
+	val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/grammar.lr1")))
 	println("BUILDING DFA DONE")
 	val parseTree:Symbol = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
     println("BUILDING AST TREE")
     //val node = AST.toNode(parseTree)
-   val ast = AST.creteAST(parseTree)
-   Parser.printTree(ast)
+    val ast = AST.creteAST(parseTree)
+    Parser.printTree(ast)
+    // TODO: do some automatic verification on the tree
   }
 }

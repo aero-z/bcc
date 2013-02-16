@@ -6,6 +6,8 @@ import scanner._
 import parser._
 
 class Newtest extends FunSuite{
+  // NOTE: this test is meant for playing around and testing manually
+  //       it doesn't test any additional functionality other tests test
   val myCode = """
 public class J1_1_AmbiguousName_AccessResultFromMethod{
 
