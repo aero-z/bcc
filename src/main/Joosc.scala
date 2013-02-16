@@ -32,8 +32,8 @@ object Joosc {
                 tokens.foreach(debug(_))
                 val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
                 debug("=== Printing parse tree ===")
-                Parser.printTree(parseTree)
-                if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
+                //Parser.printTree(parseTree)
+                //if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
             } catch {
                 case e: CompilerError =>
                     Console.err.println("Syntax error while parsing: " + e.getMessage())
