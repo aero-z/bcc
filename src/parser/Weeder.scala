@@ -3,9 +3,11 @@ package parser
 import scanner.Token
 import scanner.KeywordToken
 import scanner.ScopingToken
+import scanner.IntegerToken
+import scanner.OperatorToken
 
 object Weeder {
-  def check(s: Symbol): Boolean = {
+  /*def check(s: Symbol): Boolean = {
     /**
      * @param tree a Modifiers or Modifier tree
      * @return total number of final and abstract modifiers
@@ -30,21 +32,23 @@ object Weeder {
       case NonTerminalSymbol(_, xs) => xs.map(check(_)).reduce(_ && _)
       case _: Token => true
     }
-  }
+  }*/
   
   def astcheck(ast:Symbol): Boolean = {
-    recCheck(ast) //&& everyNode(ast)
+    recCheck(ast) && everyNode(ast)
   }
-  /*
-  def everyNode(ast:Symbol):Boolean = {
-    def
-    ast match = {
-      case NonTerminalSymbol("Assignment", NonTerminalSymbol("Assignment"=>, AssignmentToken(),
-    }
-//check int range//case NonTerminalSymbol(
-    
-//cast not in double (( ))
-  }*/
+  def everyNode(ast:Symbol):Boolean = ast match {
+      //check int range
+      case IntegerToken(str) =>
+        try { str.toInt; true} catch { case _:Throwable => false }
+      case NonTerminalSymbol("UnaryExpression", OperatorToken("-") :: IntegerToken(str) :: Nil) =>
+        try { ("-"+str).toInt; true} catch { case _:Throwable => false }
+      //cast not in double (( ))
+      case NonTerminalSymbol("NonPrimCast", ScopingToken("(") :: NonTerminalSymbol(_, ScopingToken("(") :: ys) :: xs) => false
+      case NonTerminalSymbol(_, Nil) => true;
+      case NonTerminalSymbol(_, list) => list.map(everyNode(_)).reduce(_ && _)
+      case _ => true
+  }
     
   def recCheck(ast:Symbol): Boolean = {
     def checkRec(ast:Symbol):Boolean = ast match {
@@ -58,30 +62,29 @@ object Weeder {
         //method has a body if and only if it is neither abstract nor native
         if ( (modlist.contains(KeywordToken("abstract")) || modlist.contains(KeywordToken("native"))) ) 
           tail(tail.length - 1) match {
-          	case NonTerminalSymbol("Block", _) => println("END: "+tail(tail.length - 1)); false
+          	case NonTerminalSymbol("Block", _) => /*println("END: "+tail(tail.length - 1));*/ false
           	case _ =>println("END: "+tail(tail.length - 1)); true
           }
         //An abstract method cannot be static or final
         else if (modlist.contains(KeywordToken("abstract")) && (modlist.contains(KeywordToken("static")) || modlist.contains(KeywordToken("final"))) ) false
         //A static method cannot be final
-        else if (modlist.contains(KeywordToken("static")) && modlist.contains(KeywordToken("static"))) false
+        else if (modlist.contains(KeywordToken("static")) && modlist.contains(KeywordToken("final"))) false
         //A native method must be static.
         else if (modlist.contains(KeywordToken("native")) && !modlist.contains(KeywordToken("static"))) false
-        
         else true
-        
       //No field can be final.
-      case NonTerminalSymbol("SingleVariableDeclaration", NonTerminalSymbol("Modifiers", modlist) :: xs ) =>
+      /*case NonTerminalSymbol("SingleVariableDeclaration", NonTerminalSymbol("Modifiers", modlist) :: xs ) =>
         if (modlist.contains(KeywordToken("final")) && xs.length<4) false // "<4" -> means no assignment => Bastien did it too
         else true
         
       //An interface cannot contain fields or constructors.
       case NonTerminalSymbol("InterfaceDeclaration", interfaceDecl) => interfaceCheck(interfaceDecl)
-      
+      */
       case _ => true
     }
     ast match {
-      case nt @ NonTerminalSymbol(_, list) => checkRec(nt) && list.map(astcheck(_)).reduce(_ && _)
+      case nt @ NonTerminalSymbol(_, Nil) => true
+      case nt @ NonTerminalSymbol(_, list) => checkRec(nt) && list.map(recCheck(_)).reduce(_ && _)
       case _ => true
     }
   }
@@ -90,13 +93,17 @@ object Weeder {
     case ScopingToken("{") :: ScopingToken("}") :: xs => Nil
     case ScopingToken("{") :: NonTerminalSymbol("ClassBodyDeclarations", list) :: tail => list
     case x :: tail => getClassBody(tail)
+    case Nil => Nil
   }
   def findConstructor(list:List[Symbol]):Boolean = {
     def rec(symbol:Symbol): Boolean = symbol match {
       case NonTerminalSymbol("ConstructorDeclaration", list) => true
       case _ => false
     }
-    list.map(rec(_)).reduce(_ || _)
+    list match {
+      case Nil => true
+      case list => list.map(rec(_)).reduce(_ || _)
+    }
   }
   
   //true -> 
@@ -128,12 +135,8 @@ object Weeder {
   /*
 
 A formal parameter of a method must not have an initializer.
-->BAstien A class/interface must be declared in a .java file with the same base name as the class/interface.
-
-No multidimensional array types or array creation expressions are allowed.
 A method or constructor must not contain explicit this() or super() calls.
-* 
-* check char -> count = 1
+
    */
 
 }

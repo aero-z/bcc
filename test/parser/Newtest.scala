@@ -8,10 +8,12 @@ import parser._
 class Newtest extends FunSuite{
   // NOTE: this test is meant for playing around and testing manually
   //       it doesn't test any additional functionality other tests test
-  val myCode = """
-  final class Foo {
-  public void foo( ) { x = 5+5;}
- }"""
+  val myCode =  """
+    	public abstract class Foo {
+    		public Foo() {}
+    		abstract void foo( ) ;
+		  	public helloword(int cedric) {ced=5+5;}
+    	}"""
   test("Everything") {
 	println("BEGIN TEST")
     val tokens = Scanner.scan(myCode)
