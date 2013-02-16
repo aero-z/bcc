@@ -7,10 +7,8 @@ import parser._
 
 class Newtest extends FunSuite{
   val myCode = """
-  abstract class Foo {
-  public void foo() {
-      red(pink);
-}
+  final class Foo {
+  public void foo( ) { x = 5+5;}
  }"""
   test("Everything") {
 	println("BEGIN TEST")
@@ -22,6 +20,10 @@ class Newtest extends FunSuite{
 	val parseTree = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
-	assert(Weeder.check(parseTree))
+	val ast = AST.creteAST(parseTree)
+	println("BUILDING PARSETREE DONE")
+	Parser.printTree(ast)
+	println("Weeder result: "+Weeder.astcheck(ast))
+	println("WEEDER CHECK DONE")
   }
 }
