@@ -18,7 +18,7 @@ trait AbstractNode {
 class TypeChecking extends (Visitor) {
   def visit(node:IfNode) {}
 }*/
-
+/*
 trait AST {
 	//val root
 }
@@ -50,10 +50,10 @@ case class OperationNode(leftSide:Node, operator:String, rightSide:Node) extends
 case class CompareExpressionNode(leftSide:Node, operator:String, rightSide:Node) extends Node {
   override def toString() = leftSide.toString+" "+operator+" "+rightSide.toString
 }
-
+*/
 //case class ClassDeclaration(modifiers:BlockNode, identifier:String, interfaces:BlockNode, classBodyDeclarations:BlockNode)
 
-  object AST {
+  object Ast {
    /*
 	val ifstatement = "(IfThenElseStatement|IfThenElseStatementNoShortIf)".r //the same after parsing
 	val whilestatement = "(WhileStatement|WhileStatementNoShortIf)".r
@@ -135,7 +135,7 @@ ClassDeclaration class identifier { }
 	  	}
 	  }*/ 
 	
-    def creteAST(symbol:Symbol):Symbol = {
+    def creteAst(symbol:Symbol):Symbol = {
       parametersToList(reduceSimpleSymbolBranches(symbol))
     }
     
