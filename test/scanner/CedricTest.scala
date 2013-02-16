@@ -4,27 +4,13 @@ import org.scalatest.FunSuite
 
 class CedricTest extends FunSuite {
   val test = """
-		some(code);
-	    while(happy>cedric){dont annoy me}
-	    /*multi line comment
-	    comment
-	    //with non sense comment
-	    "and even a string" ; 
-	    and also wrong /* comment
-	    
-	    
-	    formation */
-	    
-	    (more*code)-all.over.the.place
-	    a //one line comment
-	    A "string thing //with a useless comment"
-	    "and more string /*thing which do not make send*/ look"
-	    happy.code(takes(me.home))
-      """
+    ""
+    "this \"String"
+    '\''"""
     
-	test("add line numbers") {
+	/*test("add line numbers") {
 	  	println(Scanner.addLineNumbers(test))
-	}
+	}*/
   
 	test("Let's try to remove comments") {
 	    println("CODE:")
@@ -42,7 +28,7 @@ class CedricTest extends FunSuite {
 	    finished.foreach(println(_))
 	}
 	
-	test("Here we go for the categorization"){
+	/*test("Here we go for the categorization"){
 	    assert (Scanner.checkEncoding(test))
 	    try{
 	    Scanner.categorize(Scanner.generateTokens(test)).foreach(println)
@@ -50,5 +36,5 @@ class CedricTest extends FunSuite {
 	        case TokenException(eM, _) => println(eM) 
 	                fail()
 	    }
-	}
+	}*/
 }
