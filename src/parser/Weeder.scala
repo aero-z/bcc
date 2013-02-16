@@ -34,8 +34,14 @@ object Weeder {
   }
   
   def astcheck(ast:Symbol): Boolean = {
-    recCheck(ast) //&& 
+    recCheck(ast) //&& everyNode(ast)
   }
+  /*
+  def everyNode(ast:Symbol):Boolean = {
+    def
+    ast match = {}
+* check int range//case NonTerminalSymbol(
+  }*/
     
   def recCheck(ast:Symbol): Boolean = {
     def checkRec(ast:Symbol):Boolean = ast match {
@@ -125,7 +131,6 @@ No multidimensional array types or array creation expressions are allowed.
 A method or constructor must not contain explicit this() or super() calls.
 * 
 * cast not in double (( ))
-* check int range
 * check char -> count = 1
    */
 

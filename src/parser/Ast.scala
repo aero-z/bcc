@@ -135,7 +135,7 @@ ClassDeclaration class identifier { }
 	  	}
 	  }*/ 
 	
-    def creteAst(symbol:Symbol):Symbol = {
+    def createAst(symbol:Symbol):Symbol = {
       parametersToList(reduceSimpleSymbolBranches(symbol))
     }
     

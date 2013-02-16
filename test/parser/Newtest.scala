@@ -22,7 +22,7 @@ class Newtest extends FunSuite{
 	val parseTree = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
-	val ast = AST.creteAST(parseTree)
+	val ast = Ast.createAst(parseTree)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(ast)
 	println("Weeder result: "+Weeder.astcheck(ast))
