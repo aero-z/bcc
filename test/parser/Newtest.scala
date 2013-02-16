@@ -9,10 +9,9 @@ class Newtest extends FunSuite{
   // NOTE: this test is meant for playing around and testing manually
   //       it doesn't test any additional functionality other tests test
   val myCode =  """
-    	public abstract class Foo {
+    	public class Foo {
     		public Foo() {}
-    		abstract void foo( ) ;
-		  	public helloword(int cedric) {ced=5+5;}
+    		public void foo( ) {}
     	}"""
   test("Everything") {
 	println("BEGIN TEST")

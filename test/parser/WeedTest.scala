@@ -64,4 +64,28 @@ class WeedTest extends FunSuite {
     	}"""
     assert(!Weeder.astcheck(stuff(code)))
   }
+   test("abstract method -> not static SUCCESS") {
+    val code = """
+    	public abstract class Foo {
+    		public Foo() {}
+    		abstract void foo( ) ; 
+    	}"""
+    assert(Weeder.astcheck(stuff(code)))
+  }
+   test("abstract method -> not static FAIL") {
+    val code = """
+    	public abstract class Foo {
+    		public Foo() {}
+    		abstract static void foo( ) ; 
+    	}"""
+    assert(Weeder.astcheck(stuff(code)))
+  }
+    test("method abstract -> not final FAIL") {
+    val code = """
+    	public abstract class Foo {
+    		public Foo() {}
+    		abstract final void foo( ) { x = 5+5;} 
+    	}"""
+    assert(!Weeder.astcheck(stuff(code)))
+  }
 }
