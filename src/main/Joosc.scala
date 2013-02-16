@@ -46,8 +46,7 @@ object Joosc {
     def checkFileName(tree: Symbol, name: String): Boolean = {
         val fileName = new File(name).getName
         if (!fileName.endsWith(".java")) false
-        debug("Ends with .java")
-        val className = fileName.substring(0, fileName.length - 6)
+        val className = fileName.substring(0, fileName.length - 5)
         tree match {
             case NonTerminalSymbol("CompilationUnit", list) =>
                 list.exists(_ match {
