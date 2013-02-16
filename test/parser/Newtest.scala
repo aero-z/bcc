@@ -9,24 +9,9 @@ class Newtest extends FunSuite{
   // NOTE: this test is meant for playing around and testing manually
   //       it doesn't test any additional functionality other tests test
   val myCode = """
-public class J1_1_AmbiguousName_AccessResultFromMethod{
-
-    public int i;
-
-    public J1_1_AmbiguousName_AccessResultFromMethod(int j){
-    i = j;
-    }
-
-    public J1_1_AmbiguousName_AccessResultFromMethod inc(){
-    return new J1_1_AmbiguousName_AccessResultFromMethod(i+1);
-    }
-
-    public static int test(){
-    return new J1_1_AmbiguousName_AccessResultFromMethod(120).inc().inc().inc().i;
-    }
-
-}
-"""
+  final class Foo {
+  public void foo( ) { x = 5+5;}
+ }"""
   test("Everything") {
 	println("BEGIN TEST")
     val tokens = Scanner.scan(myCode)
@@ -37,5 +22,10 @@ public class J1_1_AmbiguousName_AccessResultFromMethod{
 	val parseTree = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
+	val ast = AST.creteAST(parseTree)
+	println("BUILDING PARSETREE DONE")
+	Parser.printTree(ast)
+	println("Weeder result: "+Weeder.astcheck(ast))
+	println("WEEDER CHECK DONE")
   }
 }
