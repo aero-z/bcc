@@ -140,7 +140,7 @@ ClassDeclaration class identifier { }
     }
     val recursiv = List("Modifiers", "Interfaces", "ClassBodyDeclarations", "ImportDeclarations", "TypeDeclarations", "InterfaceBodyDeclarations", "ParameterDefs", "Parameters", "Statements", "TypeDeclarations") 
 
-    val blackList = List("CompilationUnit")
+    val blackList = List("CompilationUnit", "MethodDeclaration", "FieldDeclaration", "ConstructorDeclaration")
     def reduceSimpleSymbolBranches(symbol:Symbol):Symbol = symbol match {
       case NonTerminalSymbol(name , list) =>
         val newlist = list.map(reduceSimpleSymbolBranches(_))

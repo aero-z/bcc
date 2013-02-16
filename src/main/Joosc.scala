@@ -32,8 +32,8 @@ object Joosc {
                 tokens.foreach(debug(_))
                 val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
                 debug("=== Printing parse tree ===")
-                //Parser.printTree(parseTree)
-                //if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
+                Parser.printTree(parseTree)
+                if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
             } catch {
                 case e: CompilerError =>
                     Console.err.println("Syntax error while parsing: " + e.getMessage())
@@ -46,10 +46,8 @@ object Joosc {
     def checkFileName(tree: Symbol, name: String): Boolean = {
         val fileName = new File(name).getName
         if (!fileName.endsWith(".java")) false
+        debug("Ends with .java")
         val className = fileName.substring(0, fileName.length - 6)
-        if (!Character.isJavaIdentifierStart(className.head) ||
-            className.tail.exists(!Character.isJavaIdentifierPart(_))) false
-
         tree match {
             case NonTerminalSymbol("CompilationUnit", list) =>
                 list.exists(_ match {
