@@ -35,7 +35,7 @@ object Weeder {
   def astcheck(ast:Symbol): Boolean = {
     recCheck(ast) //&& everyNode(ast)
   }
-  
+  /*
   def everyNode(ast:Symbol):Boolean = {
     def
     ast match = {
@@ -44,7 +44,7 @@ object Weeder {
 //check int range//case NonTerminalSymbol(
     
 //cast not in double (( ))
-  }
+  }*/
     
   def recCheck(ast:Symbol): Boolean = {
     def checkRec(ast:Symbol):Boolean = ast match {
