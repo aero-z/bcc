@@ -25,7 +25,7 @@ class AstTest extends FunSuite {
 	Parser.printTree(parseTree)
     println("BUILDING AST TREE")
     //val node = AST.toNode(parseTree)
-    val ast = AST.creteAST(parseTree)
+    val ast = Ast.creteAst(parseTree)
     Parser.printTree(ast)
     // TODO: do some automatic verification on the tree
   }
