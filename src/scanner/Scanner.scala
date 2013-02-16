@@ -1,7 +1,6 @@
 package scanner
 
 import main.CompilerError
-import org.apache.commons.lang3.StringEscapeUtils
 
 object Scanner {
 
@@ -59,7 +58,24 @@ object Scanner {
 
   def categorize(list: List[String]): List[Token] = {
 
-    def unescape(str: String) = StringEscapeUtils.unescapeJava(str)
+    //def unescape(str: String) = StringEscapeUtils.unescapeJava(str)
+    def unescape(str: String): String = {
+      val regex = """(.*)\\(.)(.*)""".r
+      str match {
+        case regex(head, escapechar, tail) => unescape(escapechar match {
+          case "b" => head + "\b" + tail
+          case "f" => head + "\f" + tail
+          case "n" => head + "\n" + tail
+          case "r" => head + "\r" + tail
+          case "t" => head + "\t" + tail
+          case "'" => head + "\'" + tail
+          case "\"" => head + "\"" + tail
+          case "\\" => head + "\\" + tail
+          case x => throw new CompilerError(s"invalid escape sequence \\$x")
+        })
+        case _ => str
+      }
+    }
     
     val identifiers = "([a-zA-Z\\$_][a-zA-Z0-9\\$_]*)".r;
 
@@ -85,8 +101,11 @@ object Scanner {
         case assignment(eq) => AssignmentToken()
         case identifiers(id) => IdentifierToken(id)
         case integer(intlit) => IntegerToken(intlit)
-        case string(str) => StringToken(str.substring(1, str.length() - 1))
-        case char(chr) => CharacterToken(chr)
+        case string(str) => StringToken(unescape(str.substring(1, str.length() - 1)))
+        case char(chr) => val c = unescape(chr.substring(1, chr.length() - 1))
+                          if (c.length != 1) throw new CompilerError(s"invalid char literal '$c'")
+                          c
+        CharacterToken(c)
         case x if delimiters contains x => ScopingToken(x)
         case x if operators contains x => OperatorToken(x)
         case x => throw new CompilerError(s"Cannot categorize $x")

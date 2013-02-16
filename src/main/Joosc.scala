@@ -2,12 +2,18 @@ package main
 
 import scala.io.Source
 import java.io.File
+import parser.Ast
 import scanner.Scanner
 import parser.Parser
 import parser.Dfa
 import parser.Weeder
 import java.io.IOException
 import main.Logger.debug
+import parser.Symbol
+import parser.NonTerminalSymbol
+import parser.NonTerminalSymbol
+import parser.NonTerminalSymbol
+import scanner.IdentifierToken
 
 class CompilerError(str: String) extends Exception(str)
 
@@ -18,20 +24,16 @@ object Joosc {
     val errCodeIoErr = 1
 
     def check(source: Source, name: String): Int = {
-        val fileName = new File(name).getName
-        if (!fileName.endsWith(".java")) return errCodeParseErr
-        val className = fileName.substring(0, fileName.length - 6)
-        if (!Character.isJavaIdentifierStart(className.head) || className.tail.exists(!Character.isJavaIdentifierPart(_))) return errCodeParseErr
         val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
         val parseTree =
             try {
                 val tokens = Scanner.scan(source.mkString)
                 debug("=== Printing tokens ===")
                 tokens.foreach(debug(_))
-                val parseTree = Parser.parse(tokens, dfa)
+                val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
                 debug("=== Printing parse tree ===")
                 Parser.printTree(parseTree)
-                parseTree
+                if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
             } catch {
                 case e: CompilerError =>
                     Console.err.println("Syntax error while parsing: " + e.getMessage())
@@ -39,6 +41,23 @@ object Joosc {
             }
 
         errCodeSuccess
+    }
+
+    def checkFileName(tree: Symbol, name: String): Boolean = {
+        val fileName = new File(name).getName
+        if (!fileName.endsWith(".java")) false
+        debug("Ends with .java")
+        val className = fileName.substring(0, fileName.length - 6)
+        tree match {
+            case NonTerminalSymbol("CompilationUnit", list) =>
+                list.exists(_ match {
+                    case NonTerminalSymbol("ClassDeclaration", xs) => xs contains IdentifierToken(className)
+                    case NonTerminalSymbol("InterfaceDeclaration", xs) => xs contains IdentifierToken(className)
+                    case _ => false
+                }
+            )
+        }
+
     }
 
     def main(args: Array[String]): Unit = {

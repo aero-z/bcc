@@ -1,6 +1,7 @@
 SOURCES = `find src -name *.scala`
+TESTSOURCES = `find test -name *.scala`
 ZIPFILE = bcc.zip
-ZIPCONTENT = $(SOURCES) cfg/grammar.lr1 joosc Makefile
+ZIPCONTENT = $(SOURCES) $(TESTSOURCES) cfg/grammar.lr1 joosc Makefile
 BINDIR = bin
 
 all:

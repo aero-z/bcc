@@ -18,6 +18,7 @@ class MainTest extends FunSuite {
 """
  class Foo {
   public Foo() {
+   char c = 'c';
    println("hello");
   }
  }""")
@@ -37,18 +38,29 @@ class MainTest extends FunSuite {
     assert(ret === Joosc.errCodeParseErr)
   }
   
-  test("quote in string") {
+  test("invalid char literal") {
     val code = Source.fromString(
 """
  class Foo {
   public void foo() {
-   println("he\"llo");
+    char c = 'haa';
+  }
+ }""")
+    val ret = Joosc.check(code, "Foo.java")
+    assert(ret === Joosc.errCodeParseErr)
+  }
+  
+  test("escape seq in string") {
+    val code = Source.fromString(
+"""
+ class Foo {
+  public void foo() {
+   println("he\"l\nlo");
   }
  }""")
     val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeSuccess)
   }
-  
   test("invalid ascii char") {
     val code = Source.fromString(
 """
