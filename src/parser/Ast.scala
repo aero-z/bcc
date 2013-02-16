@@ -138,18 +138,19 @@ ClassDeclaration class identifier { }
     def createAst(symbol:Symbol):Symbol = {
       parametersToList(reduceSimpleSymbolBranches(symbol))
     }
-    
+    val recursiv = List("Modifiers", "Interfaces", "ClassBodyDeclarations", "ImportDeclarations", "TypeDeclarations", "InterfaceBodyDeclarations", "ParameterDefs", "Parameters", "Statements", "TypeDeclarations") 
+
+    val blackList = List("CompilationUnit")
     def reduceSimpleSymbolBranches(symbol:Symbol):Symbol = symbol match {
-      case NonTerminalSymbol(name, list) =>
+      case NonTerminalSymbol(name , list) =>
         val newlist = list.map(reduceSimpleSymbolBranches(_))
-        if (newlist.length == 1) newlist.head
+        if (newlist.length == 1 && ! blackList.contains(name) && ! recursiv.contains(name)) newlist.head
         else NonTerminalSymbol(name, newlist)
       case x => x
     }
     
-    val recursiv = "(Modifiers|Interfaces|ClassBodyDeclarations|ImportDeclarations|TypeDeclarations|InterfaceBodyDeclarations|ParameterDefs|Parameters|Statements|TypeDeclarations)".r 
     def parametersToList(symbol:Symbol):Symbol = symbol match {
-      case NonTerminalSymbol(name @ recursiv(_), tree) => NonTerminalSymbol(name, listFromTree(tree))
+      case NonTerminalSymbol(name, tree) if recursiv.contains(name)=> NonTerminalSymbol(name, listFromTree(tree))
       case NonTerminalSymbol(name, list) => NonTerminalSymbol(name, list.map(parametersToList(_)))
       case x:Symbol => x
     }

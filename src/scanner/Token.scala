@@ -3,7 +3,7 @@ package scanner
 import parser.Symbol
 
 abstract class Token extends Symbol {
-  def typeStr(): String
+  def typeStr: String
   override def toString():String = typeStr
 }
 
