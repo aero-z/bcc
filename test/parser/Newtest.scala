@@ -6,6 +6,8 @@ import scanner._
 import parser._
 
 class Newtest extends FunSuite{
+  // NOTE: this test is meant for playing around and testing manually
+  //       it doesn't test any additional functionality other tests test
   val myCode = """
   final class Foo {
   public void foo( ) { x = 5+5;}

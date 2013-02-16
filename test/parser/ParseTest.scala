@@ -20,11 +20,11 @@ class ParseTest extends FunSuite {
     val dfa = Dfa.fromFile(Source.fromString(
 """6
 identifier
-literal
+integerLiteral
 +
 ;
 =
-$
+EOF
 5
 S
 expression
@@ -33,10 +33,10 @@ statement
 assignment
 S
 9
-S block $
+S block EOF
 expression identifier
-expression literal
-expression expression + literal
+expression integerLiteral
+expression expression + integerLiteral
 expression expression + identifier
 block statement block
 block statement
@@ -46,20 +46,20 @@ assignment identifier = expression
 31
 6 + reduce 1
 2 = shift 1
-11 $ reduce 6
+11 EOF reduce 6
 11 identifier shift 2
 14 + reduce 4
 7 + shift 3
 11 block shift 4
 6 ; reduce 1
-1 literal shift 5
+1 integerLiteral shift 5
 10 + reduce 3
 14 ; reduce 4
 1 identifier shift 6
 8 identifier reduce 7
 7 ; reduce 8
 1 expression shift 7
-4 $ reduce 5
+4 EOF reduce 5
 5 + reduce 2
 10 ; reduce 3
 13 ; shift 8
@@ -67,11 +67,11 @@ assignment identifier = expression
 0 block shift 9
 5 ; reduce 2
 12 identifier reduce 0
-3 literal shift 10
+3 integerLiteral shift 10
 11 statement shift 11
 0 statement shift 11
-8 $ reduce 7
-9 $ shift 12
+8 EOF reduce 7
+9 EOF shift 12
 11 assignment shift 13
 0 assignment shift 13
 3 identifier shift 14
@@ -80,17 +80,16 @@ assignment identifier = expression
     val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5.toString ), ScopingToken(";"),
         IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2.toString), ScopingToken(";"),
         EndToken())
-    tokens.foreach(x => println(x.getClass))
     val parseTree = Parser.parse(tokens, dfa)
-   // Parser.printTree(parseTree)
-     /*parseTree match {
+    Parser.printTree(parseTree)
+    parseTree match {
       case NonTerminalSymbol("block",
         NonTerminalSymbol("statement",
           NonTerminalSymbol("assignment",
             IdentifierToken("x") ::
             AssignmentToken() ::
             NonTerminalSymbol("expression",
-              IntegerToken(5) ::
+              IntegerToken("5") ::
               Nil) ::
             Nil) ::
           ScopingToken(";") ::
@@ -105,7 +104,7 @@ assignment identifier = expression
                   IdentifierToken("x") ::
                   Nil) ::
                 OperatorToken("+") ::
-                IntegerToken(2) ::
+                IntegerToken("2") ::
                 Nil) ::
               Nil) ::
             ScopingToken(";") ::
@@ -113,6 +112,6 @@ assignment identifier = expression
         Nil) ::
       Nil) => 
       case _ => fail
-    }*/
+    }
   }
 }

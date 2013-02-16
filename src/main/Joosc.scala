@@ -32,10 +32,6 @@ object Joosc {
         Console.err.println("Syntax error while parsing: "+e.getMessage())
         return errCodeParseErr
     }
-    if (Weeder.check(parseTree) == false) {
-        Console.err.println("Syntax error while weeding")
-        return errCodeParseErr
-    }
       
     errCodeSuccess
   }
