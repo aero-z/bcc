@@ -9,7 +9,7 @@ class MainTest extends FunSuite {
 """
   [ } this is shit
 """)
-    val ret = Joosc.check(code)
+    val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -21,7 +21,7 @@ class MainTest extends FunSuite {
    println("hello");
   }
  }""")
-    val ret = Joosc.check(code)
+    val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeSuccess)
   }
   
@@ -33,7 +33,7 @@ class MainTest extends FunSuite {
    println("he\llo");
   }
  }""")
-    val ret = Joosc.check(code)
+    val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -45,7 +45,7 @@ class MainTest extends FunSuite {
    println("he\"llo");
   }
  }""")
-    val ret = Joosc.check(code)
+    val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeSuccess)
   }
   
@@ -57,7 +57,7 @@ class MainTest extends FunSuite {
    println("hel""" + 200.toChar + """lo");
   }
  }""")
-    val ret = Joosc.check(code)
+    val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -81,7 +81,7 @@ public class Test {
     }
 }
 """)
-    val ret = Joosc.check(code)
+    val ret = Joosc.check(code, "Foo.java")
     assert(ret === Joosc.errCodeSuccess)
   }
 }

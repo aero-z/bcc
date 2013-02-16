@@ -3,7 +3,6 @@ package parser
 import scanner.Token
 import scanner.KeywordToken
 import scanner.ScopingToken
-import parser.Symbol
 
 object Weeder {
   def check(s: Symbol): Boolean = {
