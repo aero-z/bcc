@@ -20,8 +20,10 @@ case class ClassDefinitionNode(className: String, parent: Some[String], interfac
 
 
 case class MethodDeclarationNode(methodName: String, returnType: String, modifiers: List[Modifier], 
-        parameter: List[(String, String)], implementation: Some[Block]) 
-case class FieldDeclarationNode() //TODO add some stuff
-case class ConstructorDeclarationNode()//TODO add some stuff here...
+        parameters: List[(String, String)], implementation: Some[BlockNode]) 
+case class FieldDeclarationNode(fieldName : String, fieldType: String, modifiers: List[Modifier], initializer : OPtion[ExpressionNode])
+case class ConstructorDeclarationNode(constructorName: String, modifiers : List[Modifier],
+        parameters: List[(String, String)], implementation: BlockNode)
 
-case class Block() //TODO something here
+case class BlockNode() //TODO something here
+case class ExpressionNode() //TODO some stuff
