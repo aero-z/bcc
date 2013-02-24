@@ -1,0 +1,4 @@
+#! /bin/sh
+
+./joosc $1
+cat $1
