@@ -7,13 +7,19 @@ import scala.Enumeration
 
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends Expression{
-    def toString = path.reduce((x, y)=> x + "." + y)
+    override def toString = path.reduce((x, y)=> x + "." + y)
 }
 
 //Main  of a file.
-case class CompilationUnit(packageName: Option[Name], classImport: List[Name],
-        packageImport: List[Name], typeDef: TypeDefinition, fileName: String)
+case class CompilationUnit(packageName: Option[Name], classImport: List[ImportDeclaration]
+        , typeDef: Option[TypeDefinition], fileName: String)
 
+abstract class ImportDeclaration(name: Name)
+
+case class ClassImport(name: Name) extends ImportDeclaration(name)
+case class PackageImport(name: Name) extends ImportDeclaration(name)
+        
+        
 //Either a class or an interface
 abstract class TypeDefinition(typeName: String)
 
