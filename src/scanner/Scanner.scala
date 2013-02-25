@@ -58,29 +58,43 @@ object Scanner {
 
   def categorize(list: List[String]): List[Token] = {
 
-    //def unescape(str: String) = StringEscapeUtils.unescapeJava(str)
-    def unescape(str: String): String = {
-      str match {
-        case "" => ""
-        case "\\" => throw new CompilerError("\\ at end of literal"); ""
-        case _ => str.head match {
-          case '\\' => str.charAt(1) match {
-            case 'b' => '\b' + unescape(str.substring(2))
-            case 'f' => '\f' + unescape(str.substring(2))
-            case 'n' => '\n' + unescape(str.substring(2))
-            case 'r' => '\r' + unescape(str.substring(2))
-            case 't' => '\t' + unescape(str.substring(2))
-            case ''' => ''' + unescape(str.substring(2))
-            case '\"' => '\"' + unescape(str.substring(2))
-            case '\\' => '\\' + unescape(str.substring(2))
-            case n @ ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7') =>
-              "TODO" + unescape(str.substring(2))
-            case x => throw new CompilerError(s"invalid escape sequence '\\$x'"); ""
-          }
-          case x => x + unescape(str.tail) 
+    /*def unescape(str: String) = {
+      try {
+        StringEscapeUtils.unescapeJava(str)
+      } catch {
+        case e: NumberFormatException => throw new CompilerError(s"Invalid escape sequence '$str': "+e.getMessage())
+      }
+    }*/
+    
+    def unescape(str: String): String = {      
+      def unescapeRec(str: List[Char]): List[Char] = {
+        str match {
+          case Nil => Nil
+          case '\\' :: 'b'  :: xs => '\b' :: unescapeRec(xs)
+          case '\\' :: 'n'  :: xs => '\n' :: unescapeRec(xs)
+          case '\\' :: 'r'  :: xs => '\r' :: unescapeRec(xs)
+          case '\\' :: 't'  :: xs => '\t' :: unescapeRec(xs)
+          case '\\' :: 'f'  :: xs => '\f' :: unescapeRec(xs)
+          case '\\' :: '''  :: xs => '\'' :: unescapeRec(xs)
+          case '\\' :: '\"' :: xs => '\"' :: unescapeRec(xs)
+          case '\\' :: '\\' :: xs => '\\' :: unescapeRec(xs)
+          case '\\' :: (n1 @ ('0' | '1' | '2' | '3')) ::
+		               (n2 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) ::
+		               (n3 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
+                 Integer.valueOf("" + n1 + n2 + n3, 8).toChar :: unescapeRec(xs)
+          case '\\' :: (n1 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) ::
+               	       (n2 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
+                 Integer.valueOf("" + n1 + n2, 8).toChar :: unescapeRec(xs)
+          case '\\' :: (n1 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
+                 Integer.valueOf("" + n1, 8).toChar :: unescapeRec(xs)
+          case '\\' :: xs => throw new CompilerError("invalid escape sequence "+xs); Nil
+          case x :: xs => x :: unescapeRec(xs)
         }
       }
+      
+      unescapeRec(str.toList).foldRight("")(_ + _)
     }
+            
     
     val identifiers = "([a-zA-Z\\$_][a-zA-Z0-9\\$_]*)".r;
 
@@ -107,10 +121,10 @@ object Scanner {
         case identifiers(id) => IdentifierToken(id)
         case integer(intlit) => IntegerToken(intlit)
         case string(str) => StringToken(unescape(str.substring(1, str.length() - 1)))
-        case char(chr) => val c = unescape(chr.substring(1, chr.length() - 1))
-                          if (c.length != 1) throw new CompilerError(s"invalid char literal '$c'")
-                          c
-        CharacterToken(c)
+        case char(chr) =>
+          val c = unescape(chr.substring(1, chr.length() - 1))
+          if (c.length != 1) throw new CompilerError(s"invalid char literal $chr")
+          CharacterToken(c)
         case x if delimiters contains x => ScopingToken(x)
         case x if operators contains x => OperatorToken(x)
         case x => throw new CompilerError(s"Cannot categorize $x")
