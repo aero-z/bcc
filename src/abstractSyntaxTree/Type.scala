@@ -15,6 +15,7 @@ object PrimitiveType{
     case "byte" => ByteType
     case "short" => ShortType
     case "char" => CharType
+    case "void" => VoidType
   }
 }
 
@@ -38,6 +39,9 @@ case object CharType extends PrimitiveType{
     def typeName: String = "char"
 }
 
+case object VoidType extends PrimitiveType{
+  def typeName: String = "void"
+}
 
 case class ArrayType(elementType: Type) extends Type{
     def typeName: String = elementType.typeName + "[]"

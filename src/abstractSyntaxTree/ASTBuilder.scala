@@ -93,7 +93,7 @@ object ASTBuilder {
 
   def extractInterfaceMethods(symbols: List[Symbol]): List[MethodDeclaration] = Nil//TODO implement
   def extractField(symbol: Symbol): Option[FieldDeclaration] = symbol match {
-    case NonTerminalSymbol("FieldDeclaration", xs) => Some(FieldDeclaration(extractIdentifier(xs), extractType(xs), extractModifiers(xs), extractExpression(xs)))
+    case NonTerminalSymbol("FieldDeclaration", xs) => Some(FieldDeclaration(extractIdentifier(xs), extractType(xs), extractModifiers(xs), extractAssignmentExpression(xs)))
     case _ => None
   }
   def extractConstructor(symbol: Symbol) : Option[ConstructorDeclaration] = symbol match {
@@ -111,10 +111,31 @@ object ASTBuilder {
     case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ArrayType", List(name , _, _)))))) => ArrayType(RefType(extractName(name)))      
   }).get
     
-  def extractExpression(symbols: List[Symbol]) : Option[Expression] = None
-  def extractParameters(symbols: List[Symbol]) : List[(Type, String)] = Nil
-  def extractBlock(symbols: List[Symbol]): Option[Block] = None
+  def extractAssignmentExpression(symbols: List[Symbol]) : Option[Expression] = symbols.collectFirst({
+    case NonTerminalSymbol("CondOrExpression", xs) => simplifyExpression(NonTerminalSymbol("CondOrExpression", xs))})
 
+  def extractParameters(symbols: List[Symbol]) : List[(Type, String)] = {
+    def recExtractParameters(symbols: List[Symbol], acc: List[(Type, String)]): List[(Type, String)] = symbols match {
+      case List(NonTerminalSymbol("ParameterDefs", nextParameters), _, NonTerminalSymbol("ParameterDef", parameter)) => recExtractParameters(nextParameters, extractParameter(parameter) :: acc)
+      case List(NonTerminalSymbol("ParameterDef", parameter)) => extractParameter(parameter) :: acc
+    }
+    def extractParameter(symbols: List[Symbol]): (Type, String) = (extractType(symbols), extractIdentifier(symbols))
+    symbols.collectFirst({case NonTerminalSymbol("ParameterDefs", xs) => xs}) match {
+      case Some(xs) => recExtractParameters(xs, Nil)
+      case None => Nil
+    }
+  }
+  def extractBlock(symbols: List[Symbol]): Option[Block] = symbols.collectFirst({
+    case NonTerminalSymbol("Block", List(_, statements, _)) => Block(extractStatements(statements))
+    case NonTerminalSymbol("Block", List(_, _)) => Block(Nil)
+  })
+
+  def extractStatements(symbol: Symbol): List[Statement] = Nil
+
+
+
+
+  def simplifyExpression(expressionSymbol: Symbol): Expression = null
   def concat[A](option: Option[A], list: List[A]): List[A] = option match {
     case Some(x) => x :: list
     case None => list
