@@ -79,7 +79,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-    parameters: List[(Type, String)], implementation: Some[Block]) {
+    parameters: List[(Type, String)], implementation: Option[Block]) {
     def display: Unit = {
         //TODO something fancy...
     }

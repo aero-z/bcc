@@ -80,20 +80,45 @@ object ASTBuilder {
   
   def extractClassBody(symbols: List[Symbol]): (List[FieldDeclaration], List[ConstructorDeclaration], List[MethodDeclaration]) ={
     def recExtractClassBody(symbols: List[Symbol], fieldAcc: List[FieldDeclaration], constructorAcc: List[ConstructorDeclaration], methodAcc: List[MethodDeclaration]): (List[FieldDeclaration], List[ConstructorDeclaration], List[MethodDeclaration]) = symbols match{
-      case List(NonTerminalSymbol("ClassBodyDeclarations", nextDeclarations), NonTerminalSymbol("ClassBodyDeclaration", bodyDeclaration)) => ???//TODO do something with that
-    case List(NonTerminalSymbol("ClassBodyDeclaration", bodyDeclaration)) => ??? //TODO other stuff
+      case List(NonTerminalSymbol("ClassBodyDeclarations", nextDeclarations), NonTerminalSymbol("ClassBodyDeclaration", List(bodyDeclaration))) => recExtractClassBody(nextDeclarations, concat(extractField(bodyDeclaration), fieldAcc), concat(extractConstructor(bodyDeclaration), constructorAcc), concat(extractMethod(bodyDeclaration), methodAcc))
+      case List(NonTerminalSymbol("ClassBodyDeclaration", List(bodyDeclaration))) => (concat(extractField(bodyDeclaration), fieldAcc), concat(extractConstructor(bodyDeclaration), constructorAcc), concat(extractMethod(bodyDeclaration), methodAcc))
+    }
+
+
+    symbols.collectFirst({case NonTerminalSymbol("ClassBodyDeclarations", xs) => xs}) match{
+      case Some(x) => recExtractClassBody(x, Nil, Nil, Nil)
+      case None => (Nil, Nil, Nil)
+    }
   }
 
-
-  symbols.collectFirst({case NonTerminalSymbol("ClassBodyDeclarations", xs) => xs}) match{
-    case Some(x) => recExtractClassBody(x, Nil, Nil, Nil)
-    case None => (Nil, Nil, Nil)
+  def extractInterfaceMethods(symbols: List[Symbol]): List[MethodDeclaration] = Nil//TODO implement
+  def extractField(symbol: Symbol): Option[FieldDeclaration] = symbol match {
+    case NonTerminalSymbol("FieldDeclaration", xs) => Some(FieldDeclaration(extractIdentifier(xs), extractType(xs), extractModifiers(xs), extractExpression(xs)))
+    case _ => None
   }
+  def extractConstructor(symbol: Symbol) : Option[ConstructorDeclaration] = symbol match {
+    case NonTerminalSymbol("ConstructorDeclaration", xs) => Some(ConstructorDeclaration(extractModifiers(xs), extractParameters(xs), extractBlock(xs).get))
+    case _ => None
+  }
+  def extractMethod(symbol: Symbol) : Option[MethodDeclaration] = symbol match {
+    case NonTerminalSymbol("MethodDeclaration", xs) => Some(MethodDeclaration(extractIdentifier(xs), extractType(xs), extractModifiers(xs), extractParameters(xs), extractBlock(xs)))
+    case _ => None
+  }
+  def extractType (symbols: List[Symbol]): Type = symbols.collectFirst({
+    case NonTerminalSymbol("Type", List(NonTerminalSymbol("PrimitiveType", List(KeywordToken(x))))) =>PrimitiveType.fromString(x)
+    case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ClassOrInterfaceType", List(name)))))) => RefType(extractName(name))
+    case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ArrayType", List(KeywordToken(x), _, _)))))) => ArrayType(PrimitiveType.fromString(x))
+    case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ArrayType", List(name , _, _)))))) => ArrayType(RefType(extractName(name)))      
+  }).get
+    
+  def extractExpression(symbols: List[Symbol]) : Option[Expression] = None
+  def extractParameters(symbols: List[Symbol]) : List[(Type, String)] = Nil
+  def extractBlock(symbols: List[Symbol]): Option[Block] = None
 
-}
-def extractInterfaceMethods(symbols: List[Symbol]): List[MethodDeclaration] = Nil//TODO implement
-
-
-class ASTBuildingException(msg: String) extends Exception(msg)
+  def concat[A](option: Option[A], list: List[A]): List[A] = option match {
+    case Some(x) => x :: list
+    case None => list
+  }
+  class ASTBuildingException(msg: String) extends Exception(msg)
 
 }

@@ -8,6 +8,16 @@ abstract class Type{
 
 abstract class PrimitiveType extends Type
 
+object PrimitiveType{
+  def fromString(str: String): PrimitiveType = str match{
+    case "int" => IntType
+    case "boolean" => BooleanType
+    case "byte" => ByteType
+    case "short" => ShortType
+    case "char" => CharType
+  }
+}
+
 case object IntType extends PrimitiveType{
     def typeName: String = "int"
 }
