@@ -34,7 +34,7 @@ object ASTBuilder {
       case NonTerminalSymbol("Name", List(NonTerminalSymbol("SimpleName", List(simpleName)))) => extractSimpleName(simpleName) :: acc
     }
     def extractSimpleName(simpleName: Symbol): String = simpleName match {
-      case NonTerminalSymbol("SimpleName", List(IdentifierToken(id))) => id
+      case IdentifierToken(id) => id
     }
 
     Name(recExtractName(name, Nil).reverse)
