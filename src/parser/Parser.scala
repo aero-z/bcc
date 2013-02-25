@@ -33,7 +33,8 @@ object Parser {
     def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {
       (
         stack drop (rule.numOfSym),
-        NonTerminalSymbol(rule.nonTerminalSymbol, stack take (rule.numOfSym) reverseMap (_._1)))
+        NonTerminalSymbol(rule.nonTerminalSymbol, stack take (rule.numOfSym) reverseMap (_._1))
+      )
     }
     parseRec(List((null, 0)), input)
   }
