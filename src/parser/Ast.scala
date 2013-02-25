@@ -138,7 +138,7 @@ ClassDeclaration class identifier { }
     def createAst(symbol:Symbol):Symbol = {
       parametersToList(reduceSimpleSymbolBranches(symbol))
     }
-    val recursiv = List("Modifiers", "Interfaces", "ClassBodyDeclarations",  "ImportDeclarations", "InterfaceBodyDeclarations", "ParameterDefs", "Parameters", "Statements", "TypeDeclarations") 
+    val recursiv = List("Modifiers")//, "Interfaces", "ClassBodyDeclarations", "ImportDeclarations", "TypeDeclarations", "InterfaceBodyDeclarations", "ParameterDefs", "Parameters", "Statements", "TypeDeclarations") 
 
     val blackList = List("CompilationUnit", "MethodDeclaration", "FieldDeclaration", "ConstructorDeclaration")
     def reduceSimpleSymbolBranches(symbol:Symbol):Symbol = symbol match {
