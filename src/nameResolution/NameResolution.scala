@@ -1,6 +1,6 @@
-import abstractSyntaxTree._
-
 package nameResolution
+
+import abstractSyntaxTree._
 
 object NameResolution {
 	/*def resolution(cu:CompilationUnit) {
@@ -15,6 +15,7 @@ object NameResolution {
 	
 	def notSameNameClassesAndInterfaces
 	*/
+  
 	def getName(td:TypeDefinition):String = td match {
 	  case InterfaceDefinition(interfaceName, _, _, _) => return interfaceName
 	  case ClassDefinition(className, _, _, _, _, _, _) => return className
