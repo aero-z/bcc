@@ -14,6 +14,7 @@ import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import scanner.IdentifierToken
+import abstractSyntaxTree.ASTBuilder
 
 class CompilerError(str: String) extends Exception(str)
 
@@ -30,11 +31,12 @@ object Joosc {
                 val tokens = Scanner.scan(source.mkString)
                 debug("=== Printing tokens ===")
                 tokens.foreach(debug(_))
-                val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
-                debug("=== Printing parse tree ===")
-                Parser.printTree(parseTree)
-                if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
-                if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
+                //val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
+                //debug("=== Printing parse tree ===")
+                //Parser.printTree(parseTree)
+               //TODO:  if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
+                debug("=== Printing ast ===")
+                ASTBuilder.build(Parser.parse(tokens, dfa), name).display
             } catch {
                 case e: CompilerError =>
                     Console.err.println("Syntax error while parsing: " + e.getMessage())

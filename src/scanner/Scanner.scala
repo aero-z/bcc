@@ -60,20 +60,25 @@ object Scanner {
 
     //def unescape(str: String) = StringEscapeUtils.unescapeJava(str)
     def unescape(str: String): String = {
-      val regex = """(.*)\\(.)(.*)""".r
       str match {
-        case regex(head, escapechar, tail) => unescape(escapechar match {
-          case "b" => head + "\b" + tail
-          case "f" => head + "\f" + tail
-          case "n" => head + "\n" + tail
-          case "r" => head + "\r" + tail
-          case "t" => head + "\t" + tail
-          case "'" => head + "\'" + tail
-          case "\"" => head + "\"" + tail
-          case "\\" => head + "\\" + tail
-          case x => throw new CompilerError(s"invalid escape sequence \\$x")
-        })
-        case _ => str
+        case "" => ""
+        case "\\" => throw new CompilerError("\\ at end of literal"); ""
+        case _ => str.head match {
+          case '\\' => str.charAt(1) match {
+            case 'b' => '\b' + unescape(str.substring(2))
+            case 'f' => '\f' + unescape(str.substring(2))
+            case 'n' => '\n' + unescape(str.substring(2))
+            case 'r' => '\r' + unescape(str.substring(2))
+            case 't' => '\t' + unescape(str.substring(2))
+            case ''' => ''' + unescape(str.substring(2))
+            case '\"' => '\"' + unescape(str.substring(2))
+            case '\\' => '\\' + unescape(str.substring(2))
+            case n @ ('0'|'1'|'2'|'3'|'4'|'5'|'6'|'7') =>
+              "TODO" + unescape(str.substring(2))
+            case x => throw new CompilerError(s"invalid escape sequence '\\$x'"); ""
+          }
+          case x => x + unescape(str.tail) 
+        }
       }
     }
     
