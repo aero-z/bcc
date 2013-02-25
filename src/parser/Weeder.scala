@@ -5,8 +5,32 @@ import scanner.KeywordToken
 import scanner.ScopingToken
 import scanner.IntegerToken
 import scanner.OperatorToken
+import abstractSyntaxTree._
 
 object Weeder {
+//--All characters in the input program must be in the range of 7-bit ASCII (0 to 127).
+//-> done in Scanner
+  def check(cu:CompilationUnit):Boolean = cu match {
+    //case CompilationUnit(packageName: Option[Name], importDeclarations: List[ImportDeclaration], typeDef: Option[TypeDefinition], fileName: String)
+    //case CompilationUnit(packageName , importDeclarations, typeDef, fileName) => 
+    case _ => true
+  }
+//A class cannot be both abstract and final.
+//A method has a body if and only if it is neither abstract nor native.
+//An abstract method cannot be static or final.
+//A static method cannot be final.
+//A native method must be static.
+//The type void may only be used as the return type of a method.
+//A formal parameter of a method must not have an initializer.
+//A class/interface must be declared in a .java file with the same base name as the class/interface.
+//An interface cannot contain fields or constructors.
+//An interface method cannot be static, final, or native.
+//An interface method cannot have a body.
+//Every class must contain at least one explicit constructor.
+//No field can be final.
+//No multidimensional array types or array creation expressions are allowed.
+//A method or constructor must not contain explicit this() or super() calls.
+
   /*def check(s: Symbol): Boolean = {
     /**
      * @param tree a Modifiers or Modifier tree
