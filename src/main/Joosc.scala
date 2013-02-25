@@ -31,6 +31,10 @@ object Joosc {
                 val tokens = Scanner.scan(source.mkString)
                 debug("=== Printing tokens ===")
                 tokens.foreach(debug(_))
+                //val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
+                //debug("=== Printing parse tree ===")
+                //Parser.printTree(parseTree)
+               //TODO:  if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
                 debug("=== Printing ast ===")
                 ASTBuilder.build(Parser.parse(tokens, dfa), name).display
             } catch {

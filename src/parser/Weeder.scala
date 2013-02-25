@@ -40,12 +40,12 @@ object Weeder {
   def everyNode(ast:Symbol):Boolean = ast match {
       //check int range
       case IntegerToken(str) =>
-        try { str.toInt; true} catch { case _:Throwable => false }
+        try { str.toInt; println("int conversion ok"); true} catch { case _:Throwable =>println("int conversion problem"); false }
       case NonTerminalSymbol("UnaryExpression", OperatorToken("-") :: IntegerToken(str) :: Nil) =>
-        try { ("-"+str).toInt; true} catch { case _:Throwable => false }
+        try { ("-"+str).toInt; println("minus int conversion ok"); true} catch { case _:Throwable =>println("minus int conversion problem"); false }
       //cast not in double (( ))
-      case NonTerminalSymbol("NonPrimCast", ScopingToken("(") :: NonTerminalSymbol(_, ScopingToken("(") :: ys) :: xs) => false
-      case NonTerminalSymbol(_, Nil) => true;
+      /*case NonTerminalSymbol("NonPrimCast", ScopingToken("(") :: NonTerminalSymbol(_, ScopingToken("(") :: ys) :: xs) =>println("double (( casting"); false
+      case NonTerminalSymbol(_, Nil) => true;*/
       case NonTerminalSymbol(_, list) => list.map(everyNode(_)).reduce(_ && _)
       case _ => true
   }
@@ -54,23 +54,24 @@ object Weeder {
     def checkRec(ast:Symbol):Boolean = ast match {
       case NonTerminalSymbol("ClassDeclaration", NonTerminalSymbol("Modifiers", modlist) :: list) =>
         //A class cannot be both abstract and final
-        if ( modlist.contains(KeywordToken("abstract")) && modlist.contains(KeywordToken("final"))) false
+        if ( modlist.contains(KeywordToken("abstract")) && modlist.contains(KeywordToken("final"))) {println("class is abstract and final"); false}
         //Every class must contain at least one explicit constructor.
-        else !findConstructor(getClassBody(list))
+        
+        else findConstructor(getClassBody(list))
         
       case NonTerminalSymbol("MethodDeclaration", NonTerminalSymbol("Modifiers", modlist) :: tail) =>
         //method has a body if and only if it is neither abstract nor native
         if ( (modlist.contains(KeywordToken("abstract")) || modlist.contains(KeywordToken("native"))) ) 
           tail(tail.length - 1) match {
-          	case NonTerminalSymbol("Block", _) => /*println("END: "+tail(tail.length - 1));*/ false
+          	case NonTerminalSymbol("Block", _) => println("abstract method has body"); false
           	case _ =>println("END: "+tail(tail.length - 1)); true
           }
         //An abstract method cannot be static or final
-        else if (modlist.contains(KeywordToken("abstract")) && (modlist.contains(KeywordToken("static")) || modlist.contains(KeywordToken("final"))) ) false
+        else if (modlist.contains(KeywordToken("abstract")) && (modlist.contains(KeywordToken("static")) || modlist.contains(KeywordToken("final"))) ) {println("method is abstract and (static or final)"); false}
         //A static method cannot be final
-        else if (modlist.contains(KeywordToken("static")) && modlist.contains(KeywordToken("final"))) false
+        else if (modlist.contains(KeywordToken("static")) && modlist.contains(KeywordToken("final"))) {println("method is static and final"); false}
         //A native method must be static.
-        else if (modlist.contains(KeywordToken("native")) && !modlist.contains(KeywordToken("static"))) false
+        else if (modlist.contains(KeywordToken("native")) && !modlist.contains(KeywordToken("static"))) {println("method is native and static"); false}
         else true
       //No field can be final.
       /*case NonTerminalSymbol("SingleVariableDeclaration", NonTerminalSymbol("Modifiers", modlist) :: xs ) =>
@@ -97,11 +98,11 @@ object Weeder {
   }
   def findConstructor(list:List[Symbol]):Boolean = {
     def rec(symbol:Symbol): Boolean = symbol match {
-      case NonTerminalSymbol("ConstructorDeclaration", list) => true
+      case NonTerminalSymbol("ConstructorDeclaration", list) =>println("constructor found"); true
       case _ => false
     }
     list match {
-      case Nil => true
+      case Nil => false
       case list => list.map(rec(_)).reduce(_ || _)
     }
   }

@@ -44,7 +44,7 @@ object Parser {
         _ match {
           case NonTerminalSymbol(name, list) =>
             println(delim + name); printRec(delim + "    ", list)
-          case x => println(delim + x)
+          case x => println(delim +x.getClass().getSimpleName()+": "+x)
         })
     }
     printRec("", List(symbol))
