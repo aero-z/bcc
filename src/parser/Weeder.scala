@@ -40,12 +40,12 @@ object Weeder {
   def everyNode(ast:Symbol):Boolean = ast match {
       //check int range
       case IntegerToken(str) =>
-        try { str.toInt; true} catch { case _:Throwable => false }
+        try { str.toInt; println("int conversion ok"); true} catch { case _:Throwable =>println("int conversion problem"); false }
       case NonTerminalSymbol("UnaryExpression", OperatorToken("-") :: IntegerToken(str) :: Nil) =>
-        try { ("-"+str).toInt; true} catch { case _:Throwable => false }
+        try { ("-"+str).toInt; println("minus int conversion ok"); true} catch { case _:Throwable =>println("minus int conversion problem"); false }
       //cast not in double (( ))
-      case NonTerminalSymbol("NonPrimCast", ScopingToken("(") :: NonTerminalSymbol(_, ScopingToken("(") :: ys) :: xs) =>println("double (( casting"); false
-      case NonTerminalSymbol(_, Nil) => true;
+      /*case NonTerminalSymbol("NonPrimCast", ScopingToken("(") :: NonTerminalSymbol(_, ScopingToken("(") :: ys) :: xs) =>println("double (( casting"); false
+      case NonTerminalSymbol(_, Nil) => true;*/
       case NonTerminalSymbol(_, list) => list.map(everyNode(_)).reduce(_ && _)
       case _ => true
   }

@@ -10,8 +10,9 @@ class Newtest extends FunSuite{
   //       it doesn't test any additional functionality other tests test
   val myCode =  """
     	public class Foo {
-    		public Foo() {}
-    		public void foo( ) {}
+    		public void Foo() {
+		  		int i = 500;
+		  	}
     	}"""
   test("Everything") {
 	println("BEGIN TEST")

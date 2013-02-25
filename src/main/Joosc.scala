@@ -33,6 +33,7 @@ object Joosc {
                 val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
                 debug("=== Printing parse tree ===")
                 Parser.printTree(parseTree)
+                if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
                 if (!checkFileName(parseTree, name)) throw new CompilerError(s"wrong file name: $name")
             } catch {
                 case e: CompilerError =>

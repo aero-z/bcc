@@ -11,18 +11,31 @@ class WeedTest extends FunSuite {
   def stuff(code:String):Symbol = {
     val tokens = Scanner.scan(code)
     //println("BEGIN TEST")
-	tokens.foreach(x => println(x.getClass()))
+//	tokens.foreach(x => println(x.getClass()))
 	//println("SCANNING DONE")
 	//println("BUILDING DFA DONE")
 	val parseTree = Parser.parse(tokens, dfa)
 	//println("BUILDING PARSETREE DONE")
-	Parser.printTree(parseTree)
+//	Parser.printTree(parseTree)
 	val ast = Ast.createAst(parseTree)
 	//println("BUILDING PARSETREE DONE")
 	Parser.printTree(ast)
 	ast
 	//println("Weeder result: "+Weeder.astcheck(ast))
 	//println("WEEDER CHECK DONE")
+  }
+  test("general construction pass") {
+    val code = """
+    	public class Foo {
+    		public Foo() {
+    			int i = 3;
+    		}
+    		public void foo( ) {
+    			System.out.println("Hello World!");
+    			int i = 3;
+    		}
+    	}"""
+    assert(Weeder.astcheck(stuff(code)))
   }
   test("class abstract XOR final 1 PASS") {
     val code = """
@@ -87,5 +100,56 @@ class WeedTest extends FunSuite {
     		abstract final void foo( ) { x = 5+5;} 
     	}"""
     assert(!Weeder.astcheck(stuff(code)))
+  }
+    test("integer min size SUCCESS") {
+    val code = """
+    	public class Foo {
+    		public Foo() {
+    		}
+    		public void foo( ) {
+    			int i = -2147483648;
+    		}
+    	}"""
+    assert(Weeder.astcheck(stuff(code)))
+  }
+    test("integer min size FAIL") {
+    val code = """
+    	public class Foo {
+    		public Foo() {
+    			int i = -2147483649;
+    		}
+    	}"""
+    assert(!Weeder.astcheck(stuff(code)))
+  }
+    test("integer max size SUCCESS") {
+    val code = """
+    	public class Foo {
+    		public Foo() {
+    		}
+    		public void foo( ) {
+    			int i = 2147483647;
+    		}
+    }"""
+    assert(Weeder.astcheck(stuff(code)))
+  }
+  test("integer max size FAIL") {
+    val code = """
+    	public class Foo {
+    		public Foo() {
+    			int i = 2147483648;
+    		}
+    	}"""
+    assert(!Weeder.astcheck(stuff(code)))
+  }
+  test("normal cast") {
+    val code = """
+    	public class Foo {
+    		public Foo() {
+    		}
+    		public void mymethod() {
+    			int i = ((int))34;
+    		}
+    	}"""
+    assert(Weeder.astcheck(stuff(code)))
   }
 }
