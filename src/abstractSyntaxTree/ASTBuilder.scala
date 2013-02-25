@@ -30,7 +30,7 @@ object ASTBuilder {
   
   def extractName(name: Symbol): Name = {
     def recExtractName(name: Symbol, acc: List[String]): List[String] = name match {
-      case NonTerminalSymbol("Name", List(NonTerminalSymbol("QualifiedName", List(newName, _, simpleName)))) => recExtractName(newName, extractSimpleName(simpleName) :: acc)
+      case NonTerminalSymbol("Name", List(NonTerminalSymbol("QualifiedName", List(newName, _, NonTerminalSymbol("SimpleName", List(simpleName)))))) => recExtractName(newName, extractSimpleName(simpleName) :: acc)
       case NonTerminalSymbol("Name", List(NonTerminalSymbol("SimpleName", List(simpleName)))) => extractSimpleName(simpleName) :: acc
     }
     def extractSimpleName(simpleName: Symbol): String = simpleName match {
@@ -52,10 +52,10 @@ object ASTBuilder {
   def extractInterfaces(symbols: List[Symbol]): List[RefType] = {
     def recExtractInterfaces(symbols: List[Symbol], acc: List[RefType]): List[RefType] = symbols match{
       case List(NonTerminalSymbol("Interfaces",newinterfaces), _, interface) => recExtractInterfaces(newinterfaces, extractInterface(interface)::acc)
-      case List(NonTerminalSymbol("Interface", List(interface))) => extractInterface(interface) :: acc
+      case List(interface) => extractInterface(interface) :: acc
     }
     def extractInterface(interface: Symbol): RefType = interface match{
-      case NonTerminalSymbol("Interface", List(NonTerminalSymbol("ClassOrInterfaceType", List(name)))) => RefType(extractName(name))
+      case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefType(extractName(name))
     }
     
     symbols.collectFirst({case NonTerminalSymbol("Interfaces", xs) => xs}) match{
@@ -106,6 +106,7 @@ object ASTBuilder {
   }
   def extractType (symbols: List[Symbol]): Type = symbols.collectFirst({
     case NonTerminalSymbol("Type", List(NonTerminalSymbol("PrimitiveType", List(KeywordToken(x))))) =>PrimitiveType.fromString(x)
+    case KeywordToken("void") => VoidType
     case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ClassOrInterfaceType", List(name)))))) => RefType(extractName(name))
     case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ArrayType", List(KeywordToken(x), _, _)))))) => ArrayType(PrimitiveType.fromString(x))
     case NonTerminalSymbol("Type", List(NonTerminalSymbol("RefType", List(NonTerminalSymbol("ArrayType", List(name , _, _)))))) => ArrayType(RefType(extractName(name)))      

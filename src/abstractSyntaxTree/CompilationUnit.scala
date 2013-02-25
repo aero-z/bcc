@@ -23,7 +23,7 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
     for (ClassImport(name) <- importDeclarations) Logger.debug(s"Import class: ${name.toString}")
     for (PackageImport(name) <- importDeclarations) Logger.debug(s"Import package: ${name.toString}")
     Logger.debug("*" * 20)
-    Logger.debug()
+    Logger.debug("")
     for (typeDefinition <- typeDef) typeDefinition.display
   }
 }
@@ -50,7 +50,7 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     for (x <- modifiers) Logger.debug(s"Modifier: ${x.toString()}")
     Logger.debug(s"Number of methods: ${methods.size}")
     Logger.debug("*" * 20)
-    Logger.debug()
+    Logger.debug("")
     for (meth <- methods) meth.display
   }
 }
@@ -70,7 +70,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
     Logger.debug(s"Number of constructors: ${constructors.size}")
     Logger.debug(s"Number of methods: ${methods.size}")
     Logger.debug("*" * 20)
-    Logger.debug()
+    Logger.debug("")
     for (field <- fields) field.display
     for (constructor <- constructors) constructor.display
     for (method <- methods) method.display
@@ -92,7 +92,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     for((x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
     Logger.debug(s"Is defined: ${implementation.isDefined}")
     Logger.debug("*" * 20)
-    Logger.debug()
+    Logger.debug("")
     //TODO something about the implementation
   }
 }
@@ -109,7 +109,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Field initializer: ${initializer.isDefined}")
     Logger.debug("*" * 20)
-    Logger.debug()
+    Logger.debug("")
     //TODO something about the initializer
   }
 }
@@ -123,7 +123,7 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(T
     Logger.debug(s"Number of parameters: ${parameters.size}")
     for((x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n            name: $y")
     Logger.debug("*" * 20)
-    Logger.debug()
+    Logger.debug("")
     //TODO something fancy about the implementation
   }
 }
