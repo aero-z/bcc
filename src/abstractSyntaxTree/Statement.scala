@@ -11,4 +11,4 @@ case class ForStatement(init: Option[Statement], condition: Option[Expression], 
 case class IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) extends Statement
 case class ReturnStatement(returnExpression: Option[Expression]) extends Statement
 case class VariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement
-case class WhileStatement(condition: Expression, loop: Statement)
+case class WhileStatement(condition: Expression, loop: Statement) extends Statement
