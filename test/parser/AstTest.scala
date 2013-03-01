@@ -20,7 +20,7 @@ class AstTest extends FunSuite {
 	println("SCANNING DONE")
 	val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/grammar.lr1")))
 	println("BUILDING DFA DONE")
-	val parseTree:Symbol = Parser.parse(tokens, dfa)
+	val parseTree:ParserSymbol = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
     println("BUILDING AST TREE")

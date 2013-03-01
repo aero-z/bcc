@@ -58,10 +58,10 @@ object Weeder {
     }
   }*/
   
-  def astcheck(ast:Symbol): Boolean = {
+  def astcheck(ast:ParserSymbol): Boolean = {
     recCheck(ast) && everyNode(ast)
   }
-  def everyNode(ast:Symbol):Boolean = ast match {
+  def everyNode(ast:ParserSymbol):Boolean = ast match {
       //check int range
       case IntegerToken(str) =>
         try { str.toInt; println("int conversion ok"); true} catch { case _:Throwable =>println("int conversion problem"); false }
@@ -74,8 +74,8 @@ object Weeder {
       case _ => true
   }
     
-  def recCheck(ast:Symbol): Boolean = {
-    def checkRec(ast:Symbol):Boolean = ast match {
+  def recCheck(ast:ParserSymbol): Boolean = {
+    def checkRec(ast:ParserSymbol):Boolean = ast match {
       case NonTerminalSymbol("ClassDeclaration", NonTerminalSymbol("Modifiers", modlist) :: list) =>
         //A class cannot be both abstract and final
         if ( modlist.contains(KeywordToken("abstract")) && modlist.contains(KeywordToken("final"))) {println("class is abstract and final"); false}
@@ -114,14 +114,14 @@ object Weeder {
     }
   }
   
-  def getClassBody(list:List[Symbol]):List[Symbol] = list match{
+  def getClassBody(list:List[ParserSymbol]):List[ParserSymbol] = list match{
     case ScopingToken("{") :: ScopingToken("}") :: xs => Nil
     case ScopingToken("{") :: NonTerminalSymbol("ClassBodyDeclarations", list) :: tail => list
     case x :: tail => getClassBody(tail)
     case Nil => Nil
   }
-  def findConstructor(list:List[Symbol]):Boolean = {
-    def rec(symbol:Symbol): Boolean = symbol match {
+  def findConstructor(list:List[ParserSymbol]):Boolean = {
+    def rec(symbol:ParserSymbol): Boolean = symbol match {
       case NonTerminalSymbol("ConstructorDeclaration", list) =>println("constructor found"); true
       case _ => false
     }
@@ -132,18 +132,18 @@ object Weeder {
   }
   
   //true -> 
-  def interfaceCheck(interfaceDecl:List[Symbol]):Boolean = {
-    def getInterfaceBody(interfaceDecl:List[Symbol]):List[Symbol] = interfaceDecl match {
+  def interfaceCheck(interfaceDecl:List[ParserSymbol]):Boolean = {
+    def getInterfaceBody(interfaceDecl:List[ParserSymbol]):List[ParserSymbol] = interfaceDecl match {
     	case ScopingToken("{") :: ScopingToken("}") :: xs => Nil
     	case ScopingToken("{") :: NonTerminalSymbol("InterfaceBodyDeclarations", list) :: tail => list
     	case x :: tail => getInterfaceBody(tail)
     }
-    def methodHasBody(methodDecl:List[Symbol]):Boolean = methodDecl match {
+    def methodHasBody(methodDecl:List[ParserSymbol]):Boolean = methodDecl match {
       case NonTerminalSymbol("Block", list) :: _ => false
       case _ :: methodDecl => methodHasBody(methodDecl)
       case Nil => true
     }
-    def rec(symbol:Symbol):Boolean = symbol match {
+    def rec(symbol:ParserSymbol):Boolean = symbol match {
       case NonTerminalSymbol("MethodDeclaration", methlist) => methlist match {
     	  //An interface method cannot be static, final, or native.
         case NonTerminalSymbol("Modifiers", modlist) :: methodDecl =>

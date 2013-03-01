@@ -11,7 +11,7 @@ case class ErrorAction() extends Action
 
 trait Dfa {
 
-    def delta(q: Dfa.State, i: Symbol): Action
+    def delta(q: Dfa.State, i: ParserSymbol): Action
     val q0 = 0
 }
 
@@ -54,7 +54,7 @@ object Dfa {
 
         // NOTE: possible optimization: make a map (State, Symbol) => Action
 
-        def symbolRepr(s: Symbol) = {
+        def symbolRepr(s: ParserSymbol) = {
             s match {
                 //TODO
                 case NonTerminalSymbol(str, _) => str
@@ -64,7 +64,7 @@ object Dfa {
         }
 
         new Dfa {
-            def delta(q: State, i: Symbol) = {
+            def delta(q: State, i: ParserSymbol) = {
                 t.find(x => x._1 == q && x._2 == symbolRepr(i)) match {
                     case Some((_, _, actionStr, int)) => {
                         actionStr match {

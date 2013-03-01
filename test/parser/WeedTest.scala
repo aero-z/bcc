@@ -8,7 +8,7 @@ import scala.io.Source
 class WeedTest extends FunSuite {
 	val dfa = Dfa.fromFile(Source.fromFile(new java.io.File("cfg/grammar.lr1")))
 	
-  def stuff(code:String):Symbol = {
+  def stuff(code:String):ParserSymbol = {
     val tokens = Scanner.scan(code)
     //println("BEGIN TEST")
 //	tokens.foreach(x => println(x.getClass()))
