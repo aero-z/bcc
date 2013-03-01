@@ -4,6 +4,8 @@ import parser._
 import scanner._
 import abstractSyntaxTree.Modifier._
 import scala.annotation.tailrec
+import main.CompilerError
+
 object ASTBuilder {
   // Start the extraction of the parse tree.
   def build(parseTree: ParserSymbol, fileName: String): CompilationUnit = parseTree match {
@@ -148,6 +150,19 @@ object ASTBuilder {
       case NonTerminalSymbol("ArgumentList", List(exp)) => (simplifyExpression(exp) :: acc). reverse
     }
 
+    def extractCastType(symbol: ParserSymbol): Type = symbol match{
+      case NonTerminalSymbol("PrimitiveCast", List(_, NonTerminalSymbol("PrimitiveType", List(KeywordToken(str))), _)) => PrimitiveType.fromString(str)
+      case NonTerminalSymbol("PrimitiveCast", List(_, NonTerminalSymbol("PrimitiveType", List(KeywordToken(str))), _, _, _)) => ArrayType(PrimitiveType.fromString(str))
+      case NonTerminalSymbol("NonPrimCast", List(_, name, _, _, _)) => ArrayType(RefType(extractName(name)))
+      case NonTerminalSymbol("NonPrimCast", List(_, name, _)) => RefType((new Function1[ParserSymbol, Name]{ def apply(x: ParserSymbol)= x match{
+        case name @ NonTerminalSymbol("Name", _) => extractName(name)
+        case NonTerminalSymbol(_, List(next)) => apply(next)
+        case _ => throw new CompilerError("Wrong cast expression")
+      }})(name))
+    }
+
+
+
     expressionSymbol match {
       case NonTerminalSymbol("ParenthesizedExpression", List(_,exp, _)) => simplifyExpression(exp)
       case NonTerminalSymbol( str, List(exp)) if binaryExpId contains str => simplifyExpression(exp)
@@ -162,7 +177,22 @@ object ASTBuilder {
       case NonTerminalSymbol("Literal", List(exp)) => simplifyExpression(exp)
       case exp : Expression => exp
       case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, _)) => ClassCreation(RefType(extractName(cons)), Nil)
-      case _ => null
+      case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefType(extractName(cons)), recExtractArguments(arg, Nil))
+      case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, _)) => MethodInvocation(None, str, Nil)
+      case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => MethodInvocation(None, str, recExtractArguments(arg, Nil))
+      case NonTerminalSymbol("MethodInvocation", List(access, _, IdentifierToken(str), _, _)) => MethodInvocation(Some(simplifyExpression(access)), str, Nil)
+      case NonTerminalSymbol("MethodInvocation", List(access, _, IdentifierToken(str), _ , arg, _)) => MethodInvocation(Some(simplifyExpression(access)), str, recExtractArguments(arg, Nil))
+      case NonTerminalSymbol("Primary", List(exp)) => simplifyExpression(exp)
+      case NonTerminalSymbol("PostFixExpression", List(exp)) => simplifyExpression(exp)
+      case NonTerminalSymbol("PrimaryNoNewArray", List(exp)) => simplifyExpression(exp)
+      case NonTerminalSymbol("ArrayAccess", List( array, _, index, _)) => ArrayAccess(simplifyExpression(array), simplifyExpression(index))
+      case NonTerminalSymbol("ArrayCreation", List(_, NonTerminalSymbol("PrimitiveType", List(KeywordToken(arrayType))), _, size, _)) => ArrayCreation(ArrayType(PrimitiveType.fromString(arrayType)), simplifyExpression(size))
+      case NonTerminalSymbol("ArrayCreation", List(_, NonTerminalSymbol("RefType", List(arrayType)), _, size, _))=> ArrayCreation(ArrayType(RefType(extractName(arrayType))), simplifyExpression(size))
+      case NonTerminalSymbol("UnaryExpression", List(exp)) => simplifyExpression(exp)
+      case NonTerminalSymbol("UnaryExpressionNotPlusMinus", List(exp)) => simplifyExpression(exp)
+      case NonTerminalSymbol("UnaryExpression", List(OperatorToken(op), exp)) => UnaryOperation(Operator.fromString(op), simplifyExpression(exp))
+      case NonTerminalSymbol("UnaryExpressionNotPlusMinus", List(OperatorToken(op), exp)) => UnaryOperation(Operator.fromString(op), simplifyExpression(exp))
+      case NonTerminalSymbol("CastExpression", List(cast, exp)) => CastExpression(extractCastType(cast), simplifyExpression(exp))
     }
   }
   def concat[A](option: Option[A], list: List[A]): List[A] = option match {

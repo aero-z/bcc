@@ -62,7 +62,7 @@ case class StringToken(str: String) extends Token with Expression{
 }
 
 case class BooleanToken(bool: Boolean) extends Token with Expression{
-    def typeStr = "booleanToken"
+    def typeStr = "booleanLiteral"
 }
 
 case class CharacterToken(string : String) extends Token with Expression{
