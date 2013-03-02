@@ -89,7 +89,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[(Type, String)], implementation: Option[Block]) {
+  parameters: List[Parameter], implementation: Option[Block]) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -123,7 +123,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     //TODO something about the initializer
   }
 }
-case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(Type, String)], implementation: Block) {
+case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
@@ -138,5 +138,5 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(T
   }
 }
 
-
+case class Parameter(parameterType: Type, identifier: String)
 
