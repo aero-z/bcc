@@ -45,6 +45,7 @@ case class PackageImport(name: Name) extends ImportDeclaration(name)
 //Either a class or an interface
 abstract class TypeDefinition(typeName: String) {
   def display: Unit
+  def getName = typeName
 }
 
 case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
