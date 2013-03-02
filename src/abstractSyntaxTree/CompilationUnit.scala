@@ -43,7 +43,7 @@ case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-abstract class TypeDefinition(typeName: String) {
+sealed abstract class TypeDefinition(typeName: String) {
   def display: Unit
   def getName = typeName
 }
