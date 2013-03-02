@@ -135,13 +135,13 @@ ClassDeclaration class identifier { }
 	  	}
 	  }*/ 
 	
-    def createAst(symbol:Symbol):Symbol = {
+    def createAst(symbol:ParserSymbol):ParserSymbol = {
       parametersToList(reduceSimpleSymbolBranches(symbol))
     }
     val recursiv = List("Modifiers")//, "Interfaces", "ClassBodyDeclarations", "ImportDeclarations", "TypeDeclarations", "InterfaceBodyDeclarations", "ParameterDefs", "Parameters", "Statements", "TypeDeclarations") 
 
     val blackList = List("CompilationUnit", "MethodDeclaration", "FieldDeclaration", "ConstructorDeclaration")
-    def reduceSimpleSymbolBranches(symbol:Symbol):Symbol = symbol match {
+    def reduceSimpleSymbolBranches(symbol:ParserSymbol):ParserSymbol = symbol match {
       case NonTerminalSymbol(name , list) =>
         val newlist = list.map(reduceSimpleSymbolBranches(_))
         if (newlist.length == 1 && ! blackList.contains(name) && ! recursiv.contains(name)) newlist.head
@@ -149,16 +149,16 @@ ClassDeclaration class identifier { }
       case x => x
     }
     
-    def parametersToList(symbol:Symbol):Symbol = symbol match {
+    def parametersToList(symbol:ParserSymbol):ParserSymbol = symbol match {
       case NonTerminalSymbol(name, tree) if recursiv.contains(name)=> NonTerminalSymbol(name, listFromTree(tree, name))
       case NonTerminalSymbol(name, list) => NonTerminalSymbol(name, list.map(parametersToList(_)))
-      case x:Symbol => x
+      case x:ParserSymbol => x
     }
     
-    def listFromTree(tree:List[Symbol], compression: String ):List[Symbol] = {
-      def listFromSymbol(symbol:Symbol):List[Symbol] = symbol match {
+    def listFromTree(tree:List[ParserSymbol], compression: String ):List[ParserSymbol] = {
+      def listFromSymbol(symbol:ParserSymbol):List[ParserSymbol] = symbol match {
         case NonTerminalSymbol(name, list) if name == compression => list.flatMap(listFromSymbol(_))
-    	case x:Symbol => List(x)
+    	case x:ParserSymbol => List(x)
       }
     	tree.flatMap(listFromSymbol(_))
     }

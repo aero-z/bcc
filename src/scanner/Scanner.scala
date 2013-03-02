@@ -1,7 +1,7 @@
 package scanner
 
 import main.CompilerError
-
+import scala.annotation.tailrec
 object Scanner {
 
   def scan(code: String): List[Token] = {
@@ -67,32 +67,33 @@ object Scanner {
     }*/
     
     def unescape(str: String): String = {      
-      def unescapeRec(str: List[Char]): List[Char] = {
+      @tailrec
+      def unescapeRec(str: List[Char], acc : String): String = {
         str match {
-          case Nil => Nil
-          case '\\' :: 'b'  :: xs => '\b' :: unescapeRec(xs)
-          case '\\' :: 'n'  :: xs => '\n' :: unescapeRec(xs)
-          case '\\' :: 'r'  :: xs => '\r' :: unescapeRec(xs)
-          case '\\' :: 't'  :: xs => '\t' :: unescapeRec(xs)
-          case '\\' :: 'f'  :: xs => '\f' :: unescapeRec(xs)
-          case '\\' :: '''  :: xs => '\'' :: unescapeRec(xs)
-          case '\\' :: '\"' :: xs => '\"' :: unescapeRec(xs)
-          case '\\' :: '\\' :: xs => '\\' :: unescapeRec(xs)
+          case Nil =>  acc
+          case '\\' :: 'b'  :: xs => unescapeRec(xs, acc + '\b')
+          case '\\' :: 'n'  :: xs => unescapeRec(xs, acc + '\n')
+          case '\\' :: 'r'  :: xs => unescapeRec(xs, acc + '\r')
+          case '\\' :: 't'  :: xs => unescapeRec(xs, acc + '\t')
+          case '\\' :: 'f'  :: xs => unescapeRec(xs, acc + '\f')
+          case '\\' :: '''  :: xs => unescapeRec(xs, acc + '\'')
+          case '\\' :: '\"' :: xs => unescapeRec(xs, acc + '\"')
+          case '\\' :: '\\' :: xs => unescapeRec(xs, acc + '\\')
           case '\\' :: (n1 @ ('0' | '1' | '2' | '3')) ::
 		               (n2 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) ::
 		               (n3 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
-                 Integer.valueOf("" + n1 + n2 + n3, 8).toChar :: unescapeRec(xs)
+            unescapeRec(xs, acc + Integer.valueOf("" + n1 + n2 + n3, 8).toChar)
           case '\\' :: (n1 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) ::
                	       (n2 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
-                 Integer.valueOf("" + n1 + n2, 8).toChar :: unescapeRec(xs)
+            unescapeRec(xs, acc + Integer.valueOf("" + n1 + n2, 8).toChar)
           case '\\' :: (n1 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
-                 Integer.valueOf("" + n1, 8).toChar :: unescapeRec(xs)
-          case '\\' :: xs => throw new CompilerError("invalid escape sequence "+xs); Nil
-          case x :: xs => x :: unescapeRec(xs)
+            unescapeRec(xs, acc + Integer.valueOf("" + n1, 8).toChar)
+          case '\\' :: xs => throw new CompilerError("invalid escape sequence "+xs)
+          case x :: xs => unescapeRec(xs, acc + x)
         }
       }
       
-      unescapeRec(str.toList).foldRight("")(_ + _)
+      unescapeRec(str.toList, "")
     }
             
     

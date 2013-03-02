@@ -8,6 +8,13 @@ import main.Logger
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
+  def getCanonicalName():String =  {
+    def getRec(list:List[String]):String = list match {
+    	case x :: Nil => x
+    	case x :: xs => getRec(xs)
+    }
+    getRec(path);
+  }
 }
 
 //Main  of a file.
@@ -28,7 +35,9 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
   }
 }
 
-abstract class ImportDeclaration(name: Name)
+abstract class ImportDeclaration(name: Name) {
+  def getName():Name = name
+}
 
 case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
@@ -36,6 +45,7 @@ case class PackageImport(name: Name) extends ImportDeclaration(name)
 //Either a class or an interface
 sealed abstract class TypeDefinition(typeName: String) {
   def display: Unit
+  def getName = typeName
 }
 
 case class InterfaceDefinition(interfaceName: String, parents: List[RefType],

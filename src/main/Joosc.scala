@@ -9,7 +9,7 @@ import parser.Dfa
 import parser.Weeder
 import java.io.IOException
 import main.Logger.debug
-import parser.Symbol
+import parser.ParserSymbol
 import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
@@ -47,7 +47,7 @@ object Joosc {
 
     }
 
-    def checkFileName(tree: Symbol, name: String): Boolean = {
+    def checkFileName(tree: ParserSymbol, name: String): Boolean = {
         val fileName = new File(name).getName
         if (!fileName.endsWith(".java")) false
         val className = fileName.substring(0, fileName.length - 5)

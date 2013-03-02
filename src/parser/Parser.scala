@@ -10,9 +10,9 @@ object Parser {
   val debugEnabled = false
   def debug(a: Any) = if (debugEnabled) println(a)
 
-  def parse(input: List[Token], dfa: Dfa): Symbol = {
+  def parse(input: List[Token], dfa: Dfa): ParserSymbol = {
     @tailrec
-    def parseRec(stack: List[(Symbol, Dfa.State)], input: List[Symbol]): Symbol = {
+    def parseRec(stack: List[(ParserSymbol, Dfa.State)], input: List[ParserSymbol]): ParserSymbol = {
       dfa.delta(stack.head._2, input.head) match {
         case ShiftAction(state) =>
           input.head match {
@@ -30,7 +30,7 @@ object Parser {
           throw new CompilerError(s"invalid input: ${input.head} state: ${stack.head._2}")
       }
     }
-    def reduce(stack: List[(Symbol, Dfa.State)], rule: Rule): (List[(Symbol, Dfa.State)], Symbol) = {
+    def reduce(stack: List[(ParserSymbol, Dfa.State)], rule: Rule): (List[(ParserSymbol, Dfa.State)], ParserSymbol) = {
       (
         stack drop (rule.numOfSym),
         NonTerminalSymbol(rule.nonTerminalSymbol, stack take (rule.numOfSym) reverseMap (_._1))
@@ -39,8 +39,8 @@ object Parser {
     parseRec(List((null, 0)), input)
   }
 
-  def printTree(symbol: Symbol) {
-    def printRec(delim: String, tree: List[Symbol]) {
+  def printTree(symbol: ParserSymbol) {
+    def printRec(delim: String, tree: List[ParserSymbol]) {
       tree.foreach(
         _ match {
           case NonTerminalSymbol(name, list) =>
