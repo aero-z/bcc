@@ -26,24 +26,25 @@ object Joosc {
 
     def check(source: Source, name: String): Int = {
         val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
-        val parseTree =
-            try {
-                val tokens = Scanner.scan(source.mkString)
-                debug("=== Printing tokens ===")
-                tokens.foreach(debug(_))
-                //val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
-                //debug("=== Printing parse tree ===")
-                //Parser.printTree(parseTree)
-               //TODO:  if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
-                debug("=== Printing ast ===")
-                ASTBuilder.build(Parser.parse(tokens, dfa), name).display
-            } catch {
-                case e: CompilerError =>
-                    Console.err.println("Syntax error while parsing: " + e.getMessage())
-                    return errCodeParseErr
-            }
+        try {
+            val tokens = Scanner.scan(source.mkString)
+            debug("=== Printing tokens ===")
+            tokens.foreach(debug(_))
+            //val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
+            //debug("=== Printing parse tree ===")
+            //Parser.printTree(parseTree)
+           //TODO:  if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
+            debug("=== Printing ast ===")
+            val ast = ASTBuilder.build(Parser.parse(tokens, dfa), name)
+            ast.display
+            if (Weeder.check(ast)) errCodeSuccess
+            else errCodeParseErr
+        } catch {
+            case e: CompilerError =>
+                Console.err.println("Syntax error while parsing: " + e.getMessage())
+                errCodeParseErr
+        }
 
-        errCodeSuccess
     }
 
     def checkFileName(tree: Symbol, name: String): Boolean = {
