@@ -16,7 +16,7 @@ object Parser {
       dfa.delta(stack.head._2, input.head) match {
         case ShiftAction(state) =>
           input.head match {
-            case EndToken() =>
+            case EndToken =>
               assert(stack.length == 2); stack.head._1
             case x =>
               debug("shift: " + x) //TESTING

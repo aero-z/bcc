@@ -7,13 +7,17 @@ import scanner.IntegerToken
 import scanner.OperatorToken
 import abstractSyntaxTree._
 
+import scala.reflect.runtime.universe._
 object Weeder {
-  def foo(ast: AstNode): Boolean = {
-    ast.check && ast.children.forall(foo)
+  def check(ast: AstNode): (Boolean, String) = {
+    ast.children.foldLeft(ast.check)((t, a) => {
+      if (t._1) check(a)
+      else t
+    })
   }
 //--All characters in the input program must be in the range of 7-bit ASCII (0 to 127).
 //-> done in Scanner
-  def check(cu:CompilationUnit):Boolean = cu match {
+  def checkOld(cu:CompilationUnit):Boolean = cu match {
     case CompilationUnit(packageName, importDeclarations, typeDef, fileName) => {
       val (modifiers, methods) = typeDef match {
         case None => (Nil, Nil)

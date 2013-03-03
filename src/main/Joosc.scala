@@ -37,8 +37,10 @@ object Joosc {
             debug("=== Printing ast ===")
             val ast = ASTBuilder.build(Parser.parse(tokens, dfa), name)
             ast.display
-            if (Weeder.check(ast)) errCodeSuccess
-            else errCodeParseErr
+            Weeder.check(ast) match {
+              case (true, _) => errCodeSuccess
+              case (false, err) => Console.err.println(err); errCodeParseErr
+            }
         } catch {
             case e: CompilerError =>
                 Console.err.println("Syntax error while parsing: " + e.getMessage())

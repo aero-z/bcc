@@ -38,6 +38,6 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
 case object This extends Expression {
   val children = Nil
 }
-case class LocalVariableOrField(str: String) extends Expression {
+case class VariableAccess(str: String) extends Expression {
   val children = Nil
 }

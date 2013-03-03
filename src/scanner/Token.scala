@@ -74,11 +74,11 @@ case class OperatorToken(str: String) extends Token {
   def typeStr = str
 }
 
-case class NullToken() extends Token {
+case object NullToken extends Token {
     def typeStr = "null"
 }
 
-case class EndToken() extends Token {
+case object EndToken extends Token {
   val typeStr = "EOF"
 }
 

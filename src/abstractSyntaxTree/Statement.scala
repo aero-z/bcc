@@ -21,7 +21,7 @@ case class IfStatement(condition: Expression, ifStatement: Statement, elseStatem
 case class ReturnStatement(returnExpression: Option[Expression]) extends Statement {
   val children = returnExpression ::: Nil
 }
-case class VariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement {
+case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration {
   val children = initializer ::: Nil
 }
 case class WhileStatement(condition: Expression, loop: Statement) extends Statement {
