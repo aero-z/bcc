@@ -99,7 +99,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     Logger.debug(s"Number of modifiers: ${modifiers.size}")
     for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of parameters: ${parameters.size}")
-    for((x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
+    for(Parameter(x, y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
     Logger.debug(s"Is defined: ${implementation.isDefined}")
     Logger.debug("*" * 20)
     Logger.debug("")
@@ -131,7 +131,7 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Pa
     Logger.debug(s"Number of modifiers: ${modifiers.size}")
     for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of parameters: ${parameters.size}")
-    for((x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n            name: $y")
+    for(Parameter(x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n            name: $y")
     Logger.debug("*" * 20)
     Logger.debug("")
     //TODO something fancy about the implementation

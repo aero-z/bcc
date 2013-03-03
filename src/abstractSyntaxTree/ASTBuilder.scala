@@ -158,15 +158,15 @@ object ASTBuilder {
     case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefType(extractName(name))
   }
 
-  def extractParameters(symbol: ParserSymbol) : List[(Type, String)] = {
+  def extractParameters(symbol: ParserSymbol) : List[Parameter] = {
     @tailrec
-    def recExtractParameters(symbol: ParserSymbol, acc: List[(Type, String)]): List[(Type, String)] = symbol match {
+    def recExtractParameters(symbol: ParserSymbol, acc: List[Parameter]): List[Parameter] = symbol match {
       case NonTerminalSymbol("ParameterDefs", List(next, _, param)) => recExtractParameters(next, extractParameter(param) :: acc)
       case NonTerminalSymbol("ParameterDefs", List(param)) => (extractParameter(param) :: acc).reverse
     }
 
-    def extractParameter(symbol: ParserSymbol): (Type, String) = symbol match {
-      case NonTerminalSymbol("ParameterDef", List(paramType, IdentifierToken(id))) =>(extractType(paramType), id)
+    def extractParameter(symbol: ParserSymbol): Parameter = symbol match {
+      case NonTerminalSymbol("ParameterDef", List(paramType, IdentifierToken(id))) =>Parameter(extractType(paramType), id)
     }
 
     symbol match {
@@ -238,9 +238,9 @@ object ASTBuilder {
 
   def simplifyExpression(expressionSymbol: ParserSymbol): Expression ={
     @tailrec
-    def nameToFieldAccess(name : List[String], acc : Option[FieldAccess]) : FieldAccess = name match {
+    def nameToFieldAccess(name : List[String], acc : Expression) : FieldAccess = name match {
       case x :: Nil => FieldAccess(acc, x)
-      case x :: xs => nameToFieldAccess(xs, Some(FieldAccess(acc, x)))
+      case x :: xs => nameToFieldAccess(xs, FieldAccess(acc, x))
     }
 
     def extractCastType(symbol: ParserSymbol): Type = symbol match{
@@ -263,9 +263,9 @@ object ASTBuilder {
       case NonTerminalSymbol( str, List(exp)) if recExId contains str => simplifyExpression(exp)
       case NonTerminalSymbol( str, List(exp1, OperatorToken(op), exp2)) if binaryExpId contains str => BinaryOperation(simplifyExpression(exp1), Operator.fromString(op), simplifyExpression(exp2))
       case NonTerminalSymbol("Assignment", List(lhs, _, exp)) => Assignment(simplifyExpression(lhs), simplifyExpression(exp))
-      case xs @ NonTerminalSymbol("Name", _) => nameToFieldAccess(extractName(xs).path, None)
+      case xs @ NonTerminalSymbol("Name", _) => nameToFieldAccess(extractName(xs).path.tail, LocalVariableOrField(extractName(xs).path.head))
       case KeywordToken("this") => This
-      case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(Some(simplifyExpression(pri)), str)
+      case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(simplifyExpression(pri), str)
       case exp : Expression => exp
       case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefType(extractName(cons)), extractArguments(arg))
       case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => MethodInvocation(None, str, extractArguments(arg))
