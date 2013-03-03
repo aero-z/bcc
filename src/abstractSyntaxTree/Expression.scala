@@ -3,7 +3,7 @@ package abstractSyntaxTree
 import abstractSyntaxTree.Operator._
 
 //Every possible expression
-trait Expression
+trait Expression extends AstNode
 
 case class UnaryOperation(operation : Operator, term : Expression) extends Expression
 case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression

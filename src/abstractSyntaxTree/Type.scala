@@ -1,8 +1,6 @@
 package abstractSyntaxTree
 
-
-
-abstract class Type{
+abstract class Type extends AstNode{
     def typeName:String
 }
 
@@ -47,6 +45,13 @@ case class ArrayType(elementType: Type) extends Type{
     def typeName: String = elementType.typeName + "[]"
 }
 
-case class RefType(path : Name) extends Type{
+abstract class RefType(path:Name) extends Type {
     def typeName: String = path.toString
+}
+
+case class RefTypeUnlinked(path: Name) extends RefType(path) {
+}
+
+case class RefTypeLinked(path:Name, decl:Declaration) extends RefType(path) {
+  
 }

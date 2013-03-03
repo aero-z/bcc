@@ -27,14 +27,16 @@ object NameResolution {
 	      case Some((_,_,decl)) => decl :: importDeclarations
 	      case None => importDeclarations
 	    }*/
+//TODO:import
 	    val scope = createInitialScope(importDeclarations, possibleImports) //we know that there are no duplicates present
 	    typeDef match {
-	      case Some(interdef @ InterfaceDefinition(_, _, _, _)) => handleInterface(interdef, scope)
-	      case Some(classdef @ ClassDefinition(_, _, _, _, _, _, _)) => handleClass(classdef, scope)
+	      case Some(interdef:InterfaceDefinition) => handleInterface(interdef, scope)
+	      case Some(classdef:ClassDefinition) => handleClass(classdef, scope)
 	    }
 	    
 	  }
 	}
+//TODO:import
 	//creates a reference scope which contains all class and interfaces which CAN be imported...
 	def possibleImports(cuList:List[CompilationUnit]):List[(String, String, TypeDefinition)] = {
 	  val names:List[String] = cuList.flatMap{case CompilationUnit(packageName, importDeclarations, typeDef, fileName) => typeDef match { case Some(typedef) => List(typedef.getName) case None => Nil}}
@@ -48,12 +50,13 @@ object NameResolution {
 	    	}
 	  }
 	}
-	def newScope(parent:Option[Scope]):Scope = new Scope(parent, new scala.collection.immutable.ListMap[String, Object]())
+	def newScope(parent:Scope, node:AstNode):Scope = Scope(Some(parent), Nil, node, Map[String, Declaration]())
+//TODO:import
 	def createInitialScope(importDeclarations:List[ImportDeclaration], imports:List[(String, String, TypeDefinition)]):Scope = {
 		def createRec(scope:Scope, importDeclarations:List[ImportDeclaration]):Scope = importDeclarations match {
 		  case ClassImport(name) :: tail =>
 		    imports.find(_._2.equals(name.getCanonicalName)) match { //TODO: do we need to check if it is really a class?
-		      case Some(classimp) => createRec(scope.declareSingle(classimp), tail)
+		      case Some(classimp) => createRec(scope.declare(classimp), tail)
 		      case None => throw new EnvironmentException("This class cannot be imported: "+name.getCanonicalName)
 		    }
 		  case PackageImport(name) :: tail =>
@@ -71,31 +74,33 @@ object NameResolution {
 	    //TODO: treat package imports!
 	    newScope(null)
 	}
-	def handleInterface(interfacedef:InterfaceDefinition, scope:Scope) {
-	  //TODO: handle interfaces
+	def importClass() = {
+	  
 	}
-	def handleClass(classdef:ClassDefinition, scope:Scope) = classdef match {
-	  case ClassDefinition(className, parent, interfaces, modifiers, fields, constructors, methods) =>
-	    val fieldDecl = fields.map{case FieldDeclaration(name, _, _, _) => name}
+	def handleInterface(interfacedef:InterfaceDefinition, scope:Scope):Scope = {
+	  interfacedef.parents.foreach(
+	    x => scope.getDefinition(x.path.getCanonicalName()) match {
+	      case (i:InterfaceDefinition) => handleInterface(i, scope) //recursive check
+	      case _ => throw new EnvironmentException("interface: \""+interfacedef.interfaceName+"\" cannot have \""+x.path+"\" as a parent.")
+	    } )
+	  //interfaces in Joos cannot have field declaration -> importing an interface does not change the environemnt
+	}
+	def handleClass(classdef:ClassDefinition, scope:Scope):Scope = {
+	    val fieldDecl = classdef.fields.map(_.fieldName)
 	    // No two fields declared in the same class may have the same name
 	    if (fieldDecl.length != fieldDecl.distinct.length)
-	      throw new EnvironmentException("In class"+className+": field declared with the same name!")
-	    //TODO: add className to environment/namespace?? => correct?
-	    val classScope:Scope = scope.declareSingle(className, classdef)
-	    methods.foreach(handleMethod(_, newScope(Some(classScope))))
+	      throw new EnvironmentException("In class"+classdef.className+": field declared with the same name!")
+//TODO: add className to environment/namespace?? => already in environment because of import!
+	    val newScope = scope.declare(classdef).declareList(classdef.fields)
+	    val children = classdef.methods.map(handleMethod(_, newScope))
+	    Scope(Some(newScope), children, classdef, Map[String, Declaration]())
 	}
-	def handleMethod(method:MethodDeclaration, scope:Scope) = method match {
-	  //TODO: add name to environment/namespace?
-	  case MethodDeclaration(methodName, returnType, modifiers,parameters, implementation)
-	  	=> implementation match {
-	  	  case Some(block @ Block(list)) => handleStatements(block :: Nil, scope)
-	  	  case None => //just for completeness
-	  	}
+	def handleMethod(method:MethodDeclaration, scope:Scope):Scope = {
+	  method.implementation.map(handleStatement(_, scope)).getOrElse(scope)
 	}
 	def handleStatement(statement:Statement, scope:Scope):Scope = statement match {
-	  case Block(statements) =>
-	    handleStatements(statements, newScope(Some(scope)))
-	    scope //block does not affect scope for following declarations
+	  case block @ Block(statements) =>
+	    Scope(scope, handleStatements(statements, scope) :: Nil, block, Map[String, Declaration]())
 	  case ForStatement(Some(init), condition, incrementation, loop) => //TODO: problem here if it is a block we cannot a scope with its value returned
 	    handleStatement(loop, handleStatement(init, scope)); scope
 	  case IfStatement(condition, ifStatement,Some(elseStatement)) =>
@@ -136,33 +141,36 @@ object NameResolution {
 //a Scope is a single linked tree so in each scope you can just see a list of encapsulated Scopes
 //TODO: a scope should know it's corresponding ST node (class/block/whatever)
 //TODO: don't use object but extend existing classes
-case class Scope(parent:Option[Scope], envpart:Map[String, Object]) { //each scope contains only part of the environment
-  //TODO: don't use Object but create a trait instead!
-  //TODO: for next assignment: create a map: (String, Type) -> Decl (to allow duplicate names)
-  def containedInScope(name:String):Boolean = envpart.contains(name)
-  def containedInEnvironment(name:String):Boolean = 
-    parent match {
-      case Some(parent @ Scope(_,_)) => envpart.contains(name) || parent.containedInEnvironment(name)
-      case None => envpart.contains(name)
-    }
-  def declareSingle(decl:Object):Scope = {
-    def extract(name:String, decl:Object):Scope = {
+case class Scope(parent:Option[Scope], children:List[Scope], node:AstNode, envpart:Map[String, Declaration]) { //each scope contains only part of the environment
+	  //TODO: don't use Object but create a trait instead!
+	  //TODO: for next assignment: create a map: (String, Type) -> Decl (to allow duplicate names)
+	def getDefinition(name:String):Object = {
+	    //recursively search for the corresponding declaration in environment (also in parent)
+		envpart.get(name).getOrElse(parent.getOrElse(throw new EnvironmentException(name+" not found in Scope")).getDefinition(name))
+	}
+	def containedInScope(name:String):Boolean = envpart.contains(name)
+	def containedInEnvironment(name:String):Boolean = 
+		envpart.contains(name) || parent.map(_.containedInEnvironment(name)).getOrElse(false)
+	  
+	
+    def declare(decl:Declaration):Scope = {
+	  def extractName(node:Declaration):String = node match {
+	    //TODO: imports
+	    //case x @ ClassImport(name) => add(name.getCanonicalName, x)
+	    //case x @ PackageImport(name) :: Nil => extract(name.getCanonicalName, x)
+	    case m:MethodDeclaration => m.methodName
+	    case v:VariableDeclaration => v.identifier
+	  }
+      val name = extractName(decl)
       if (containedInScope(name))
         throw new EnvironmentException("Name already exists in scope: "+name)
       else
-    	Scope(parent, envpart + (name -> decl))
+    	Scope(parent, children, node, envpart + (name -> decl))
     }
-    decl match {
-      case x @ ClassImport(name) => extract(name.getCanonicalName, x)
-      //case x @ PackageImport(name) :: Nil => extract(name.getCanonicalName, x)
-      //case x @ MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],parameters: List[(Type, String)], implementation: Option[Block]) => extract
-      case x @ VariableDeclaration(typeName, identifier, initializer) => extract(identifier, x)
-    }
-  }
-  def declareList(list:List[Object]):Scope = list match { //for parameters and field declarations
-    case x :: nil => declareSingle(x)
-    case x :: xs => (declareSingle(x).declareList(xs))
+    
+  def declareList(list:List[Declaration]):Scope = list match { //for parameters and field declarations
+    case x :: nil => declare(x)
+    case x :: xs => (declare(x).declareList(xs))
     case nil => this //don't declare anything
   }
-  
 }

@@ -1,6 +1,6 @@
 package abstractSyntaxTree
 
-abstract class Statement
+abstract class Statement extends AstNode
 
 case class Block (statements : List[Statement]) extends Statement
 case object EmptyStatement extends Statement

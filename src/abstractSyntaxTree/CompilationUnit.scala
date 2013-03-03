@@ -5,20 +5,18 @@ import abstractSyntaxTree.Operator._
 import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
+
+trait AstNode
+trait Declaration
+
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
-  def getCanonicalName():String =  {
-    def getRec(list:List[String]):String = list match {
-    	case x :: Nil => x
-    	case x :: xs => getRec(xs)
-    }
-    getRec(path);
-  }
+  def getCanonicalName():String = path.last
 }
 
 //Main  of a file.
-case class CompilationUnit(packageName: Option[Name], importDeclarations: List[ImportDeclaration], typeDef: Option[TypeDefinition], fileName: String) {
+case class CompilationUnit(packageName: Option[Name], importDeclarations: List[ImportDeclaration], typeDef: Option[TypeDefinition], fileName: String) extends AstNode {
   def display(): Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Compilation Unit")
@@ -35,7 +33,7 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
   }
 }
 
-abstract class ImportDeclaration(name: Name) {
+abstract class ImportDeclaration(name: Name) extends AstNode {
   def getName():Name = name
 }
 
@@ -43,7 +41,7 @@ case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-abstract class TypeDefinition(typeName: String) {
+abstract class TypeDefinition(typeName: String) extends AstNode with Declaration {
   def display: Unit
   def getName = typeName
 }
@@ -87,9 +85,10 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
   }
 }
 
+
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[(Type, String)], implementation: Option[Block]) {
+  parameters: List[(Type, String)], implementation: Option[Block]) extends AstNode with Declaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -108,7 +107,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
-  initializer: Option[Expression]) {
+  initializer: Option[Expression]) extends AstNode with Declaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Field declaration")
@@ -123,7 +122,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     //TODO something about the initializer
   }
 }
-case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(Type, String)], implementation: Block) {
+case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(Type, String)], implementation: Block) extends AstNode with Declaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
@@ -137,6 +136,4 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(T
     //TODO something fancy about the implementation
   }
 }
-
-
 
