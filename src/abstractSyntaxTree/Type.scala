@@ -52,6 +52,6 @@ abstract class RefType(path:Name) extends Type {
 case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
-case class RefTypeLinked(path:Name, decl:Declaration) extends RefType(path) {
+case class RefTypeLinked(path:Name, decl:TypeDefinition) extends RefType(path) {
   
 }

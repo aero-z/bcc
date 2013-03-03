@@ -200,8 +200,8 @@ object ASTBuilder {
       case NonTerminalSymbol("ReturnStatement", List(_, _)) => ReturnStatement(None)
       case NonTerminalSymbol("ReturnStatement", List(_, exp, _)) => ReturnStatement(Some(simplifyExpression(exp)))
       case NonTerminalSymbol("StatementWithoutTrailingSubstatement", List(lvd, _)) => extractStatement(lvd)
-      case NonTerminalSymbol("LocalVariableDeclaration", List(varType, IdentifierToken(id))) => VariableDeclaration(extractType(varType), id, None)
-      case NonTerminalSymbol("LocalVariableDeclaration", List(varType, IdentifierToken(id), _, exp)) => VariableDeclaration(extractType(varType), id, Some(simplifyExpression(exp)))
+      case NonTerminalSymbol("LocalVariableDeclaration", List(varType, IdentifierToken(id))) => LocalVariableDeclaration(extractType(varType), id, None)
+      case NonTerminalSymbol("LocalVariableDeclaration", List(varType, IdentifierToken(id), _, exp)) => LocalVariableDeclaration(extractType(varType), id, Some(simplifyExpression(exp)))
       case NonTerminalSymbol("IfThenStatement", List(_, _, exp, _, stmt)) => IfStatement(simplifyExpression(exp), extractStatement(stmt), None)
       case NonTerminalSymbol("IfThenElseStatement", List(_, _, exp, _, stmt1, _, stmt2)) => IfStatement(simplifyExpression(exp), extractStatement(stmt1), Some(extractStatement(stmt2)))
       case NonTerminalSymbol("IfThenElseStatementNoShortIf", List(_, _, exp, _, stmt1, _, stmt2)) => IfStatement(simplifyExpression(exp), extractStatement(stmt1), Some(extractStatement(stmt2)))
@@ -263,9 +263,14 @@ object ASTBuilder {
       case NonTerminalSymbol( str, List(exp)) if recExId contains str => simplifyExpression(exp)
       case NonTerminalSymbol( str, List(exp1, OperatorToken(op), exp2)) if binaryExpId contains str => BinaryOperation(simplifyExpression(exp1), Operator.fromString(op), simplifyExpression(exp2))
       case NonTerminalSymbol("Assignment", List(lhs, _, exp)) => Assignment(simplifyExpression(lhs), simplifyExpression(exp))
-      case xs @ NonTerminalSymbol("Name", _) => nameToFieldAccess(extractName(xs).path.tail, LocalVariableOrField(extractName(xs).path.head))
+      case xs @ NonTerminalSymbol("Name", _) => nameToFieldAccess(extractName(xs).path.tail, VariableAccess(extractName(xs).path.head))
       case KeywordToken("this") => This
       case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(simplifyExpression(pri), str)
+      case it: IntegerToken => NumberLiteral(it)
+      case st : StringToken => StringLiteral(st)
+      case BooleanToken(bool) => BooleanLiteral(bool)
+      case char : CharacterToken => VharacterLiteral(char)
+      case NullToken => NillLiteral
       case exp : Expression => exp
       case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefTypeUnlinked(extractName(cons)), extractArguments(arg))
       case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => MethodInvocation(None, str, extractArguments(arg))

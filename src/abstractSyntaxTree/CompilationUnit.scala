@@ -7,7 +7,7 @@ import scala.Enumeration
 import main.Logger
 
 trait AstNode
-trait Declaration
+trait VariableDeclaration
 
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends Expression {
@@ -41,7 +41,7 @@ case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-abstract class TypeDefinition(typeName: String) extends AstNode with Declaration {
+abstract class TypeDefinition(typeName: String) extends AstNode {
   def display: Unit
 }
 
@@ -87,7 +87,7 @@ case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], i
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[Parameter], implementation: Option[Block]) extends AstNode with Declaration {
+  parameters: List[Parameter], implementation: Option[Block]) extends AstNode {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -106,7 +106,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
-  initializer: Option[Expression]) extends AstNode with Declaration {
+  initializer: Option[Expression]) extends AstNode with VariableDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Field declaration")
@@ -122,7 +122,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
   }
 }
 
-case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with Declaration {
+case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
@@ -137,4 +137,4 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Pa
   }
 }
 
-case class Parameter(paramType: Type, id:String) extends AstNode with Declaration
+case class Parameter(paramType: Type, id:String) extends AstNode with VariableDeclaration

@@ -16,4 +16,4 @@ case class ClassCreation(constructor: RefTypeUnlinked, parameters: List[Expressi
 case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression
 case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
 case object This extends Expression
-case class LocalVariableOrField(str: String) extends Expression
+case class VariableAccess(str: String) extends Expression
