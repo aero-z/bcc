@@ -7,15 +7,6 @@ import scala.Enumeration
 import main.Logger
 import scala.language.implicitConversions
 
-/*
-object Implicits {
-  implicit def option2List[A](o: Option[A]) = o match {
-    case Some(x) => x :: Nil
-    case None => Nil
-  }
-}
-import Implicits._*/
-
 trait AstNode {
   val children: List[AstNode]
   val check: (Boolean, String) = (true, null)
@@ -29,6 +20,7 @@ trait AstNode {
     (modifiers.distinct.length == modifiers.length, "duplicate modifier")
 
 }
+trait AstNode
 trait VariableDeclaration
 
 //Will be used quite often, is for instance "java.util.String"
