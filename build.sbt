@@ -30,7 +30,14 @@ pollInterval := 1000
 
 defaultExcludes in Compile := "*.java"
 
+
+
 defaultExcludes in Test := "*.java"
+
+
+defaultExcludes in Compile ~= (_ || "src/nameResolution/NameResolution.scala")
+
+defaultExcludes in Test ~= (_ || "src/nameResolution/NameResolution.scala")
 
 // // set the main class for packaging the main jar
 // // 'run' will still auto-detect and prompt

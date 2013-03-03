@@ -87,7 +87,7 @@ case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], i
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[(Type, String)], implementation: Option[Block]) extends AstNode with Declaration {
+  parameters: List[Parameter], implementation: Option[Block]) extends AstNode with Declaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -122,7 +122,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
   }
 }
 
-case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(Type, String)], implementation: Block) extends AstNode with Declaration {
+case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with Declaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
@@ -136,3 +136,5 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(T
     //TODO something fancy about the implementation
   }
 }
+
+case class Parameter(paramType: Type, id:String) extends AstNode with Declaration
