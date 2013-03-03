@@ -5,14 +5,33 @@ import abstractSyntaxTree.Operator._
 import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
+import scala.language.implicitConversions
 
-trait AstNode
+/*
+object Implicits {
+  implicit def option2List[A](o: Option[A]) = o match {
+    case Some(x) => x :: Nil
+    case None => Nil
+  }
+}
+import Implicits._*/
+
+trait AstNode {
+  val children: List[AstNode]
+  val check = true
+  
+  implicit def option2List[A](o: Option[A]) = o match {
+    case Some(x) => x :: Nil
+    case None => Nil
+  }
+}
 trait Declaration
 
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
+  val children = Nil
 }
 
 //Main  of a file.
@@ -31,17 +50,19 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
     Logger.debug("")
     for (typeDefinition <- typeDef) typeDefinition.display
   }
+  val children = packageName ::: importDeclarations ::: typeDef
 }
 
 abstract class ImportDeclaration(name: Name) extends AstNode {
   def getName():Name = name
+  val children = Nil
 }
 
 case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-abstract class TypeDefinition(typeName: String) extends AstNode with Declaration {
+sealed abstract class TypeDefinition(typeName: String) extends AstNode with Declaration with NotNull {
   def display: Unit
 }
 
@@ -60,6 +81,7 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlin
     Logger.debug("")
     for (meth <- methods) meth.display
   }
+  val children = parents ::: methods
 }
 
 case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], interfaces: List[RefTypeUnlinked], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
@@ -82,6 +104,7 @@ case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], i
     for (constructor <- constructors) constructor.display
     for (method <- methods) method.display
   }
+  val children = parent ::: interfaces ::: fields ::: constructors ::: methods
 }
 
 
@@ -103,6 +126,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     Logger.debug("")
     //TODO something about the implementation
   }
+  val children = returnType :: parameters ::: implementation
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
@@ -120,6 +144,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     Logger.debug("")
     //TODO something about the initializer
   }
+  val children = fieldType :: initializer
 }
 
 case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with Declaration {
@@ -135,6 +160,9 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Pa
     Logger.debug("")
     //TODO something fancy about the implementation
   }
+  val children = implementation :: parameters 
 }
 
-case class Parameter(paramType: Type, id:String) extends AstNode with Declaration
+case class Parameter(paramType: Type, id:String) extends AstNode with Declaration {
+  val children = Nil
+}
