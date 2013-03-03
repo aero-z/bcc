@@ -20,7 +20,6 @@ trait AstNode {
     (modifiers.distinct.length == modifiers.length, "duplicate modifier")
 
 }
-trait AstNode
 trait VariableDeclaration
 
 //Will be used quite often, is for instance "java.util.String"
