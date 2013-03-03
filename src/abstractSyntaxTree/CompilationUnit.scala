@@ -43,10 +43,9 @@ case class PackageImport(name: Name) extends ImportDeclaration(name)
 //Either a class or an interface
 abstract class TypeDefinition(typeName: String) extends AstNode with Declaration {
   def display: Unit
-  def getName = typeName
 }
 
-case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
+case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlinked],
   modifiers: List[Modifier], methods: List[MethodDeclaration]) extends TypeDefinition(interfaceName) {
   def display: Unit = {
     Logger.debug("*" * 20)
@@ -54,7 +53,7 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     Logger.debug("*" * 20)
     Logger.debug(s"Interface name: $interfaceName")
     Logger.debug(s"Number of parents: ${parents.size}")
-    for (RefType(x) <- parents) Logger.debug(s"Interface extending: ${x.toString}")
+    for (RefTypeUnlinked(x) <- parents) Logger.debug(s"Interface extending: ${x.toString}")
     for (x <- modifiers) Logger.debug(s"Modifier: ${x.toString()}")
     Logger.debug(s"Number of methods: ${methods.size}")
     Logger.debug("*" * 20)
@@ -63,16 +62,16 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
   }
 }
 
-case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
+case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], interfaces: List[RefTypeUnlinked], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Class declaration")
     Logger.debug("*" * 20)
     Logger.debug(s"Class name: $className")
     Logger.debug(s"Has parent: ${parent.isDefined}")
-    for (RefType(x) <- parent) Logger.debug(s"Class extending: ${x.toString}")
+    for (RefTypeUnlinked(x) <- parent) Logger.debug(s"Class extending: ${x.toString}")
     Logger.debug(s"Number of implemented interfaces: ${interfaces.size}")
-    for (RefType(x) <- interfaces) Logger.debug(s"Interface implemented: ${x.toString}")
+    for (RefTypeUnlinked(x) <- interfaces) Logger.debug(s"Interface implemented: ${x.toString}")
     for (x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of fields: ${fields.size}")
     Logger.debug(s"Number of constructors: ${constructors.size}")
@@ -122,6 +121,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     //TODO something about the initializer
   }
 }
+
 case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(Type, String)], implementation: Block) extends AstNode with Declaration {
   def display: Unit = {
     Logger.debug("*" * 20)
@@ -136,4 +136,3 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(T
     //TODO something fancy about the implementation
   }
 }
-

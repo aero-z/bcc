@@ -11,9 +11,35 @@ object Weeder {
 //--All characters in the input program must be in the range of 7-bit ASCII (0 to 127).
 //-> done in Scanner
   def check(cu:CompilationUnit):Boolean = cu match {
-    //case CompilationUnit(packageName: Option[Name], importDeclarations: List[ImportDeclaration], typeDef: Option[TypeDefinition], fileName: String)
-    //case CompilationUnit(packageName , importDeclarations, typeDef, fileName) => 
-    case _ => true
+    case CompilationUnit(packageName, importDeclarations, typeDef, fileName) => {
+      val (modifiers, methods) = typeDef match {
+        case None => (Nil, Nil)
+        case Some(ClassDefinition(_, _, _, modifiers, _, _, methods)) => (modifiers, methods)
+        case Some(InterfaceDefinition(_, _, modifiers, methods)) => (modifiers, methods)
+      }
+      (
+        // no duplicate class modifiers
+        modifiers.distinct.length == modifiers.length 
+          && 
+        // not abstract and final at the same time
+        !(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+          &&
+        // test each method:
+        methods.forall(_ match {
+          case MethodDeclaration(_, _, modifiers, _, implementation) =>
+            (
+            // a method has a body if and only if it is neither abstract nor native.
+            implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier))
+              &&
+            // a static method cannot be final.
+            modifiers.contains(Modifier.abstractModifier) == (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier))
+              &&
+            // a native method must be static.
+            modifiers.contains(Modifier.nativeModifier) == !modifiers.contains(Modifier.staticModifier)
+            )
+        })
+      )
+    }
   }
 //A class cannot be both abstract and final.
 //A method has a body if and only if it is neither abstract nor native.

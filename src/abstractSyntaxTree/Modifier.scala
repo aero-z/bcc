@@ -1,6 +1,6 @@
 package abstractSyntaxTree
 
-object Modifier extends Enumeration{
+object Modifier extends Enumeration {
   type Modifier = Value
   val abstractModifier, finalModifier, nativeModifier,
     privateModifier, protectedModifier, publicModifier, staticModifier = Value
