@@ -59,20 +59,20 @@ object ASTBuilder {
   
   
   //find John Connor parent and save it from the Terminator
-  def extractParent(symbol: ParserSymbol): Option[RefType] = symbol match {
+  def extractParent(symbol: ParserSymbol): Option[RefTypeUnlinked] = symbol match {
     case NonTerminalSymbol("OptClassParent", List( _, refType)) => extractParent(refType)
     case NonTerminalSymbol("OptClassParent", Nil) => None
-    case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => Some(RefType(extractName(name)))
+    case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => Some(RefTypeUnlinked(extractName(name)))
   }
 
-  def extractInterfaces(symbol: ParserSymbol): List[RefType] = {
+  def extractInterfaces(symbol: ParserSymbol): List[RefTypeUnlinked] = {
     @tailrec
-    def recExtractInterfaces(symbol: ParserSymbol, acc: List[RefType]): List[RefType] = symbol match{
+    def recExtractInterfaces(symbol: ParserSymbol, acc: List[RefTypeUnlinked]): List[RefTypeUnlinked] = symbol match{
       case NonTerminalSymbol("Interfaces", List(next, _, interface)) => recExtractInterfaces(next, extractInterface(interface)::acc)
       case NonTerminalSymbol("Interfaces", List(interface)) => extractInterface(interface) :: acc
     }
-    def extractInterface(interface: ParserSymbol): RefType = interface match{
-      case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefType(extractName(name))
+    def extractInterface(interface: ParserSymbol): RefTypeUnlinked = interface match{
+      case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefTypeUnlinked(extractName(name))
     }
     
     symbol match{
@@ -154,8 +154,8 @@ object ASTBuilder {
     case KeywordToken(str) => PrimitiveType.fromString(str)
     case NonTerminalSymbol("RefType", List(next)) => extractType(next)
     case NonTerminalSymbol("ArrayType", List(primType @ NonTerminalSymbol("PrimitiveType", _), _, _)) => ArrayType(extractType(primType))
-    case NonTerminalSymbol("ArrayType", List(nameType @ NonTerminalSymbol("Name", _), _, _)) => ArrayType(RefType(extractName(nameType)))
-    case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefType(extractName(name))
+    case NonTerminalSymbol("ArrayType", List(nameType @ NonTerminalSymbol("Name", _), _, _)) => ArrayType(RefTypeUnlinked(extractName(nameType)))
+    case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefTypeUnlinked(extractName(name))
   }
 
   def extractParameters(symbol: ParserSymbol) : List[Parameter] = {
@@ -246,8 +246,8 @@ object ASTBuilder {
     def extractCastType(symbol: ParserSymbol): Type = symbol match{
       case NonTerminalSymbol("PrimitiveCast", List(_, NonTerminalSymbol("PrimitiveType", List(KeywordToken(str))), _)) => PrimitiveType.fromString(str)
       case NonTerminalSymbol("PrimitiveCast", List(_, NonTerminalSymbol("PrimitiveType", List(KeywordToken(str))), _, _, _)) => ArrayType(PrimitiveType.fromString(str))
-      case NonTerminalSymbol("NonPrimCast", List(_, name, _, _, _)) => ArrayType(RefType(extractName(name)))
-      case NonTerminalSymbol("NonPrimCast", List(_, name, _)) => RefType((new Function1[ParserSymbol, Name]{ def apply(x: ParserSymbol)= x match{
+      case NonTerminalSymbol("NonPrimCast", List(_, name, _, _, _)) => ArrayType(RefTypeUnlinked(extractName(name)))
+      case NonTerminalSymbol("NonPrimCast", List(_, name, _)) => RefTypeUnlinked((new Function1[ParserSymbol, Name]{ def apply(x: ParserSymbol)= x match{
         case name @ NonTerminalSymbol("Name", _) => extractName(name)
         case NonTerminalSymbol(_, List(next)) => apply(next)
         case _ => throw new ASTBuildingException("Wrong cast expression")
@@ -267,7 +267,7 @@ object ASTBuilder {
       case KeywordToken("this") => This
       case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(simplifyExpression(pri), str)
       case exp : Expression => exp
-      case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefType(extractName(cons)), extractArguments(arg))
+      case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefTypeUnlinked(extractName(cons)), extractArguments(arg))
       case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => MethodInvocation(None, str, extractArguments(arg))
       case NonTerminalSymbol("MethodInvocation", List(access, _, IdentifierToken(str), _ , arg, _)) => MethodInvocation(Some(simplifyExpression(access)), str, extractArguments(arg))
       case NonTerminalSymbol("ArrayAccess", List( array, _, index, _)) => ArrayAccess(simplifyExpression(array), simplifyExpression(index))
