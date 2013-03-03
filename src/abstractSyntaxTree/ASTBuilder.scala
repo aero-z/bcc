@@ -263,7 +263,8 @@ object ASTBuilder {
       case NonTerminalSymbol( str, List(exp)) if recExId contains str => simplifyExpression(exp)
       case NonTerminalSymbol( str, List(exp1, OperatorToken(op), exp2)) if binaryExpId contains str => BinaryOperation(simplifyExpression(exp1), Operator.fromString(op), simplifyExpression(exp2))
       case NonTerminalSymbol("Assignment", List(lhs, _, exp)) => Assignment(simplifyExpression(lhs), simplifyExpression(exp))
-      case xs @ NonTerminalSymbol("Name", _) => nameToFieldAccess(extractName(xs).path.tail, VariableAccess(extractName(xs).path.head))
+      case xs @ NonTerminalSymbol("Name", _) => val name = extractName(xs).path; 
+        if(name.tail == Nil)  VariableAccess(name.head) else nameToFieldAccess(name.tail, VariableAccess(name.head))
       case KeywordToken("this") => This
       case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(simplifyExpression(pri), str)
       case it: IntegerToken => NumberLiteral(it)
