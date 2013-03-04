@@ -59,19 +59,19 @@ object ASTBuilder {
   
   
   //find John Connor parent and save it from the Terminator
-  def extractParent(symbol: ParserSymbol): Option[RefTypeUnlinked] = symbol match {
+  def extractParent(symbol: ParserSymbol): Option[RefType] = symbol match {
     case NonTerminalSymbol("OptClassParent", List( _, refType)) => extractParent(refType)
     case NonTerminalSymbol("OptClassParent", Nil) => None
     case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => Some(RefTypeUnlinked(extractName(name)))
   }
 
-  def extractInterfaces(symbol: ParserSymbol): List[RefTypeUnlinked] = {
+  def extractInterfaces(symbol: ParserSymbol): List[RefType] = {
     @tailrec
-    def recExtractInterfaces(symbol: ParserSymbol, acc: List[RefTypeUnlinked]): List[RefTypeUnlinked] = symbol match{
+    def recExtractInterfaces(symbol: ParserSymbol, acc: List[RefType]): List[RefType] = symbol match{
       case NonTerminalSymbol("Interfaces", List(next, _, interface)) => recExtractInterfaces(next, extractInterface(interface)::acc)
       case NonTerminalSymbol("Interfaces", List(interface)) => extractInterface(interface) :: acc
     }
-    def extractInterface(interface: ParserSymbol): RefTypeUnlinked = interface match{
+    def extractInterface(interface: ParserSymbol): RefType = interface match{
       case NonTerminalSymbol("ClassOrInterfaceType", List(name)) => RefTypeUnlinked(extractName(name))
     }
     

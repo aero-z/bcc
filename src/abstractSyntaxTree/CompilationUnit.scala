@@ -13,6 +13,8 @@ trait Declaration
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
+  def appendClassName(name:Name) = Name(path ::: name.path)
+  
 }
 
 //Main  of a file.
@@ -42,10 +44,11 @@ case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
 abstract class TypeDefinition(typeName: String) extends AstNode with Declaration {
+  def getName():String = typeName
   def display: Unit
 }
 
-case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlinked],
+case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
   modifiers: List[Modifier], methods: List[MethodDeclaration]) extends TypeDefinition(interfaceName) {
   def display: Unit = {
     Logger.debug("*" * 20)
@@ -53,7 +56,7 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlin
     Logger.debug("*" * 20)
     Logger.debug(s"Interface name: $interfaceName")
     Logger.debug(s"Number of parents: ${parents.size}")
-    for (RefTypeUnlinked(x) <- parents) Logger.debug(s"Interface extending: ${x.toString}")
+    for (x:RefType <- parents) Logger.debug(s"Interface extending: ${x.toString}")
     for (x <- modifiers) Logger.debug(s"Modifier: ${x.toString()}")
     Logger.debug(s"Number of methods: ${methods.size}")
     Logger.debug("*" * 20)
@@ -62,16 +65,16 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlin
   }
 }
 
-case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], interfaces: List[RefTypeUnlinked], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
+case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Class declaration")
     Logger.debug("*" * 20)
     Logger.debug(s"Class name: $className")
     Logger.debug(s"Has parent: ${parent.isDefined}")
-    for (RefTypeUnlinked(x) <- parent) Logger.debug(s"Class extending: ${x.toString}")
+    for (x:RefType <- parent) Logger.debug(s"Class extending: ${x.toString}")
     Logger.debug(s"Number of implemented interfaces: ${interfaces.size}")
-    for (RefTypeUnlinked(x) <- interfaces) Logger.debug(s"Interface implemented: ${x.toString}")
+    for (x:RefType <- interfaces) Logger.debug(s"Interface implemented: ${x.toString}")
     for (x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of fields: ${fields.size}")
     Logger.debug(s"Number of constructors: ${constructors.size}")
