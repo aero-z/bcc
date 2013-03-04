@@ -16,8 +16,10 @@ import parser.NonTerminalSymbol
 import scanner.IdentifierToken
 import abstractSyntaxTree.ASTBuilder
 import abstractSyntaxTree.CheckResult
+import abstractSyntaxTree.CheckOk
+import abstractSyntaxTree.CheckFail
 
-class CompilerError(str: String) extends Exception(str)
+case class CompilerError(str: String) extends Exception(str)
 
 object Joosc {
 
@@ -39,8 +41,8 @@ object Joosc {
             val ast = ASTBuilder.build(Parser.parse(tokens, dfa), name)
             ast.display
             Weeder.check(ast) match {
-              case CheckResult(true, _) => errCodeSuccess
-              case CheckResult(false, err) => Console.err.println(err); errCodeParseErr
+              case CheckOk() => errCodeSuccess
+              case CheckFail(err) => Console.err.println(err); errCodeParseErr
             }
         } catch {
             case e: CompilerError =>

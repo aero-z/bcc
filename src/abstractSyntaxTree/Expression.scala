@@ -1,6 +1,7 @@
 package abstractSyntaxTree
 
 import abstractSyntaxTree.Operator._
+import scanner.IntegerToken
 
 //Every possible expression
 trait Expression extends AstNode

@@ -77,8 +77,8 @@ assignment identifier = expression
 3 identifier shift 14
 """
         ))
-    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5.toString ), ScopingToken(";"),
-        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2.toString), ScopingToken(";"),
+    val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken("5"), ScopingToken(";"),
+        IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken("2"), ScopingToken(";"),
         EndToken)
     val parseTree = Parser.parse(tokens, dfa)
     Parser.printTree(parseTree)

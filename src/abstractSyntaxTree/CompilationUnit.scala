@@ -6,17 +6,27 @@ import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
 import scala.language.implicitConversions
+import java.io.File
 
-case class CheckResult(passed: Boolean, errStr: String) {
-  def +(c: CheckResult) = {
+sealed abstract class CheckResult(passed: Boolean, errStr: String) {
+  def ++(c: CheckResult) = {
     if (passed) c
     else this
   }
 }
 
+object CheckResult {
+  def apply(passed: Boolean, errStr: String): CheckResult =
+    if (passed) CheckOk()
+    else CheckFail(errStr)
+}
+
+case class CheckFail(errStr: String) extends CheckResult(false, errStr)
+case class CheckOk() extends CheckResult(true, null)
+
 trait AstNode {
   val children: List[AstNode]
-  val check = CheckResult(true, null)
+  val check: CheckResult = CheckOk()
   
   implicit def option2List[A](o: Option[A]) = o match {
     case Some(x) => x :: Nil
@@ -58,6 +68,10 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
     for (typeDefinition <- typeDef) typeDefinition.display
   }
   val children = packageName ::: importDeclarations ::: typeDef
+  override val check = typeDef match {
+    case None => CheckOk()
+    case Some(x) => CheckResult(x.getName()+".java" == new File(fileName).getName(), "file name and class name don't match")
+  }
 }
 
 abstract class ImportDeclaration(name: Name) extends AstNode {
@@ -69,17 +83,18 @@ case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-sealed abstract class TypeDefinition(typeName: String) extends AstNode with NotNull {
+sealed abstract class TypeDefinition(typeName: String, modifiers: List[Modifier]) extends AstNode with NotNull {
 def getName():String = typeName
   def display: Unit
   
   def checkModifiers(modifiers: List[Modifier]) = 
-    (!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
-            ,"class can't be abstract and final at the same time")
+    CheckResult(!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+            , "class can't be abstract and final at the same time")
+  override val check = checkDuplicateModifiers(modifiers) ++ checkModifiers(modifiers)
 }
 
 case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
-  modifiers: List[Modifier], methods: List[MethodDeclaration]) extends TypeDefinition(interfaceName) {
+  modifiers: List[Modifier], methods: List[MethodDeclaration]) extends TypeDefinition(interfaceName, modifiers) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Interface declaration")
@@ -94,10 +109,9 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     for (meth <- methods) meth.display
   }
   val children = parents ::: methods
-  override val check = checkDuplicateModifiers(modifiers)
 }
 
-case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
+case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className, modifiers) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Class declaration")
@@ -118,7 +132,6 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
     for (method <- methods) method.display
   }
   val children = parent ::: interfaces ::: fields ::: constructors ::: methods
-  override val check = checkDuplicateModifiers(modifiers)
 }
 
 
@@ -141,7 +154,15 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     //TODO something about the implementation
   }
   val children = returnType :: parameters ::: implementation
-  override val check = checkDuplicateModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers) ++
+                       CheckResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
+                                   "a static method cannot be final") ++
+                       CheckResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
+                                   "a native method must be static") ++
+                       CheckResult(!modifiers.contains(Modifier.abstractModifier) || (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier)),
+                                   "an abstract method cannot be static or final") ++
+                       CheckResult(implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
+                                   "method must have a body if and only if it is neither abstract nor native")
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
@@ -160,7 +181,8 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     //TODO something about the initializer
   }
   val children = fieldType :: initializer
-  override val check = checkDuplicateModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers) ++
+                       CheckResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
 }
 
 case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {

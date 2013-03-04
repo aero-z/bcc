@@ -11,7 +11,7 @@ import scala.reflect.runtime.universe._
 object Weeder {
   def check(ast: AstNode): CheckResult = {
     ast.children.foldLeft(ast.check)((cr, a) => {
-      cr + check(a)
+      cr ++ check(a)
     })
   }
 //--All characters in the input program must be in the range of 7-bit ASCII (0 to 127).

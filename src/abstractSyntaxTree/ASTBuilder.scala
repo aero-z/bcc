@@ -235,8 +235,8 @@ object ASTBuilder {
   }
   
 
-
-  def simplifyExpression(expressionSymbol: ParserSymbol): Expression ={
+  def simplifyExpression(expressionSymbol: ParserSymbol): Expression = simplifyExpression(expressionSymbol, false)
+  def simplifyExpression(expressionSymbol: ParserSymbol, unaryMinus: Boolean): Expression ={
     @tailrec
     def nameToFieldAccess(name : List[String], acc : Expression) : FieldAccess = name match {
       case x :: Nil => FieldAccess(acc, x)
@@ -260,26 +260,38 @@ object ASTBuilder {
     expressionSymbol match {
       case NonTerminalSymbol("ParenthesizedExpression", List(_,exp, _)) => simplifyExpression(exp)
       case NonTerminalSymbol("RelationalExpression", List(exp, KeywordToken("instanceof"), reftype)) => InstanceOfCall(simplifyExpression(exp), extractType(reftype))
-      case NonTerminalSymbol( str, List(exp)) if recExId contains str => simplifyExpression(exp)
+      case NonTerminalSymbol( str, List(exp)) if recExId contains str => simplifyExpression(exp, unaryMinus)
       case NonTerminalSymbol( str, List(exp1, OperatorToken(op), exp2)) if binaryExpId contains str => BinaryOperation(simplifyExpression(exp1), Operator.fromString(op), simplifyExpression(exp2))
       case NonTerminalSymbol("Assignment", List(lhs, _, exp)) => Assignment(simplifyExpression(lhs), simplifyExpression(exp))
       case xs @ NonTerminalSymbol("Name", _) => val name = extractName(xs).path; 
         if(name.tail == Nil)  VariableAccess(name.head) else nameToFieldAccess(name.tail, VariableAccess(name.head))
       case KeywordToken("this") => This
       case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(simplifyExpression(pri), str)
-      case it: IntegerToken => NumberLiteral(it)
+      case IntegerToken(intStr) => {
+        val opIntStr = if (unaryMinus) "-" + intStr
+                       else intStr
+        val int = try { opIntStr.toInt }
+                  catch { case _: Throwable => throw CompilerError("bad integer literal "+opIntStr); ??? }
+        NumberLiteral(int)
+      }
       case st : StringToken => StringLiteral(st)
       case BooleanToken(bool) => BooleanLiteral(bool)
       case char : CharacterToken => CharacterLiteral(char)
       case NullToken => NullLiteral
-      //case exp : Expression => exp
       case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefTypeUnlinked(extractName(cons)), extractArguments(arg))
       case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => MethodInvocation(None, str, extractArguments(arg))
       case NonTerminalSymbol("MethodInvocation", List(access, _, IdentifierToken(str), _ , arg, _)) => MethodInvocation(Some(simplifyExpression(access)), str, extractArguments(arg))
       case NonTerminalSymbol("ArrayAccess", List( array, _, index, _)) => ArrayAccess(simplifyExpression(array), simplifyExpression(index))
       case NonTerminalSymbol("ArrayCreation", List(_, arrayType, _, size, _)) => ArrayCreation(ArrayType(extractType(arrayType)), simplifyExpression(size))
-      case NonTerminalSymbol("UnaryExpression", List(OperatorToken(op), exp)) => UnaryOperation(Operator.fromString(op), simplifyExpression(exp))
-      case NonTerminalSymbol("UnaryExpressionNotPlusMinus", List(OperatorToken(op), exp)) => UnaryOperation(Operator.fromString(op), simplifyExpression(exp))
+      case NonTerminalSymbol("UnaryExpression", List(OperatorToken(op), exp)) => {
+        val operator = Operator.fromString(op)
+        val expression = simplifyExpression(exp, true)
+        (operator, expression) match {
+          case (Operator.minus, n @ NumberLiteral(int)) => n
+          case _ => UnaryOperation(operator, expression)
+        }
+      }
+      case NonTerminalSymbol("UnaryExpressionNotPlusMinus", List(OperatorToken(op), exp)) => UnaryOperation(Operator.fromString(op), simplifyExpression(exp, unaryMinus))
       case NonTerminalSymbol("CastExpression", List(cast, exp)) => CastExpression(extractCastType(cast), simplifyExpression(exp))
     }
   }
