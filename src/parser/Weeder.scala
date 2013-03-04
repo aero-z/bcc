@@ -9,10 +9,9 @@ import abstractSyntaxTree._
 
 import scala.reflect.runtime.universe._
 object Weeder {
-  def check(ast: AstNode): (Boolean, String) = {
-    ast.children.foldLeft(ast.check)((t, a) => {
-      if (t._1) check(a)
-      else t
+  def check(ast: AstNode): CheckResult = {
+    ast.children.foldLeft(ast.check)((cr, a) => {
+      cr + check(a)
     })
   }
 //--All characters in the input program must be in the range of 7-bit ASCII (0 to 127).

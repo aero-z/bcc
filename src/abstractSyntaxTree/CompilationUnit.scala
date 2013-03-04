@@ -7,18 +7,29 @@ import scala.Enumeration
 import main.Logger
 import scala.language.implicitConversions
 
+case class CheckResult(passed: Boolean, errStr: String) {
+  def +(c: CheckResult) = {
+    if (passed) c
+    else this
+  }
+}
+
 trait AstNode {
   val children: List[AstNode]
-  val check: (Boolean, String) = (true, null)
+  val check = CheckResult(true, null)
   
   implicit def option2List[A](o: Option[A]) = o match {
     case Some(x) => x :: Nil
     case None => Nil
   }
   
-  def checkModifiers(modifiers: List[Modifier]) = 
-    (modifiers.distinct.length == modifiers.length, "duplicate modifier")
-
+  def mergeCheck(x: (Boolean, String), y: (Boolean, String)) = {
+    if (x._1) x
+    else y
+  }
+  
+  def checkDuplicateModifiers(modifiers: List[Modifier]) = 
+    CheckResult(modifiers.distinct.length == modifiers.length, "duplicate modifier")
 }
 trait VariableDeclaration
 
@@ -59,6 +70,10 @@ case class PackageImport(name: Name) extends ImportDeclaration(name)
 //Either a class or an interface
 sealed abstract class TypeDefinition(typeName: String) extends AstNode with NotNull {
   def display: Unit
+  
+  def checkModifiers(modifiers: List[Modifier]) = 
+    (!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+            ,"class can't be abstract and final at the same time")
 }
 
 case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlinked],
@@ -77,7 +92,7 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlin
     for (meth <- methods) meth.display
   }
   val children = parents ::: methods
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers)
 }
 
 case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], interfaces: List[RefTypeUnlinked], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
@@ -101,7 +116,7 @@ case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], i
     for (method <- methods) method.display
   }
   val children = parent ::: interfaces ::: fields ::: constructors ::: methods
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers)
 }
 
 
@@ -124,7 +139,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     //TODO something about the implementation
   }
   val children = returnType :: parameters ::: implementation
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers)
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
@@ -143,7 +158,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     //TODO something about the initializer
   }
   val children = fieldType :: initializer
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers)
 }
 
 case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
@@ -160,7 +175,7 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Pa
     //TODO something fancy about the implementation
   }
   val children = implementation :: parameters 
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers)
 }
 
 case class Parameter(paramType: Type, id:String) extends AstNode with VariableDeclaration {
