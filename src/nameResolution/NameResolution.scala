@@ -15,7 +15,7 @@ import parser._
  * 7. resolve methods and instance fields
  */
 
-class EnvironmentException(message:String) extends Exception
+//class EnvironmentException(message:String) extends Exception
 
 object NameResolution {
 	def resolution(cu:CompilationUnit, possibleImports:List[(String, String, TypeDefinition)]) = cu match { //true=no problem, false=declaration collision!

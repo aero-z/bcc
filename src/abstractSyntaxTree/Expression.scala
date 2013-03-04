@@ -4,7 +4,6 @@ import abstractSyntaxTree.Operator._
 
 //Every possible expression
 trait Expression extends AstNode
-
 case class UnaryOperation(operation : Operator, term : Expression) extends Expression {
   val children = term :: Nil
 }
@@ -26,7 +25,7 @@ case class Assignment(leftHandSide: Expression, rightHandSide: Expression) exten
 case class FieldAccess(accessed : Expression, field: String) extends Expression {
   val children = accessed :: Nil
 }
-case class ClassCreation(constructor: RefTypeUnlinked, parameters: List[Expression]) extends Expression {
+case class ClassCreation(constructor: RefType, parameters: List[Expression]) extends Expression {
   val children = constructor :: parameters
 }
 case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression {

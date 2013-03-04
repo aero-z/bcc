@@ -24,7 +24,7 @@ object Joosc {
     val errCodeSuccess = 0
     val errCodeParseErr = 42
     val errCodeIoErr = 1
-
+    
     def check(source: Source, name: String): Int = {
         val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
         try {
