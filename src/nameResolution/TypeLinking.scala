@@ -1,6 +1,6 @@
 package nameResolution
 
-import abstractSyntaxTree._
+import ast._
 
 class EnvironmentException(message:String) extends Exception(message)
 
@@ -9,8 +9,8 @@ object TypeLinking {
     println("CREATE POSSIBLE IMPORTS:")
     val possibleImports = getPossibleImports(cus)
     println("TREAT FILES SEPARATELY:")
+    lazy val myList:List[CompilationUnit] = cus.map(linkCompilationUnit(_, getPossibleImports(myList)))
     cus.map(linkCompilationUnit(_, possibleImports))
-    //lazy val myList:List[CompilationUnit] = cus.map(linkCompilationUnit(_, getPossibleImports(myList)))
   }
   def getPossibleImports(cus:List[CompilationUnit]):List[(Option[Name], String, TypeDefinition)] = {//:(Map[Name, TypeDefinition], Map[Name, List[(Name, TypeDefinition)]]) = { //pcknm -> List[ClassDecl]
     println("GET POSSIBLE IMPORTS:")

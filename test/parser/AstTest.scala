@@ -4,6 +4,7 @@ import scala.io.Source
 import org.scalatest.FunSuite
 import scanner._
 import parser._
+import ast.AstBuilder
 
 class AstTest extends FunSuite {
   val myCode = """
@@ -25,8 +26,8 @@ class AstTest extends FunSuite {
 	Parser.printTree(parseTree)
     println("BUILDING AST TREE")
     //val node = AST.toNode(parseTree)
-    val ast = Ast.createAst(parseTree)
-    Parser.printTree(ast)
+    val ast = AstBuilder.build(parseTree, "Foo.java")
+    //Parser.printTree(ast)
     // TODO: do some automatic verification on the tree
   }
 }

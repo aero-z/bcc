@@ -2,7 +2,6 @@ package main
 
 import scala.io.Source
 import java.io.File
-import parser.Ast
 import scanner.Scanner
 import parser.Parser
 import parser.Dfa
@@ -14,9 +13,12 @@ import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import scanner.IdentifierToken
-import abstractSyntaxTree.ASTBuilder
+import ast.AstBuilder
+import ast.CheckResult
+import ast.CheckOk
+import ast.CheckFail
 
-class CompilerError(str: String) extends Exception(str)
+case class CompilerError(str: String) extends Exception(str)
 
 object Joosc {
 
@@ -30,37 +32,17 @@ object Joosc {
             val tokens = Scanner.scan(source.mkString)
             debug("=== Printing tokens ===")
             tokens.foreach(debug(_))
-            //val parseTree = Ast.createAst(Parser.parse(tokens, dfa))
-            //debug("=== Printing parse tree ===")
-            //Parser.printTree(parseTree)
-           //TODO:  if(Weeder.astcheck(parseTree)) throw new CompilerError(s"wrong file name: $name")
             debug("=== Printing ast ===")
-            val ast = ASTBuilder.build(Parser.parse(tokens, dfa), name)
+            val ast = AstBuilder.build(Parser.parse(tokens, dfa), name)
             ast.display
             Weeder.check(ast) match {
-              case (true, _) => errCodeSuccess
-              case (false, err) => Console.err.println(err); errCodeParseErr
+              case CheckOk() => errCodeSuccess
+              case CheckFail(err) => Console.err.println(err); errCodeParseErr
             }
         } catch {
             case e: CompilerError =>
-                Console.err.println("Syntax error while parsing: " + e.getMessage())
+                Console.err.println("Compilation error: " + e.getMessage())
                 errCodeParseErr
-        }
-
-    }
-
-    def checkFileName(tree: ParserSymbol, name: String): Boolean = {
-        val fileName = new File(name).getName
-        if (!fileName.endsWith(".java")) false
-        val className = fileName.substring(0, fileName.length - 5)
-        tree match {
-            case NonTerminalSymbol("CompilationUnit", list) =>
-                list.exists(_ match {
-                    case NonTerminalSymbol("ClassDeclaration", xs) => xs contains IdentifierToken(className)
-                    case NonTerminalSymbol("InterfaceDeclaration", xs) => xs contains IdentifierToken(className)
-                    case _ => false
-                }
-            )
         }
 
     }

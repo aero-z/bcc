@@ -1,7 +1,7 @@
 package scanner
 
 import parser.ParserSymbol
-import abstractSyntaxTree.Expression
+import ast.Expression
 abstract class Token extends ParserSymbol {
   def typeStr: String
   override def toString():String = typeStr

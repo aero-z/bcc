@@ -1,8 +1,9 @@
-package javaCode;
-
 public class Test {
-	public Test() {
-		int x = 5;
-	}
-	public native static int hoi();
+    public Test() {}
+    protected char x = (char)123;
+    public static int test() {
+	J1_char obj = new J1_char();
+	char y = obj.x;
+	return (int)y;
+    }
 }

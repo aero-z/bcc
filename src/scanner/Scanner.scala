@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 object Scanner {
 
   def scan(code: String): List[Token] = {
-    if (!checkEncoding(code)) throw new CompilerError("bad encoding") // TODO
+    if (!checkEncoding(code)) throw CompilerError("bad encoding") // TODO
     categorize(generateTokens(code))
   }
 
@@ -57,14 +57,6 @@ object Scanner {
   }
 
   def categorize(list: List[String]): List[Token] = {
-
-    /*def unescape(str: String) = {
-      try {
-        StringEscapeUtils.unescapeJava(str)
-      } catch {
-        case e: NumberFormatException => throw new CompilerError(s"Invalid escape sequence '$str': "+e.getMessage())
-      }
-    }*/
     
     def unescape(str: String): String = {      
       @tailrec
@@ -88,7 +80,7 @@ object Scanner {
             unescapeRec(xs, acc + Integer.valueOf("" + n1 + n2, 8).toChar)
           case '\\' :: (n1 @ ('0' | '1' | '2' | '3' | '4' | '5' | '6' | '7')) :: xs =>
             unescapeRec(xs, acc + Integer.valueOf("" + n1, 8).toChar)
-          case '\\' :: xs => throw new CompilerError("invalid escape sequence "+xs)
+          case '\\' :: xs => throw CompilerError("invalid escape sequence "+xs)
           case x :: xs => unescapeRec(xs, acc + x)
         }
       }
@@ -124,11 +116,11 @@ object Scanner {
         case string(str) => StringToken(unescape(str.substring(1, str.length() - 1)))
         case char(chr) =>
           val c = unescape(chr.substring(1, chr.length() - 1))
-          if (c.length != 1) throw new CompilerError(s"invalid char literal $chr")
+          if (c.length != 1) throw CompilerError(s"invalid char literal $chr")
           CharacterToken(c)
         case x if delimiters contains x => ScopingToken(x)
         case x if operators contains x => OperatorToken(x)
-        case x => throw new CompilerError(s"Cannot categorize $x")
+        case x => throw CompilerError(s"Cannot categorize $x")
       }
     } :+ EndToken
   }
