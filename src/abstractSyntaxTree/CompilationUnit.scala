@@ -6,19 +6,40 @@ import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
 import scala.language.implicitConversions
+import java.io.File
+
+sealed abstract class CheckResult(passed: Boolean, errStr: String) {
+  def ++(c: CheckResult) = {
+    if (passed) c
+    else this
+  }
+}
+
+object CheckResult {
+  def apply(passed: Boolean, errStr: String): CheckResult =
+    if (passed) CheckOk()
+    else CheckFail(errStr)
+}
+
+case class CheckFail(errStr: String) extends CheckResult(false, errStr)
+case class CheckOk() extends CheckResult(true, null)
 
 trait AstNode {
   val children: List[AstNode]
-  val check: (Boolean, String) = (true, null)
+  val check: CheckResult = CheckOk()
   
   implicit def option2List[A](o: Option[A]) = o match {
     case Some(x) => x :: Nil
     case None => Nil
   }
   
-  def checkModifiers(modifiers: List[Modifier]) = 
-    (modifiers.distinct.length == modifiers.length, "duplicate modifier")
-
+  def mergeCheck(x: (Boolean, String), y: (Boolean, String)) = {
+    if (x._1) x
+    else y
+  }
+  
+  def checkDuplicateModifiers(modifiers: List[Modifier]) = 
+    CheckResult(modifiers.distinct.length == modifiers.length, "duplicate modifier")
 }
 trait VariableDeclaration
 
@@ -26,6 +47,7 @@ trait VariableDeclaration
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
+  def appendClassName(name:Name) = Name(path ::: name.path)
   val children = Nil
 }
 
@@ -46,6 +68,10 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
     for (typeDefinition <- typeDef) typeDefinition.display
   }
   val children = packageName ::: importDeclarations ::: typeDef
+  override val check = typeDef match {
+    case None => CheckOk()
+    case Some(x) => CheckResult(x.getName()+".java" == new File(fileName).getName(), "file name and class name don't match")
+  }
 }
 
 abstract class ImportDeclaration(name: Name) extends AstNode {
@@ -57,19 +83,25 @@ case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-sealed abstract class TypeDefinition(typeName: String) extends AstNode with NotNull {
+sealed abstract class TypeDefinition(typeName: String, modifiers: List[Modifier]) extends AstNode with NotNull {
+def getName():String = typeName
   def display: Unit
+  
+  def checkModifiers(modifiers: List[Modifier]) = 
+    CheckResult(!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+            , "class can't be abstract and final at the same time")
+  override val check = checkDuplicateModifiers(modifiers) ++ checkModifiers(modifiers)
 }
 
-case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlinked],
-  modifiers: List[Modifier], methods: List[MethodDeclaration]) extends TypeDefinition(interfaceName) {
+case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
+  modifiers: List[Modifier], methods: List[MethodDeclaration]) extends TypeDefinition(interfaceName, modifiers) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Interface declaration")
     Logger.debug("*" * 20)
     Logger.debug(s"Interface name: $interfaceName")
     Logger.debug(s"Number of parents: ${parents.size}")
-    for (RefTypeUnlinked(x) <- parents) Logger.debug(s"Interface extending: ${x.toString}")
+    for (x:RefType <- parents) Logger.debug(s"Interface extending: ${x.toString}")
     for (x <- modifiers) Logger.debug(s"Modifier: ${x.toString()}")
     Logger.debug(s"Number of methods: ${methods.size}")
     Logger.debug("*" * 20)
@@ -77,19 +109,18 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefTypeUnlin
     for (meth <- methods) meth.display
   }
   val children = parents ::: methods
-  override val check = checkModifiers(modifiers)
 }
 
-case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], interfaces: List[RefTypeUnlinked], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
+case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className, modifiers) {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Class declaration")
     Logger.debug("*" * 20)
     Logger.debug(s"Class name: $className")
     Logger.debug(s"Has parent: ${parent.isDefined}")
-    for (RefTypeUnlinked(x) <- parent) Logger.debug(s"Class extending: ${x.toString}")
+    for (x:RefType <- parent) Logger.debug(s"Class extending: ${x.toString}")
     Logger.debug(s"Number of implemented interfaces: ${interfaces.size}")
-    for (RefTypeUnlinked(x) <- interfaces) Logger.debug(s"Interface implemented: ${x.toString}")
+    for (x:RefType <- interfaces) Logger.debug(s"Interface implemented: ${x.toString}")
     for (x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of fields: ${fields.size}")
     Logger.debug(s"Number of constructors: ${constructors.size}")
@@ -101,7 +132,6 @@ case class ClassDefinition(className: String, parent: Option[RefTypeUnlinked], i
     for (method <- methods) method.display
   }
   val children = parent ::: interfaces ::: fields ::: constructors ::: methods
-  override val check = checkModifiers(modifiers)
 }
 
 
@@ -124,7 +154,15 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     //TODO something about the implementation
   }
   val children = returnType :: parameters ::: implementation
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers) ++
+                       CheckResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
+                                   "a static method cannot be final") ++
+                       CheckResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
+                                   "a native method must be static") ++
+                       CheckResult(!modifiers.contains(Modifier.abstractModifier) || (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier)),
+                                   "an abstract method cannot be static or final") ++
+                       CheckResult(implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
+                                   "method must have a body if and only if it is neither abstract nor native")
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
@@ -143,7 +181,8 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     //TODO something about the initializer
   }
   val children = fieldType :: initializer
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers) ++
+                       CheckResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
 }
 
 case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
@@ -160,7 +199,7 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Pa
     //TODO something fancy about the implementation
   }
   val children = implementation :: parameters 
-  override val check = checkModifiers(modifiers)
+  override val check = checkDuplicateModifiers(modifiers)
 }
 
 case class Parameter(paramType: Type, id:String) extends AstNode with VariableDeclaration {

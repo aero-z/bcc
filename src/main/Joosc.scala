@@ -15,15 +15,18 @@ import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import scanner.IdentifierToken
 import abstractSyntaxTree.ASTBuilder
+import abstractSyntaxTree.CheckResult
+import abstractSyntaxTree.CheckOk
+import abstractSyntaxTree.CheckFail
 
-class CompilerError(str: String) extends Exception(str)
+case class CompilerError(str: String) extends Exception(str)
 
 object Joosc {
 
     val errCodeSuccess = 0
     val errCodeParseErr = 42
     val errCodeIoErr = 1
-
+    
     def check(source: Source, name: String): Int = {
         val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
         try {
@@ -38,8 +41,8 @@ object Joosc {
             val ast = ASTBuilder.build(Parser.parse(tokens, dfa), name)
             ast.display
             Weeder.check(ast) match {
-              case (true, _) => errCodeSuccess
-              case (false, err) => Console.err.println(err); errCodeParseErr
+              case CheckOk() => errCodeSuccess
+              case CheckFail(err) => Console.err.println(err); errCodeParseErr
             }
         } catch {
             case e: CompilerError =>
