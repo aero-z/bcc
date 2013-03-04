@@ -82,7 +82,7 @@ object TypeLinking {
 		    case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
 			case BinaryOperation(first, operation, second) => BinaryOperation(linkExpression(first), operation, linkExpression(second))
 			case CastExpression(typeCast, target) => CastExpression(link(typeCast), linkExpression(target))
-			case ArrayAccess(array : Expression, index: Expression) => ArrayAccess(array : Expression, index: Expression)
+			case ArrayAccess(typeCast : Expression, target: Expression) => ArrayAccess(linkExpression(typeCast), linkExpression(target))
 			case ArrayCreation(typeName : Type, size: Expression) => ArrayCreation(link(typeName), linkExpression(size))
 			case Assignment(leftHandSide: Expression, rightHandSide: Expression) => Assignment(linkExpression(leftHandSide), linkExpression(rightHandSide))
 			case ClassCreation(constructor: RefType, parameters: List[Expression]) => ClassCreation(link(constructor), parameters.map(linkExpression(_)))

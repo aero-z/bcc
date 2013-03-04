@@ -53,7 +53,7 @@ E identifier
     dfa.delta(2, IdentifierToken("bar")) match {
       case ShiftAction(state) => assert(state === 1)
     }
-    dfa.delta(1, EndToken()) match {
+    dfa.delta(1, EndToken) match {
       case ReduceAction(rule) => rule match {
         case Rule(s, n) => assert(s === "E"); assert(n === 3)
       }

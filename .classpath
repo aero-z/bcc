@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry excluding="parser/Test.java|nameResolution/NameResolution.scala" kind="src" path="src"/>
-	<classpathentry excluding="parser/a1marmoset/|scanner/ScannerRegex.scala|javaCode/SimpleClass.java|javaCode/a1marmoset/" kind="src" path="test"/>
+	<classpathentry excluding="parser/a1marmoset/|scanner/ScannerRegex.scala|javaCode/SimpleClass.java|javaCode/
+	<classpathentry excluding="parser/a1marmoset/|scanner/ScannerRegex.scala|javaCode/SimpleClass.java|javaCode/
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/scalatest_2.10-1.9.1.jar"/>
+	<classpathentry kind="lib" path="lib/scalaz-core_2.10-6.0.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

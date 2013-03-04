@@ -4,7 +4,9 @@ abstract class Type extends AstNode{
     def typeName:String
 }
 
-abstract class PrimitiveType extends Type
+abstract class PrimitiveType extends Type {
+  val children = Nil
+}
 
 object PrimitiveType{
   def fromString(str: String): PrimitiveType = str match{
@@ -42,11 +44,13 @@ case object VoidType extends PrimitiveType{
 }
 
 case class ArrayType(elementType: Type) extends Type{
-    def typeName: String = elementType.typeName + "[]"
+  def typeName: String = elementType.typeName + "[]"
+  val children = elementType :: Nil
 }
 
 abstract class RefType(path:Name) extends Type {
     def typeName: String = path.toString
+    val children = Nil
 }
 
 case class RefTypeUnlinked(path: Name) extends RefType(path) {

@@ -7,45 +7,75 @@ import scanner.IntegerToken
 import scanner.OperatorToken
 import abstractSyntaxTree._
 
+import scala.reflect.runtime.universe._
 object Weeder {
+  def check(ast: AstNode): (Boolean, String) = {
+    ast.children.foldLeft(ast.check)((t, a) => {
+      if (t._1) check(a)
+      else t
+    })
+  }
 //--All characters in the input program must be in the range of 7-bit ASCII (0 to 127).
 //-> done in Scanner
-  def check(cu:CompilationUnit):Boolean = cu match {
+  def checkOld(cu:CompilationUnit):Boolean = cu match {
     case CompilationUnit(packageName, importDeclarations, typeDef, fileName) => {
       val (modifiers, methods) = typeDef match {
         case None => (Nil, Nil)
         case Some(ClassDefinition(_, _, _, modifiers, _, _, methods)) => (modifiers, methods)
         case Some(InterfaceDefinition(_, _, modifiers, methods)) => (modifiers, methods)
       }
+      
+      def e(s: String) = {
+        Console.err.println(s)
+        false
+      }
+      
       (
         // no duplicate class modifiers
-        modifiers.distinct.length == modifiers.length 
+        (modifiers.distinct.length == modifiers.length
+            || e("duplicate class modifiers"))
           && 
         // not abstract and final at the same time
-        !(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+        (!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+            || e("class can't be abstract and final at the same time"))
           &&
         // test each method:
         methods.forall(_ match {
           case MethodDeclaration(_, _, modifiers, _, implementation) =>
             (
             // a method has a body if and only if it is neither abstract nor native.
-            implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier))
+            ((implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)))
+                || e("method must have a body if and only if it is neither abstract nor native"))
               &&
             // a static method cannot be final.
-            modifiers.contains(Modifier.abstractModifier) == (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier))
+            (!(modifiers.contains(Modifier.staticModifier) && modifiers.contains(Modifier.finalModifier))
+                || e("a static method cannot be final"))
               &&
             // a native method must be static.
-            modifiers.contains(Modifier.nativeModifier) == !modifiers.contains(Modifier.staticModifier)
+            ((modifiers.contains(Modifier.nativeModifier) == modifiers.contains(Modifier.staticModifier))
+                || e("a native method must be static"))
             )
         })
       )
     }
+  }
+  
+  def checkMethod(md: MethodDeclaration): Boolean = {
+    true
+  }
+  
+  def recCheck(ast: AstNode): Boolean = {
+    (ast match {
+      case x: MethodDeclaration => checkMethod(x)
+      case _ => true
+    }) && ast.children.forall(recCheck)
   }
 //A class cannot be both abstract and final.
 //A method has a body if and only if it is neither abstract nor native.
 //An abstract method cannot be static or final.
 //A static method cannot be final.
 //A native method must be static.
+  
 //The type void may only be used as the return type of a method.
 //A formal parameter of a method must not have an initializer.
 //A class/interface must be declared in a .java file with the same base name as the class/interface.

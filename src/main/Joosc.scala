@@ -23,7 +23,7 @@ object Joosc {
     val errCodeSuccess = 0
     val errCodeParseErr = 42
     val errCodeIoErr = 1
-
+    
     def check(source: Source, name: String): Int = {
         val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
         try {
@@ -37,8 +37,10 @@ object Joosc {
             debug("=== Printing ast ===")
             val ast = ASTBuilder.build(Parser.parse(tokens, dfa), name)
             ast.display
-            if (Weeder.check(ast)) errCodeSuccess
-            else errCodeParseErr
+            Weeder.check(ast) match {
+              case (true, _) => errCodeSuccess
+              case (false, err) => Console.err.println(err); errCodeParseErr
+            }
         } catch {
             case e: CompilerError =>
                 Console.err.println("Syntax error while parsing: " + e.getMessage())

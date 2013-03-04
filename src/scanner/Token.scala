@@ -51,21 +51,21 @@ case class AssignmentToken() extends Token {
  */
 
 
-case class IntegerToken(intLit: String) extends Token with Expression {
+case class IntegerToken(intLit: String) extends Token {
     def typeStr = "integerLiteral"
     override def toString() = intLit
 }
 
-case class StringToken(str: String) extends Token with Expression{
+case class StringToken(str: String) extends Token {
     def typeStr = "stringLiteral"
     override def toString() = str
 }
 
-case class BooleanToken(bool: Boolean) extends Token with Expression{
+case class BooleanToken(bool: Boolean) extends Token {
     def typeStr = "booleanLiteral"
 }
 
-case class CharacterToken(string : String) extends Token with Expression{
+case class CharacterToken(string : String) extends Token {
     def typeStr = "characterLiteral"
     override def toString() = string
 }
@@ -74,11 +74,11 @@ case class OperatorToken(str: String) extends Token {
   def typeStr = str
 }
 
-case class NullToken() extends Token with Expression{
+case object NullToken extends Token {
     def typeStr = "null"
 }
 
-case class EndToken() extends Token {
+case object EndToken extends Token {
   val typeStr = "EOF"
 }
 

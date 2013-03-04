@@ -30,7 +30,14 @@ pollInterval := 1000
 
 defaultExcludes in Compile := "*.java"
 
+
+
 defaultExcludes in Test := "*.java"
+
+
+defaultExcludes in Compile ~= (_ || "NameResolution.scala")
+
+defaultExcludes in Test ~= (_ || "NameResolution.scala")
 
 // // set the main class for packaging the main jar
 // // 'run' will still auto-detect and prompt
@@ -45,6 +52,8 @@ mainClass in (Compile, run) := Some("main.Joosc")
 // watchSources <+= baseDirectory map { _ / "input" }
 
 scalacOptions += "-unchecked"
+
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 // // add a maven-style repository
 // resolvers += "name" at "url"
 

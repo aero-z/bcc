@@ -5,16 +5,29 @@ import abstractSyntaxTree.Operator._
 import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
+import scala.language.implicitConversions
 
-trait AstNode
-trait Declaration
+trait AstNode {
+  val children: List[AstNode]
+  val check: (Boolean, String) = (true, null)
+  
+  implicit def option2List[A](o: Option[A]) = o match {
+    case Some(x) => x :: Nil
+    case None => Nil
+  }
+  
+  def checkModifiers(modifiers: List[Modifier]) = 
+    (modifiers.distinct.length == modifiers.length, "duplicate modifier")
+
+}
+trait VariableDeclaration
 
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
   def appendClassName(name:Name) = Name(path ::: name.path)
-  
+  val children = Nil
 }
 
 //Main  of a file.
@@ -33,18 +46,20 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
     Logger.debug("")
     for (typeDefinition <- typeDef) typeDefinition.display
   }
+  val children = packageName ::: importDeclarations ::: typeDef
 }
 
 abstract class ImportDeclaration(name: Name) extends AstNode {
   def getName():Name = name
+  val children = Nil
 }
 
 case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
 
 //Either a class or an interface
-abstract class TypeDefinition(typeName: String) extends AstNode with Declaration {
-  def getName():String = typeName
+sealed abstract class TypeDefinition(typeName: String) extends AstNode with NotNull {
+def getName():String = typeName
   def display: Unit
 }
 
@@ -63,6 +78,8 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     Logger.debug("")
     for (meth <- methods) meth.display
   }
+  val children = parents ::: methods
+  override val check = checkModifiers(modifiers)
 }
 
 case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className) {
@@ -85,12 +102,14 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
     for (constructor <- constructors) constructor.display
     for (method <- methods) method.display
   }
+  val children = parent ::: interfaces ::: fields ::: constructors ::: methods
+  override val check = checkModifiers(modifiers)
 }
 
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[(Type, String)], implementation: Option[Block]) extends AstNode with Declaration {
+  parameters: List[Parameter], implementation: Option[Block]) extends AstNode with VariableDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -100,16 +119,18 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     Logger.debug(s"Number of modifiers: ${modifiers.size}")
     for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of parameters: ${parameters.size}")
-    for((x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
+    for(Parameter(x, y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
     Logger.debug(s"Is defined: ${implementation.isDefined}")
     Logger.debug("*" * 20)
     Logger.debug("")
     //TODO something about the implementation
   }
+  val children = returnType :: parameters ::: implementation
+  override val check = checkModifiers(modifiers)
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
-  initializer: Option[Expression]) extends AstNode with Declaration {
+  initializer: Option[Expression]) extends AstNode with VariableDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Field declaration")
@@ -123,9 +144,11 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
     Logger.debug("")
     //TODO something about the initializer
   }
+  val children = fieldType :: initializer
+  override val check = checkModifiers(modifiers)
 }
 
-case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(Type, String)], implementation: Block) extends AstNode with Declaration {
+case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
@@ -133,9 +156,15 @@ case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[(T
     Logger.debug(s"Number of modifiers: ${modifiers.size}")
     for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
     Logger.debug(s"Number of parameters: ${parameters.size}")
-    for((x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n            name: $y")
+    for(Parameter(x,y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n            name: $y")
     Logger.debug("*" * 20)
     Logger.debug("")
     //TODO something fancy about the implementation
   }
+  val children = implementation :: parameters 
+  override val check = checkModifiers(modifiers)
+}
+
+case class Parameter(paramType: Type, id:String) extends AstNode with VariableDeclaration {
+  val children = Nil
 }

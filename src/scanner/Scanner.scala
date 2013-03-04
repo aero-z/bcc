@@ -69,7 +69,7 @@ object Scanner {
     def unescape(str: String): String = {      
       @tailrec
       def unescapeRec(str: List[Char], acc : String): String = {
-        str match {
+        (str: @unchecked) match {
           case Nil =>  acc
           case '\\' :: 'b'  :: xs => unescapeRec(xs, acc + '\b')
           case '\\' :: 'n'  :: xs => unescapeRec(xs, acc + '\n')
@@ -116,7 +116,7 @@ object Scanner {
     list.map {
       _ match {
         case x if keywords contains x => KeywordToken(x)
-        case "null" => NullToken()
+        case "null" => NullToken
         case boolean(bool) => BooleanToken(bool.toBoolean)
         case assignment(eq) => AssignmentToken()
         case identifiers(id) => IdentifierToken(id)
@@ -130,6 +130,6 @@ object Scanner {
         case x if operators contains x => OperatorToken(x)
         case x => throw new CompilerError(s"Cannot categorize $x")
       }
-    } :+ EndToken()
+    } :+ EndToken
   }
 }

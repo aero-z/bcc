@@ -79,7 +79,7 @@ assignment identifier = expression
         ))
     val tokens = List(IdentifierToken("x"), AssignmentToken(), IntegerToken(5.toString ), ScopingToken(";"),
         IdentifierToken("y"), AssignmentToken(), IdentifierToken("x"), OperatorToken("+"), IntegerToken(2.toString), ScopingToken(";"),
-        EndToken())
+        EndToken)
     val parseTree = Parser.parse(tokens, dfa)
     Parser.printTree(parseTree)
     parseTree match {
