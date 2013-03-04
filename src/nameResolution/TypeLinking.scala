@@ -54,16 +54,16 @@ object TypeLinking {
 		    case cd:ClassDefinition => ClassDefinition(cd.className, cd.parent, cd.interfaces, cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_))) 
 		  }
 		  def linkMethod(md:MethodDeclaration):MethodDeclaration = {
-		    MethodDeclaration(md.methodName, link(md.returnType), md.modifiers, md.parameters.map{case (t, s) => (link(t), s)}, md.implementation: Option[Block]) 
-		    md
+		    MethodDeclaration(md.methodName, link(md.returnType), md.modifiers, md.parameters.map(linkParameter(_)), md.implementation: Option[Block]) 
 		  }
 		  def linkField(fd:FieldDeclaration):FieldDeclaration = {
 		    FieldDeclaration(fd.fieldName, link(fd.fieldType), fd.modifiers, fd.initializer.map(linkExpression(_)))
-		    fd
 		  }
 		  def linkConstructor(cd:ConstructorDeclaration):ConstructorDeclaration = {
-		    ConstructorDeclaration(cd.modifiers, cd.parameters.map{ case (t,s) => (link(t), s)}, linkBlock(cd.implementation)) 
-		    cd
+		    ConstructorDeclaration(cd.modifiers, cd.parameters.map(linkParameter(_)), linkBlock(cd.implementation)) 
+		  }
+		  def linkParameter(parameter:Parameter):Parameter = {
+		    Parameter(link(parameter.paramType), parameter.id)
 		  }
 		  def linkBlock(block:Block):Block = { //separate linkBlock required for Constructor an other stuff
 		    Block(block.statements.map(linkStatement(_)))
@@ -74,7 +74,7 @@ object TypeLinking {
 		    case ForStatement(init, condition, incrementation, loop) => ForStatement(init.map(linkStatement(_)), condition.map(linkExpression(_)), incrementation.map(linkExpression(_)), linkStatement(loop))
 		    case IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) => IfStatement(linkExpression(condition), linkStatement(ifStatement), elseStatement.map(linkStatement(_)))
 		    case ReturnStatement(returnExpression) => ReturnStatement(returnExpression.map(linkExpression(_)))
-		    case VariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) => VariableDeclaration(link(typeName), identifier, initializer.map(linkExpression(_)))
+		    case LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) => LocalVariableDeclaration(link(typeName), identifier, initializer.map(linkExpression(_)))
 		    case WhileStatement(condition: Expression, loop: Statement) => WhileStatement(linkExpression(condition), linkStatement(loop))
 		    case _ => s //any other case!
 		  }
@@ -86,7 +86,7 @@ object TypeLinking {
 			case ArrayCreation(typeName : Type, size: Expression) => ArrayCreation(link(typeName), linkExpression(size))
 			case Assignment(leftHandSide: Expression, rightHandSide: Expression) => Assignment(linkExpression(leftHandSide), linkExpression(rightHandSide))
 			case ClassCreation(constructor: RefType, parameters: List[Expression]) => ClassCreation(link(constructor), parameters.map(linkExpression(_)))
-			case FieldAccess(accessed : Option[Expression], field: String) => FieldAccess(accessed.map(linkExpression(_)), field)
+			case FieldAccess(accessed : Expression, field: String) => FieldAccess(linkExpression(accessed), field)
 			case MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) => MethodInvocation(accessed.map(linkExpression(_)), method, arguments.map(linkExpression(_)))
 			case InstanceOfCall(exp: Expression, typeChecked: Type) => InstanceOfCall(linkExpression(exp), link(typeChecked))
 			case _ => e //return expression by default
