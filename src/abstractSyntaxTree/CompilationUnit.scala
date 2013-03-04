@@ -26,7 +26,7 @@ case class CheckOk() extends CheckResult(true, null)
 
 trait AstNode {
   val children: List[AstNode]
-  val check: CheckResult = CheckOk()
+  def check: CheckResult = CheckOk()
   
   implicit def option2List[A](o: Option[A]) = o match {
     case Some(x) => x :: Nil
@@ -40,6 +40,9 @@ trait AstNode {
   
   def checkDuplicateModifiers(modifiers: List[Modifier]) = 
     CheckResult(modifiers.distinct.length == modifiers.length, "duplicate modifier")
+  
+  def checkPublicProtectedModifier(modifiers: List[Modifier]) = 
+    CheckResult(modifiers.contains(Modifier.publicModifier) || modifiers.contains(Modifier.protectedModifier), "public/protected modifier missing")
 }
 trait VariableDeclaration
 
@@ -87,10 +90,10 @@ sealed abstract class TypeDefinition(typeName: String, modifiers: List[Modifier]
 def getName():String = typeName
   def display: Unit
   
-  def checkModifiers(modifiers: List[Modifier]) = 
-    CheckResult(!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
-            , "class can't be abstract and final at the same time")
-  override val check = checkDuplicateModifiers(modifiers) ++ checkModifiers(modifiers)
+  override def check = checkDuplicateModifiers(modifiers) ++
+                       CheckResult(!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier))
+            , "class can't be abstract and final at the same time") ++
+                       CheckResult(modifiers.contains(Modifier.publicModifier), "type definition must be private")
 }
 
 case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
@@ -109,6 +112,11 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     for (meth <- methods) meth.display
   }
   val children = parents ::: methods
+  override val check = super.check ++ methods.foldLeft(CheckOk(): CheckResult)((cr, m) => m match {
+             case MethodDeclaration(_,_,_,_,Some(x)) => CheckFail("an interface method cannot have a body")
+             case MethodDeclaration(_,_,modifiers,_,_) => CheckResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
+             case _ => CheckOk()
+           })
 }
 
 case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className, modifiers) {
@@ -155,6 +163,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
   }
   val children = returnType :: parameters ::: implementation
   override val check = checkDuplicateModifiers(modifiers) ++
+                       checkPublicProtectedModifier(modifiers) ++
                        CheckResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
                                    "a static method cannot be final") ++
                        CheckResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
@@ -182,6 +191,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
   }
   val children = fieldType :: initializer
   override val check = checkDuplicateModifiers(modifiers) ++
+                       checkPublicProtectedModifier(modifiers) ++
                        CheckResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
 }
 
