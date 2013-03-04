@@ -10,7 +10,7 @@ import ast._
 
 object Weeder {
   def check(ast: AstNode): CheckResult = {
-    ast.children.foldLeft(ast.check)((cr, a) => {
+    ast.children.foldLeft(ast.isValid)((cr, a) => {
       cr ++ check(a)
     })
   }
