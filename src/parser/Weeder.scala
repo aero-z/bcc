@@ -7,7 +7,7 @@ import scanner.IntegerToken
 import scanner.OperatorToken
 import abstractSyntaxTree._
 
-import scala.reflect.runtime.universe._
+
 object Weeder {
   def check(ast: AstNode): (Boolean, String) = {
     ast.children.foldLeft(ast.check)((t, a) => {

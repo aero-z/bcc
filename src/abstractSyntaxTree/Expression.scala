@@ -26,8 +26,8 @@ case class Assignment(leftHandSide: Expression, rightHandSide: Expression) exten
 case class FieldAccess(accessed : Expression, field: String) extends Expression {
   val children = accessed :: Nil
 }
-case class ClassCreation(constructor: RefTypeUnlinked, parameters: List[Expression]) extends Expression {
-  val children = constructor :: parameters
+case class ClassCreation(constructor: RefTypeUnlinked, arguments: List[Expression]) extends Expression {
+  val children = constructor :: arguments
 }
 case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression {
   val children = accessed ::: arguments

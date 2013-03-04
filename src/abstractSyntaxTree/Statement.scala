@@ -1,6 +1,6 @@
 package abstractSyntaxTree
 
-abstract class Statement extends AstNode
+sealed abstract class Statement extends AstNode
 
 case class Block (statements : List[Statement]) extends Statement {
   val children = statements
