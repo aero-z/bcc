@@ -4,6 +4,7 @@ import scala.io.Source
 import org.scalatest.FunSuite
 import scanner._
 import parser._
+import ast.AstBuilder
 
 class Newtest extends FunSuite{
   // NOTE: this test is meant for playing around and testing manually
@@ -24,10 +25,10 @@ class Newtest extends FunSuite{
 	val parseTree = Parser.parse(tokens, dfa)
 	println("BUILDING PARSETREE DONE")
 	Parser.printTree(parseTree)
-	val ast = Ast.createAst(parseTree)
+	val ast = AstBuilder.build(parseTree, "Foo.java")
 	println("BUILDING PARSETREE DONE")
-	Parser.printTree(ast)
-	println("Weeder result: "+Weeder.astcheck(ast))
+	//Parser.printTree(ast)
+	println("Weeder result: "+Weeder.check(ast))
 	println("WEEDER CHECK DONE")
   }
 }

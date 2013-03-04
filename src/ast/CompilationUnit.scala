@@ -1,7 +1,7 @@
-package abstractSyntaxTree
+package ast
 
-import abstractSyntaxTree.Modifier._
-import abstractSyntaxTree.Operator._
+import ast.Modifier._
+import ast.Operator._
 import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger

@@ -1,6 +1,6 @@
-package abstractSyntaxTree
+package ast
 
-import abstractSyntaxTree.Operator._
+import ast.Operator._
 import scanner.IntegerToken
 
 //Every possible expression

@@ -1,4 +1,4 @@
-package abstractSyntaxTree
+package ast
 
 object Modifier extends Enumeration {
   type Modifier = Value

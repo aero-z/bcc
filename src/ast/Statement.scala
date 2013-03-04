@@ -1,4 +1,4 @@
-package abstractSyntaxTree
+package ast
 
 sealed abstract class Statement extends AstNode
 

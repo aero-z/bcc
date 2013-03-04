@@ -1,12 +1,12 @@
-package abstractSyntaxTree
+package ast
 
 import parser._
 import scanner._
-import abstractSyntaxTree.Modifier._
+import ast.Modifier._
 import scala.annotation.tailrec
 import main.CompilerError
 
-object ASTBuilder {
+object AstBuilder {
   // Start the extraction of the parse tree.
   def build(parseTree: ParserSymbol, fileName: String): CompilationUnit = parseTree match {
     case NonTerminalSymbol("CompilationUnit", List(pack, imp, typeDef)) => CompilationUnit(extractPackage(pack),

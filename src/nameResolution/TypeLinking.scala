@@ -1,6 +1,6 @@
 package nameResolution
 
-import abstractSyntaxTree._
+import ast._
 
 class EnvironmentException(message:String) extends Exception
 

@@ -1,4 +1,4 @@
-package abstractSyntaxTree
+package ast
 
 object Operator extends Enumeration {
     type Operator = Value

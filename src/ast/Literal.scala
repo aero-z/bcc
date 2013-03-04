@@ -1,4 +1,4 @@
-package abstractSyntaxTree
+package ast
 
 import scanner.IntegerToken
 import scanner.StringToken

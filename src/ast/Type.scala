@@ -1,4 +1,4 @@
-package abstractSyntaxTree
+package ast
 
 abstract class Type extends AstNode{
     def typeName:String
