@@ -6,5 +6,4 @@ public class Test {
 	char y = obj.x;
 	return (int)y;
     }
-    public function
 }
