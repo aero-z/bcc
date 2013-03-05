@@ -55,7 +55,6 @@ object Joosc {
       }).toList
     val ret = check(files)
     
-    println("FINISHED")
     System.exit(ret)
   }
 
