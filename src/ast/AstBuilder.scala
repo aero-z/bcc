@@ -49,7 +49,7 @@ object AstBuilder {
     def recExtractName(name: ParserSymbol, acc: List[String]): List[String] = name match {
       case NonTerminalSymbol("Name", List(next)) => recExtractName(next, acc)
       case NonTerminalSymbol("QualifiedName", List(next, _, IdentifierToken(id))) => recExtractName(next, id :: acc)
-      case NonTerminalSymbol("SimpleName", List(IdentifierToken(id))) => (id :: acc).reverse
+      case NonTerminalSymbol("SimpleName", List(IdentifierToken(id))) => id :: acc //don't .reverse!
     }
     
 

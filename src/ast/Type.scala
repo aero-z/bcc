@@ -52,6 +52,12 @@ abstract class RefType(path:Name) extends Type {
 case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
-case class RefTypeLinked(path:Name, decl:TypeDefinition) extends RefType(path) {
-  
+class RefTypeLinked(val path: Name, typeDef: =>TypeDefinition) extends RefType(path) {
+  lazy val decl = typeDef
+}
+
+
+object RefTypeLinked{
+  def apply(path: Name, typeDef: => TypeDefinition) = new RefTypeLinked(path, typeDef)
+  def unapply(refType: RefTypeLinked) = Some((refType.path, refType.decl))
 }

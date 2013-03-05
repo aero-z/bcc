@@ -62,15 +62,29 @@ object VarResolver{
     case MethodInvocation(acc, meth, args) => MethodInvocation(acc.map(linkExpression(_, env)), meth, args.map(linkExpression(_, env)))
     case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
     case This => This
-    case variable : VariableAccess => linkVariable(variable, env)
+    case VariableAccess(name) => linkVariable(name, env)
   }
 
   def update(stmt: Statement, env: Environment) : Environment = stmt match {
-    case decl: LocalVariableDeclaration => if(env._1 contains decl.identifier) throw new Exception("Variable Name resolution exception") else (env._1 + (decl.identifier -> decl), env._2)
+    case decl: LocalVariableDeclaration => if(env._1 contains decl.identifier) throw new Exception(s"Name resolution exception: ${decl.identifier} is already define") else (env._1 + (decl.identifier -> decl), env._2)
     case _ => env
   }
 
-  def linkVariable( variable : VariableAccess, env : Environment): LinkedVariableOrField = LinkedVariableOrField(variable.str, null)
+  def linkVariable(varName : String, env : Environment): LinkedVariableOrField ={
+    def checkClassFields(varName: String, classDef: ClassDefinition): LinkedVariableOrField ={
+      val field = classDef.fields.find(_.fieldName == varName)
+
+      field match{
+        case Some(varDecl) => LinkedVariableOrField(varName, varDecl)
+        case None => classDef.parent match {
+          case Some(RefTypeLinked(_, parent @ ClassDefinition(_, _, _, _, _, _, _))) => checkClassFields(varName, parent)
+          case _ => throw new Exception(s"Name resolution exception: $varName does not exists")
+        }
+      }
+    }
+
+    env._1.get(varName).map(LinkedVariableOrField(varName, _))getOrElse(checkClassFields(varName, env._2))
+  }
 
 
 
