@@ -4,34 +4,36 @@ import scala.language.implicitConversions
 import main.CompilerError
 import ast.Modifier._
 
-sealed abstract class CheckResult(passed: Boolean, errStr: String) {
-  def ++(c: CheckResult) = {
+/**
+ * return value of weeding check
+ */
+sealed abstract class WeedResult(passed: Boolean, errStr: String) {
+  /**
+   * merge two results to one result (only success if both are successful)
+   */
+  def ++(c: WeedResult) = {
     if (passed) c
-    else this
+    else WeedResult.this
   }
 }
 
-object CheckResult {
-  def apply(passed: Boolean, errStr: String): CheckResult =
+case class CheckFail(errStr: String) extends WeedResult(false, errStr)
+case class CheckOk() extends WeedResult(true, null)
+
+/**
+ * Helper object to create WeedResult instances
+ */
+object WeedResult {
+  def apply(passed: Boolean, errStr: String): WeedResult =
     if (passed) CheckOk()
     else CheckFail(errStr)
 }
 
-case class CheckFail(errStr: String) extends CheckResult(false, errStr)
-case class CheckOk() extends CheckResult(true, null)
-
+/**
+ * Every node in the AST implements this trait
+ */
 trait AstNode {
-  lazy val weedResult: CheckResult = CheckOk()
-  
-  implicit def option2List[A](o: Option[A]) = o match {
-    case Some(x) => x :: Nil
-    case None => Nil
-  }
-  
-  def mergeCheck(x: (Boolean, String), y: (Boolean, String)) = {
-    if (x._1) x
-    else y
-  }
+  lazy val weedResult: WeedResult = CheckOk()
       
   {
     weedResult match {

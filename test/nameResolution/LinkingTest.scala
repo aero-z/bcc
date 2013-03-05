@@ -26,7 +26,7 @@ class A extends B{
 """)
   )
   def printAddress(cu:CompilationUnit) =
-    println("XXXXX "+cu.fileName+": "+cu.typeDef.get.hashCode)
+    println("XXXXX "+cu.typeName+": "+cu.typeDef.get.hashCode)
   def createCU(string:String, name:String):CompilationUnit = {
     //println("BEGIN TEST")
     val tokens = Scanner.scan(string)

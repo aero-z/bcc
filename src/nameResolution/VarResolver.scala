@@ -1,9 +1,6 @@
 
 import ast._
 
-import scalaz._
-import Scalaz._
-
 object VarResolver{
 
   type Environment = (Map[String, VariableDeclaration], ClassDefinition)

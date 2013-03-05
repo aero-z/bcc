@@ -5,12 +5,18 @@ import scanner._
 import ast.Modifier._
 import scala.annotation.tailrec
 import main.CompilerError
+import java.io.File
+import main.CompilerError
 
 object AstBuilder {
   // Start the extraction of the parse tree.
-  def build(parseTree: ParserSymbol, fileName: String): CompilationUnit = parseTree match {
-    case NonTerminalSymbol("CompilationUnit", List(pack, imp, typeDef)) => CompilationUnit(extractPackage(pack),
-      extractImports(imp), extractTypeDefinition(typeDef), fileName)
+  def build(parseTree: ParserSymbol, filePath: String): CompilationUnit = parseTree match {
+    case NonTerminalSymbol("CompilationUnit", List(pack, imp, typeDef)) =>
+      val fileName = (new File(filePath)).getName()
+      val dotIndex = fileName.lastIndexOf('.');
+      if (dotIndex < 0) throw CompilerError("file name must end with .java")
+      val typeName = fileName.substring(0,dotIndex);
+      CompilationUnit(extractPackage(pack), extractImports(imp), extractTypeDefinition(typeDef), typeName)
     case _ => throw new ASTBuildingException("That is not a compilation unit")
   }
 

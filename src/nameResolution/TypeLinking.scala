@@ -47,13 +47,13 @@ object TypeLinking {
     def importSelf(map:Map[Name, () => TypeDefinition]):Map[Name, () => TypeDefinition] = cu.packageName match {
       case Some(pkgname) =>
         println("IMPORT SELF: SOME")
-        val selfMap = map + (Name(cu.fileName::Nil) -> (() => cu.typeDef.get))
-        val fullName = Name(pkgname.path ::: List(cu.fileName))
+        val selfMap = map + (Name(cu.typeName::Nil) -> (() => cu.typeDef.get))
+        val fullName = Name(pkgname.path ::: List(cu.typeName))
         checkPrefix(fullName, selfMap)
-        map+(Name(cu.fileName::Nil)->(() =>cu.typeDef.get))+(fullName ->(() => cu.typeDef.get))
+        map+(Name(cu.typeName::Nil)->(() =>cu.typeDef.get))+(fullName ->(() => cu.typeDef.get))
       case None =>
         println("IMPORT SELF: NONE")
-        map + (Name(cu.fileName::Nil) -> (() =>cu.typeDef.get))
+        map + (Name(cu.typeName::Nil) -> (() =>cu.typeDef.get))
     }
     def importClass(name:Name, map:Map[Name, () => TypeDefinition]):Map[Name, () => TypeDefinition] = {
       println("IMPORT CLASS")
@@ -144,7 +144,7 @@ object TypeLinking {
 	  println("LINK AST:")
 	    def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 		  println("LINK COMPILATIONUNIT:")
-		    CompilationUnit(cu.packageName, cu.importDeclarations, cu.typeDef.map(linkTypeDefinition(_)).map(_()), cu.fileName)
+		    CompilationUnit(cu.packageName, cu.importDeclarations, cu.typeDef.map(linkTypeDefinition(_)).map(_()), cu.typeName)
 		  }
 		  def linkTypeDefinition(td:TypeDefinition):() => TypeDefinition = td match {
 		    case id:InterfaceDefinition =>println("LINK INTERFACE:"); () => InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
@@ -206,7 +206,7 @@ object TypeLinking {
 		      //println("name resolution: "+u.typeName+" -> "+typ.get.getName)
 		      //println("XXBEFOREXXX "+cu.fileName+": "+u.hashCode)
 		      val niew = RefTypeLinked(u.path, typ.get()).asInstanceOf[A] //TODO: resolve name and create new node!
-		      println("XXAFTERXXX "+cu.fileName+": "+niew.hashCode)
+		      println("XXAFTERXXX "+cu.typeName+": "+niew.hashCode)
 		      niew
 		    case l:RefTypeLinked =>
 		      println("already linked! Why are you traversing twice?)");

@@ -8,7 +8,7 @@ class MarmosetTest extends FunSuite{
   test("Test all the java"){
     val marmDir = new File("test/javaCode/a1marmoset")
     val failure = marmDir.listFiles.sortBy(_.getName()).filter( x =>
-      if(x.getName.startsWith("Je")==(42==Joosc.check(Source.fromFile(x), x.getPath))){
+      if(x.getName.startsWith("Je")==(42==Joosc.check(Source.fromFile(x) :: Nil))){
         println(s"File: ${x.getName} PASSED")
         false
       } else{
