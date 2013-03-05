@@ -5,7 +5,6 @@ import java.io.File
 import scanner.Scanner
 import parser.Parser
 import parser.Dfa
-import parser.Weeder
 import java.io.IOException
 import main.Logger.debug
 import parser.ParserSymbol
@@ -73,10 +72,6 @@ object Joosc {
             debug("=== Printing ast ===")
             val ast = AstBuilder.build(Parser.parse(tokens, dfa), name)
             ast.display
-            Weeder.check(ast) match {
-              case CheckOk() => errCodeSuccess
-              case CheckFail(err) => Console.err.println(err); errCodeParseErr
-            }
             errCodeSuccess
         } catch {
             case e: CompilerError =>

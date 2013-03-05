@@ -16,7 +16,7 @@ class MainTest extends FunSuite {
   test("simple code") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public Foo() {
    char c = 'c';
    println("hello");
@@ -29,7 +29,7 @@ class MainTest extends FunSuite {
   test("invalid escape seq") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public void foo() {
    println("he\llo");
   }
@@ -41,7 +41,7 @@ class MainTest extends FunSuite {
   test("invalid char literal") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public void foo() {
     char c = 'haa';
   }
@@ -53,7 +53,7 @@ class MainTest extends FunSuite {
   test("escape seq in string") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public void foo() {
    println("he\"l\nlo");
   }
@@ -64,7 +64,7 @@ class MainTest extends FunSuite {
   test("invalid ascii char") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public Foo() {
    println("hel""" + 200.toChar + """lo");
   }
@@ -93,7 +93,7 @@ public class Test {
     }
 }
 """)
-    val ret = Joosc.check(code, "Foo.java")
+    val ret = Joosc.check(code, "Test.java")
     assert(ret === Joosc.errCodeSuccess)
   }
 }

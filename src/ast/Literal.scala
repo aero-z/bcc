@@ -4,9 +4,7 @@ import scanner.IntegerToken
 import scanner.StringToken
 import scanner.CharacterToken
 
-abstract class Literal extends Expression {
-  val children = Nil
-}
+abstract class Literal extends Expression
 
 case class NumberLiteral(int: Int) extends Literal
 case object NullLiteral extends Literal
