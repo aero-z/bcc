@@ -10,10 +10,10 @@ import java.io.File
 private object Weed {
   
   def checkDuplicateModifiers(modifiers: List[Modifier]) = 
-    CheckResult(modifiers.distinct.length == modifiers.length, "duplicate modifier")
+    WeedResult(modifiers.distinct.length == modifiers.length, "duplicate modifier")
   
   def checkPublicProtectedModifier(modifiers: List[Modifier]) = 
-    CheckResult(modifiers.contains(Modifier.publicModifier) || modifiers.contains(Modifier.protectedModifier), "public/protected modifier missing")
+    WeedResult(modifiers.contains(Modifier.publicModifier) || modifiers.contains(Modifier.protectedModifier), "public/protected modifier missing")
 
 }
 trait VariableDeclaration
@@ -26,12 +26,12 @@ case class Name(path: List[String]) extends Expression {
 }
 
 //Main  of a file.
-case class CompilationUnit(packageName: Option[Name], importDeclarations: List[ImportDeclaration], typeDef: Option[TypeDefinition], fileName: String) extends AstNode {
+case class CompilationUnit(packageName: Option[Name], importDeclarations: List[ImportDeclaration], typeDef: Option[TypeDefinition], typeName: String) extends AstNode {
   def display(): Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Compilation Unit")
     Logger.debug("*" * 20)
-    Logger.debug(s"File Name: $fileName")
+    Logger.debug(s"File Name: $typeName")
     Logger.debug(s"Package defined: ${packageName.isDefined}")
     for (x <- packageName) Logger.debug(s"Package name: ${packageName.toString}")
     Logger.debug(s"Number of import: ${importDeclarations.size}")
@@ -43,7 +43,7 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
   }
   override lazy val weedResult = typeDef match {
     case None => CheckOk()
-    case Some(x) => CheckResult(x.getName()+".java" == (new File(fileName)).getName(), "file name and class name don't match")
+    case Some(x) => WeedResult(x.getName() == typeName, "file name and class name don't match")
   }
 }
 
@@ -64,9 +64,9 @@ sealed abstract class TypeDefinition(typeName: String, modifiers: List[Modifier]
   def display: Unit
   
   def weedResult_ = Weed.checkDuplicateModifiers(modifiers) ++
-                    CheckResult(!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier)),
+                    WeedResult(!(modifiers.contains(Modifier.abstractModifier) && modifiers.contains(Modifier.finalModifier)),
                            "class can't be abstract and final at the same time") ++
-                    CheckResult(modifiers.contains(Modifier.publicModifier), "type definition must be public")
+                    WeedResult(modifiers.contains(Modifier.publicModifier), "type definition must be public")
   override lazy val weedResult = weedResult_
 }
 
@@ -85,9 +85,9 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     Logger.debug("")
     for (meth <- methods) meth.display
   }
-  override lazy val weedResult = super.weedResult_ ++ methods.foldLeft(CheckOk(): CheckResult)((cr, m) => m match {
+  override lazy val weedResult = super.weedResult_ ++ methods.foldLeft(CheckOk(): WeedResult)((cr, m) => m match {
              case MethodDeclaration(_,_,_,_,Some(x)) => CheckFail("an interface method cannot have a body")
-             case MethodDeclaration(_,_,modifiers,_,_) => CheckResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
+             case MethodDeclaration(_,_,modifiers,_,_) => WeedResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
              case _ => CheckOk()
            })
 }
@@ -135,13 +135,13 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
   }
   override lazy val weedResult = Weed.checkDuplicateModifiers(modifiers) ++
                             Weed.checkPublicProtectedModifier(modifiers) ++
-                            CheckResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
+                            WeedResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
                                         "a static method cannot be final") ++
-                            CheckResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
+                            WeedResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
                                         "a native method must be static") ++
-                            CheckResult(!modifiers.contains(Modifier.abstractModifier) || (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier)),
+                            WeedResult(!modifiers.contains(Modifier.abstractModifier) || (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier)),
                                         "an abstract method cannot be static or final") ++
-                            CheckResult(implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
+                            WeedResult(implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
                                         "method must have a body if and only if it is neither abstract nor native")
 }
 
@@ -162,7 +162,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
   }
   override lazy val weedResult = Weed.checkDuplicateModifiers(modifiers) ++
                             Weed.checkPublicProtectedModifier(modifiers) ++
-                            CheckResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
+                            WeedResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
 }
 
 case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
