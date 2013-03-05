@@ -147,8 +147,8 @@ object TypeLinking {
 		    CompilationUnit(cu.packageName, cu.importDeclarations, cu.typeDef.map(linkTypeDefinition(_)).map(_()), cu.fileName)
 		  }
 		  def linkTypeDefinition(td:TypeDefinition):() => TypeDefinition = td match {
-		    case id:InterfaceDefinition =>println("LINK INTERFACE:"); () => InterfaceDefinition(id.interfaceName, id.parents, id.modifiers, id.methods.map(linkMethod(_)))
-		    case cd:ClassDefinition =>println("LINK CLASS:"); () => ClassDefinition(cd.className, cd.parent, cd.interfaces, cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_))) 
+		    case id:InterfaceDefinition =>println("LINK INTERFACE:"); () => InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
+		    case cd:ClassDefinition =>println("LINK CLASS:"); () => ClassDefinition(cd.className, cd.parent.map(link(_)), cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_))) 
 		  }
 		  def linkMethod(md:MethodDeclaration):MethodDeclaration = {
 		    println("LINK METHOD:")
