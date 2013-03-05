@@ -17,7 +17,7 @@ object TypeLinking {
     val names = cus.map(x => x.typeDef.get.getName)
     if (names.length != names.distinct.length)
       throw new EnvironmentException("two typedefinition given as arguments for joosc have the same name!");
-    val possible = cus.filter(_.typeDef.isDefined).map(x => (x.packageName, x.fileName))
+    val possible = cus.filter(_.typeDef.isDefined).map(x => (x.packageName, x.typeName))
     possible.foreach(x => println(x._1+"-"+x._2))
     possible
   }
@@ -31,8 +31,8 @@ object TypeLinking {
     }
     def importSelf(map:NameMap):NameMap = {
 	    println("IMPORT SELF")
-	    val fullName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.fileName)
-	    map + (Name(cu.fileName::Nil) -> (cu.packageName, cu.fileName)) + (fullName -> (cu.packageName, cu.fileName)) //might overwrite the old one
+	    val fullName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName)
+	    map + (Name(cu.typeName::Nil) -> (cu.packageName, cu.typeName)) + (fullName -> (cu.packageName, cu.typeName)) //might overwrite the old one
     }
     def importClass(fullname:Name, map:NameMap):NameMap = {
       println("IMPORT CLASS")
@@ -86,7 +86,7 @@ object TypeLinking {
 	  println("LINK AST:")
 	    def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 		  println("LINK COMPILATIONUNIT:")
-		    CompilationUnit(cu.packageName, cu.importDeclarations, cu.typeDef.map(linkTypeDefinition(_)), cu.fileName)
+		    CompilationUnit(cu.packageName, cu.importDeclarations, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
 		  }
 		  def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 		    case id:InterfaceDefinition =>println("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))

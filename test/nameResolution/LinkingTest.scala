@@ -9,7 +9,7 @@ import ast._
 class Linking extends FunSuite {
   val classes = List(
     ("C1.java","""
-package p;
+package pk1;
 
 import pk2.C2;
 
@@ -22,7 +22,7 @@ public class C1 extends C2 {
 }
 """),
     ("C2.java", """
-package p;
+package pk2;
 
 import pk1.C1;
     
@@ -32,7 +32,7 @@ public class C2 extends C1 {
 """)
   )
   def printAddress(cu:CompilationUnit) =
-    println("XXXXX "+cu.fileName+": "+cu.typeDef.get.hashCode)
+    println("XXXXX "+cu.typeName+": "+cu.typeDef.get.hashCode)
   def createCU(string:String, name:String):CompilationUnit = {
     //println("BEGIN TEST")
     val tokens = Scanner.scan(string)
@@ -66,6 +66,3 @@ public class C2 extends C1 {
     } catch {case e:Exception => println("The exception: "+e.toString()+" "+e.getMessage())}
   }
 }
-
-
-

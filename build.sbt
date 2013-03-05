@@ -51,7 +51,7 @@ mainClass in (Compile, run) := Some("main.Joosc")
 // // add <base>/input to the files that '~' triggers on
 // watchSources <+= baseDirectory map { _ / "input" }
 
-scalacOptions += "-unchecked"
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 // // add a maven-style repository
