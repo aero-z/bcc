@@ -27,8 +27,5 @@ class Newtest extends FunSuite{
 	Parser.printTree(parseTree)
 	val ast = AstBuilder.build(parseTree, "Foo.java")
 	println("BUILDING PARSETREE DONE")
-	//Parser.printTree(ast)
-	println("Weeder result: "+Weeder.check(ast))
-	println("WEEDER CHECK DONE")
   }
 }

@@ -8,71 +8,72 @@ class MainTest extends FunSuite {
     val code = Source.fromString(
 """
   [ } this is shit
-""")
-    val ret = Joosc.check(code, "Foo.java")
+""").withDescription("Foo.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
   test("simple code") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public Foo() {
    char c = 'c';
    println("hello");
   }
- }""")
-    val ret = Joosc.check(code, "Foo.java")
+ }""").withDescription("Foo.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeSuccess)
   }
   
   test("invalid escape seq") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public void foo() {
    println("he\llo");
   }
- }""")
-    val ret = Joosc.check(code, "Foo.java")
+ }""").withDescription("Foo.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
   test("invalid char literal") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public void foo() {
     char c = 'haa';
   }
- }""")
-    val ret = Joosc.check(code, "Foo.java")
+ }""").withDescription("Foo.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
   test("escape seq in string") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public void foo() {
    println("he\"l\nlo");
   }
- }""")
-    val ret = Joosc.check(code, "Foo.java")
+ }""").withDescription("Foo.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeSuccess)
   }
   test("invalid ascii char") {
     val code = Source.fromString(
 """
- class Foo {
+ public class Foo {
   public Foo() {
    println("hel""" + 200.toChar + """lo");
   }
- }""")
-    val ret = Joosc.check(code, "Foo.java")
+ }""").withDescription("Foo.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
+  /*
   test("fancy test") {
     val code = Source.fromString(
 """
@@ -92,8 +93,8 @@ public class Test {
 		}
     }
 }
-""")
-    val ret = Joosc.check(code, "Foo.java")
+""").withDescription("Test.java")
+    val ret = Joosc.check(code :: Nil)
     assert(ret === Joosc.errCodeSuccess)
-  }
+  }*/
 }

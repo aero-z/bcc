@@ -4,9 +4,7 @@ abstract class Type extends AstNode{
     def typeName:String
 }
 
-abstract class PrimitiveType extends Type {
-  val children = Nil
-}
+abstract class PrimitiveType extends Type
 
 object PrimitiveType{
   def fromString(str: String): PrimitiveType = str match{
@@ -45,23 +43,14 @@ case object VoidType extends PrimitiveType{
 
 case class ArrayType(elementType: Type) extends Type{
   def typeName: String = elementType.typeName + "[]"
-  val children = elementType :: Nil
 }
 
 abstract class RefType(path:Name) extends Type {
     def typeName: String = path.toString
-    val children = Nil
 }
 
 case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
-class RefTypeLinked(val path: Name, typeDef: =>TypeDefinition) extends RefType(path) {
-  lazy val decl = typeDef
-}
-
-
-object RefTypeLinked{
-  def apply(path: Name, typeDef: => TypeDefinition) = new RefTypeLinked(path, typeDef)
-  def unapply(refType: RefTypeLinked) = Some((refType.path, refType.decl))
+case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) {
 }

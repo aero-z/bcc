@@ -3,8 +3,6 @@ package nameResolution
 
 import ast._
 
-
-
 object VarResolver{
   //( Map from name to new name, what to add to the new name, current class, previous cus)
   case class Environment(symbolMap: Map[String, PathToDeclaration], currentPosition: PathToVariable, previousCUS: List[CompilationUnit],pck: Option[Name], classDef: ClassDefinition){

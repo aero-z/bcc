@@ -8,6 +8,7 @@ all:
 	mkdir -p $(BINDIR)
 	scalac -d $(BINDIR) $(SOURCES)
 zip:
+	rm -f $(ZIPFILE)
 	zip $(ZIPFILE) $(ZIPCONTENT)
 clean:
 	rm -f $(ZIPFILE)
