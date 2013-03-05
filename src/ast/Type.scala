@@ -53,4 +53,4 @@ case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
 case class RefTypeLinked(pkgName: Name, className:String) extends RefType(Name(pkgName.path :::className::Nil)) {
-} //should 
+}
