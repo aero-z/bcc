@@ -22,7 +22,8 @@ trait VariableDeclaration
 case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
-  def appendClassName(name:String) = Name(path ::: List(name))
+  def appendClassName(className:String) = Name(path ::: List(className))
+  def appendClassName(className:Name) = Name(path ::: className.path)
 }
 
 //Main  of a file.
