@@ -3,17 +3,13 @@ package main
 import scala.io.Source
 import java.io.File
 import scanner.Scanner
-import parser.Parser
-import parser.Dfa
 import java.io.IOException
-import main.Logger.debug
-import parser.ParserSymbol
-import parser.NonTerminalSymbol
-import parser.NonTerminalSymbol
-import parser.NonTerminalSymbol
-import scanner.IdentifierToken
+
 import ast._
+import main.Logger.debug
 import nameResolution._
+import parser._
+import scanner._
 
 case class CompilerError(str: String) extends Exception(str)
 
@@ -58,6 +54,8 @@ object Joosc {
           return // return is just for the compiler not to complain
       }).toList
     val ret = check(files)
+    
+    println("FINISHED")
     System.exit(ret)
   }
 

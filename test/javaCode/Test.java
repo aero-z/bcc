@@ -1,9 +1,10 @@
 public class Test {
-    public public Test() {}
+    public Test() {}
     protected char x = (char)123;
     public static int test() {
-	J1_char obj = new J1_char();
+	Test obj = new Test();
 	char y = obj.x;
 	return (int)y;
     }
+    public function
 }

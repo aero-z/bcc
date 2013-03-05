@@ -79,7 +79,7 @@ object TypeLinking {
       println("IMPORT PACKAGES:")
       packageImports.foreach(x => println(x._1))
       
-      packageImports.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports)})
+      packageImports.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
       packageImports
     }
 	def linkAst(cu:CompilationUnit, imported:NameMap, possibleImports:NameMap):CompilationUnit = {
