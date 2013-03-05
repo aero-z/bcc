@@ -52,5 +52,5 @@ abstract class RefType(path:Name) extends Type {
 case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
-case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.path :::className::Nil)) {
+case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) {
 }
