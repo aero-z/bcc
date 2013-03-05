@@ -6,7 +6,7 @@ import scala.io.Source
 
 class MarmosetTest extends FunSuite{
   test("Test all the java"){
-    val marmDir = new File("test/javaCode/a1marmoset")
+    val marmDir = new File("test/javaCode/a2marmoset")
     val failure = marmDir.listFiles.sortBy(_.getName()).filter( x =>
       if(x.getName.startsWith("Je")==(42==Joosc.check(Source.fromFile(x), x.getPath))){
         println(s"File: ${x.getName} PASSED")

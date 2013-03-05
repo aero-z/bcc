@@ -9,8 +9,9 @@ object TypeLinking {
     println("CREATE POSSIBLE IMPORTS:")
     val possibleImports = getPossibleImports(cus)
     println("TREAT FILES SEPARATELY:")
-    lazy val myList:List[CompilationUnit] = cus.map(linkCompilationUnit(_, getPossibleImports(myList)))
     cus.map(linkCompilationUnit(_, possibleImports))
+    //lazy val myList:List[CompilationUnit] = cus.map(linkCompilationUnit(_, getPossibleImports(myList)))
+    //myList
   }
   def getPossibleImports(cus:List[CompilationUnit]):List[(Option[Name], String, TypeDefinition)] = {//:(Map[Name, TypeDefinition], Map[Name, List[(Name, TypeDefinition)]]) = { //pcknm -> List[ClassDecl]
     println("GET POSSIBLE IMPORTS:")
@@ -37,21 +38,25 @@ object TypeLinking {
   def linkCompilationUnit(cu:CompilationUnit, possibleImports:List[(Option[Name], String, TypeDefinition)]):CompilationUnit = {
     println("LINKCOMPILATIONSUNIT:")
     def checkPrefix(name:Name, map:Map[Name, TypeDefinition]) {
-      for (i <- (1 to 10 by 1)) {
+      if (name.path.length <= 1) return
+      for (i <- (1 to name.path.length-1 by 1)) {
         if (map.get(Name(name.path.take(i))).isDefined)
           throw new EnvironmentException("Error: imported prefix: "+map.get(Name(name.path.take(i))).get)
       }
     }
     def importSelf(map:Map[Name, TypeDefinition]):Map[Name, TypeDefinition] = cu.packageName match {
       case Some(pkgname) =>
+        println("IMPORT SELF: SOME")
         val selfMap = map + (Name(cu.fileName::Nil) -> cu.typeDef.get)
         val fullName = Name(pkgname.path ::: List(cu.fileName))
         checkPrefix(fullName, selfMap)
         map+(Name(cu.fileName::Nil)->cu.typeDef.get)+(fullName -> cu.typeDef.get)
-      case None => map + (Name(cu.fileName::Nil) -> cu.typeDef.get)
-        map+(Name(cu.fileName::Nil)->cu.typeDef.get)
+      case None =>
+        println("IMPORT SELF: NONE")
+        map + (Name(cu.fileName::Nil) -> cu.typeDef.get)
     }
-    def importClasses(name:Name, map:Map[Name, TypeDefinition]):Map[Name, TypeDefinition] = {
+    def importClass(name:Name, map:Map[Name, TypeDefinition]):Map[Name, TypeDefinition] = {
+      println("IMPORT CLASS")
       val className = name.path.last
       val packageName = name match {case Name(x::Nil) => None case Name(xs) => Some(Name(xs.dropRight(1)))}//might be Name(Nil)!
       val typeDef:TypeDefinition = possibleImports.find(x => x._1 == packageName && x._2 == className) match {case Some(found) => found._3 case None => throw new EnvironmentException("Error: not part of possible imports: "+name)}
@@ -63,9 +68,10 @@ object TypeLinking {
         case Some(name) => checkPrefix(name, mapBuff); mapBuff+(name -> typeDef)
       }
     }
-    def importPackage(name:Name, map:Map[Name, TypeDefinition]):Map[Name, TypeDefinition] = {
+    def importPackage(packageName:Name, map:Map[Name, TypeDefinition]):Map[Name, TypeDefinition] = {
+      println("IMPORT PACKAGE")
       def rec(className:Name, typeDef:TypeDefinition, map:Map[Name, TypeDefinition]):Map[Name, TypeDefinition] = {
-        val fullName = Name(name.path:::className.path)
+        val fullName = Name(packageName.path:::className.path)
         checkPrefix(fullName, map)
         val withClass =
 	        if (map.contains(className))
@@ -74,20 +80,27 @@ object TypeLinking {
 	          map + (className -> typeDef)
 	    withClass  + (fullName -> typeDef)
       }
-      val classes = possibleImports.filter(_._1 == name).map(x => (x._2, x._3)) //className, typeDef
-      classes.foldLeft(map)((map, row) => rec(name.appendClassName(row._1), row._2, map))
+      val classes = possibleImports.filter(_._1 == Some(packageName)).map(x => (Name(x._2::Nil), x._3)) //fullName, typeDef
+      classes.foldLeft(map)((map, row) => rec(row._1, row._2, map))
     }
     def importAll(list:List[ImportDeclaration]):Map[Name, TypeDefinition] = {
       println("IMPORTALL")
       val classes = list.filter{case ClassImport(_) => true case _ => false}.map(_.getName)
-      val packages = list.filter{case PackageImport(_) => true}.map(_.getName)
+      val packages = list.filter{case PackageImport(_) => true case _ => false}.map(_.getName)
       val mapSelf = importSelf(Map[Name, TypeDefinition]())
       println("IMPORT SELF:")
       mapSelf.foreach(x => println(x._1))
-      val classImports = classes.foldLeft(mapSelf)((map:Map[Name, TypeDefinition], y:Name) => importClasses(y, map))
+      val classImports = classes.foldLeft(mapSelf)((map:Map[Name, TypeDefinition], y:Name) => importClass(y, map))
       println("IMPORT CLASSES:")
       classImports.foreach(x => println(x._1))
-      val packageImports = packages.foldLeft(classImports)((map:Map[Name, TypeDefinition], y:Name) => importPackage(y, map))
+      println("IMPORT MY PACKAGE:")
+      val myPackage = 
+        if (cu.packageName.isDefined)
+          importPackage(cu.packageName.get, classImports);
+        else
+      		classImports
+      myPackage.foreach(x => println(x._1))
+      val packageImports = packages.foldLeft(myPackage)((map:Map[Name, TypeDefinition], y:Name) => importPackage(y, map))
       println("IMPORT PACKAGES:")
       packageImports.foreach(x => println(x._1))
       packageImports
@@ -191,7 +204,10 @@ object TypeLinking {
 		      if (typ == None)
 		        throw new EnvironmentException(u.typeName+" not imported yet!")
 		      println("name resolution: "+u.typeName+" -> "+typ.get.getName)
-		      RefTypeLinked(u.path, typ.get).asInstanceOf[A] //TODO: resolve name and create new node!
+		      println("XXBEFOREXXX "+cu.fileName+": "+u.hashCode)
+		      val niew = RefTypeLinked(u.path, typ.get).asInstanceOf[A] //TODO: resolve name and create new node!
+		      println("XXAFTERXXX "+cu.fileName+": "+niew.hashCode)
+		      niew
 		    case l:RefTypeLinked =>
 		      println("already linked! Why are you traversing twice?)");
 		      l.asInstanceOf[A]

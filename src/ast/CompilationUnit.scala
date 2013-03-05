@@ -51,6 +51,7 @@ case class Name(path: List[String]) extends Expression {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
   def appendClassName(name:Name) = Name(path ::: name.path)
+  def appendClassName(name:String) = Name(path ::: List(name))
   val children = Nil
 }
 
@@ -84,7 +85,11 @@ abstract class ImportDeclaration(name: Name) extends AstNode {
 
 case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
-
+/*
+class Wrapper(typeDef: => TypeDefinition) extends AstNode with NotNull {
+* we need a lazy valuation somewhere
+}
+* */
 //Either a class or an interface
 sealed abstract class TypeDefinition(typeName: String, modifiers: List[Modifier]) extends AstNode with NotNull {
 def getName():String = typeName
