@@ -1,5 +1,5 @@
 
-import abstractSyntaxTree._
+import ast._
 
 import scalaz._
 import Scalaz._

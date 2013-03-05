@@ -1,6 +1,6 @@
 package nameResolution
 
-import abstractSyntaxTree._
+import ast._
 import parser._
 
 /*
