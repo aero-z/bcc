@@ -35,9 +35,9 @@ defaultExcludes in Compile := "*.java"
 defaultExcludes in Test := "*.java"
 
 
-defaultExcludes in Compile ~= (_ || "NameResolution.scala")
+//defaultExcludes in Compile ~= (_ || "TypeLinking.scala")
 
-defaultExcludes in Test ~= (_ || "NameResolution.scala")
+//defaultExcludes in Test ~= (_ || "TypeLinking.scala")
 
 // // set the main class for packaging the main jar
 // // 'run' will still auto-detect and prompt

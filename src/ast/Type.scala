@@ -54,3 +54,10 @@ case class RefTypeUnlinked(path: Name) extends RefType(path) {
 
 case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) {
 }
+
+case object NullType extends Type{
+  def typeName: String = "nullType"
+}
+
+
+

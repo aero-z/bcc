@@ -13,7 +13,7 @@ import parser.NonTerminalSymbol
 import parser.NonTerminalSymbol
 import scanner.IdentifierToken
 import ast._
-import nameResolution._
+import nameResolution.TypeLinking
 
 case class CompilerError(str: String) extends Exception(str)
 
@@ -34,7 +34,7 @@ object Joosc {
         //ast.display
         ast
       })
-      TypeLinking.treatAll(compilationUnits) // TODO
+      //TypeLinking.treatAll(compilationUnits) // TODO
       errCodeSuccess
     } catch {
       case e: CompilerError =>
