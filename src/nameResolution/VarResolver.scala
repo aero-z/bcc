@@ -32,7 +32,7 @@ object VarResolver{
 
   def checkFields(fields: List[FieldDeclaration]): Unit = {
     val fieldName = fields.map(_.fieldName)
-    if(fieldName.distinct.size != fieldName.size) throw CompilerError("There is two fields with the same name")
+    if(fieldName.distinct.size != fieldName.size) throw new CompilerError("There is two fields with the same name")
   }
 
   def linkConstructor(cus: List[CompilationUnit], index: Int, pck: Option[Name], classDef: ClassDefinition): ConstructorDeclaration = {
@@ -97,11 +97,10 @@ object VarResolver{
       val field = classDef.fields.find(_.fieldName == varName)
       field match{
         case Some(varDecl) => LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName))
-        case None => sys.error("We do not handle the link to a parent field yet...")
-          // case None => classDef.parent match {
-          //   case Some(RefTypeLinked(_, parent @ ClassDefinition(_, _, _, _, _, _, _))) => checkClassFields(varName, parent)
-          //   case _ => throw new Exception(s"Name resolution exception: $varName does not exists")
-          // }
+          case None => classDef.parent match {
+            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getType(env.previousCUS).asInstanceOf[ClassDefinition])
+            case _ => throw new CompilerError(s"Name resolution exception: $varName does not exists")
+          }
       }
     }
 
