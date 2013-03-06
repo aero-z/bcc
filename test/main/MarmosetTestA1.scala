@@ -4,7 +4,7 @@ import org.scalatest.FunSuite
 import java.io.File
 import scala.io.Source
 
-class MarmosetTest extends FunSuite{
+class MarmosetTestA1 extends FunSuite{
   test("Test all the java"){
     val marmDir = new File("test/javaCode/a1marmoset")
     val failure = marmDir.listFiles.sortBy(_.getName()).filter( x =>
