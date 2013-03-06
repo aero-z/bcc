@@ -19,24 +19,40 @@ class MarmosetTestA2 extends FunSuite {
     "test/javaCode/stdlib/2.0/java/util/Arrays.java",
     "test/javaCode/stdlib/2.0/java/io/Serializable.java",
     "test/javaCode/stdlib/2.0/java/io/PrintStream.java",
-    "test/javaCode/stdlib/2.0/java/io/OutputStream.java").map(Source.fromFile(_))
+    "test/javaCode/stdlib/2.0/java/io/OutputStream.java").map(f => (Source.fromFile(f), f))
     
   test("Test all the java") {
+    def getFiles(file: File, depth: Int): Seq[File] = {
+      if (file.isDirectory() && depth != 0)
+        file.listFiles().sortBy(_.getName()).flatMap(getFiles(_, depth-1))
+      else
+        file :: Nil
+    }
+    
     // TODO: run directories!!!
     val marmDir = new File("test/javaCode/a2marmoset")
-    val failure = marmDir.listFiles.sortBy(_.getName()).filter(_.isFile()).filter(x => {
-      val success = Joosc.check(Source.fromFile(x) :: stdlibFiles) == main.Joosc.errCodeSuccess
-      if (x.getName.startsWith("Je") != success) {
-        println(s"File: ${x.getName} PASSED")
+    val testCaseFiles = getFiles(marmDir, 1)
+    val failedTests = testCaseFiles.filter(file => {
+      println("=== Test case " + file.getName + " ===")
+      val testSources = getFiles(file, -1).map(f => (Source.fromFile(f), f.getName))
+      println("Files:")
+      testSources.foreach(x=> println("- " + x._2))
+      println("- stdlib files")
+      val success = Joosc.check(testSources ++: stdlibFiles) == main.Joosc.errCodeSuccess
+      if (file.getName.startsWith("Je") != success) {
+        println("PASSED")
         false
       } else {
-        println(s"File: ${x.getName} FAILED")
+        println("FAILED")
         true
       }
     })
+    
+    val total = testCaseFiles.length
+    val passed = total - failedTests.length
 
-    println(s"Success rate : ${320 - failure.size}/320 = ${100 - 100 * failure.size / 320}%")
+    println(s"Success rate : ${passed}/${total} = ${100.0  * passed / total}%")
     println("Failed test:")
-    failure.foreach(x => println(x.getName))
+    failedTests.foreach(x => println(x.getName))
   }
 }
