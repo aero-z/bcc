@@ -20,8 +20,11 @@ class MarmosetTestA2 extends FunSuite {
       /*println("Files:")
       testSources.foreach(x=> println("- " + x._2))
       println("- stdlib files")*/
+      val errCode =
+        if (file.getName.startsWith("Je")) Joosc.errCodeParseErr
+        else                               Joosc.errCodeSuccess
       test(file.getName) {
-        assert(Joosc.check(testSources ++: StdlibFiles.stdlibFiles) === main.Joosc.errCodeSuccess)
+        assert(Joosc.check(testSources ++: StdlibFiles.stdlibFiles) === errCode)
       }
     })
   }
