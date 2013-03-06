@@ -31,7 +31,7 @@ object Joosc {
         //ast.display
         ast
       })
-      //TypeLinking.treatAll(compilationUnits) // TODO
+      TypeLinking.treatAll(compilationUnits) // TODO
       errCodeSuccess
     } catch {
       case e: CompilerError =>

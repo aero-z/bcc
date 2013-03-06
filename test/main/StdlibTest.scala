@@ -8,7 +8,6 @@ class StdlibTest extends FunSuite {
   test("stdlib test") {
     val code = Source.fromString(
 """
-import java.lang.Object;
 
  public class Foo {
   public Foo() {
@@ -18,5 +17,6 @@ import java.lang.Object;
  }
  """)
     assert(Joosc.check((code, "Foo.java") :: StdlibFiles.stdlibFiles) == main.Joosc.errCodeSuccess)
- }
+ 
+  }
 }
