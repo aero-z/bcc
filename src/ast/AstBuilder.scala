@@ -13,11 +13,11 @@ object AstBuilder {
   def build(parseTree: ParserSymbol, filePath: String): CompilationUnit = parseTree match {
     case NonTerminalSymbol("CompilationUnit", List(pack, imp, typeDef)) =>
       val fileName = (new File(filePath)).getName()
-      val dotIndex = fileName.lastIndexOf('.');
+      val dotIndex = fileName.lastIndexOf('.')
       if (dotIndex < 0) throw CompilerError("file name must end with .java")
-      val typeName = fileName.substring(0,dotIndex);
+      val typeName = fileName.substring(0,dotIndex)
       CompilationUnit(extractPackage(pack), extractImports(imp), extractTypeDefinition(typeDef), typeName)
-    case _ => throw new ASTBuildingException("That is not a compilation unit")
+    case _ => throw new AstBuildingException("That is not a compilation unit")
   }
 
   def extractPackage(symbol: ParserSymbol): Option[Name] = symbol match {
@@ -256,7 +256,7 @@ object AstBuilder {
       case NonTerminalSymbol("NonPrimCast", List(_, name, _)) => RefTypeUnlinked((new Function1[ParserSymbol, Name]{ def apply(x: ParserSymbol)= x match{
         case name @ NonTerminalSymbol("Name", _) => extractName(name)
         case NonTerminalSymbol(_, List(next)) => apply(next)
-        case _ => throw new ASTBuildingException("Wrong cast expression")
+        case _ => throw new AstBuildingException("Wrong cast expression")
       }})(name))
     }
 
@@ -317,6 +317,6 @@ object AstBuilder {
 
   }
 
-  class ASTBuildingException(msg: String) extends CompilerError(msg)
+  class AstBuildingException(msg: String) extends CompilerError(msg)
 
 }
