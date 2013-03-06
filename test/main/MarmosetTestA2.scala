@@ -21,7 +21,8 @@ class MarmosetTestA2 extends FunSuite {
     "test/javaCode/stdlib/2.0/java/io/PrintStream.java",
     "test/javaCode/stdlib/2.0/java/io/OutputStream.java").map(f => (Source.fromFile(f), f))
     
-  test("Test all the java") {
+  
+  {
     def getFiles(file: File, depth: Int): Seq[File] = {
       if (file.isDirectory() && depth != 0)
         file.listFiles().sortBy(_.getName()).flatMap(getFiles(_, depth-1))
@@ -29,30 +30,16 @@ class MarmosetTestA2 extends FunSuite {
         file :: Nil
     }
     
-    // TODO: run directories!!!
     val marmDir = new File("test/javaCode/a2marmoset")
     val testCaseFiles = getFiles(marmDir, 1)
-    val failedTests = testCaseFiles.filter(file => {
-      println("=== Test case " + file.getName + " ===")
+    testCaseFiles.foreach(file => {
       val testSources = getFiles(file, -1).map(f => (Source.fromFile(f), f.getPath))
       /*println("Files:")
       testSources.foreach(x=> println("- " + x._2))
       println("- stdlib files")*/
-      val success = Joosc.check(testSources ++: stdlibFiles) == main.Joosc.errCodeSuccess
-      if (file.getName.startsWith("Je") != success) {
-        println("==> PASSED")
-        false
-      } else {
-        println("==> FAILED")
-        true
+      test(file.getName) {
+        assert(Joosc.check(testSources ++: stdlibFiles) === main.Joosc.errCodeSuccess)
       }
     })
-    
-    val total = testCaseFiles.length
-    val passed = total - failedTests.length
-
-    println(s"Success rate : ${passed}/${total} = ${100.0  * passed / total}%")
-    println("Failed test:")
-    failedTests.foreach(x => println(x.getName))
   }
 }
