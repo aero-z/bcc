@@ -29,7 +29,7 @@ object AstBuilder {
     @tailrec
     def recExtractImports(symbol: ParserSymbol, acc: List[ImportDeclaration]): List[ImportDeclaration] = symbol match {
       case NonTerminalSymbol("ImportDeclarations", List(next, imp)) => recExtractImports(next, extractImport(imp) :: acc)
-      case NonTerminalSymbol("ImportDeclarations", List(imp)) => (extractImport(imp)::acc).reverse
+      case NonTerminalSymbol("ImportDeclarations", List(imp)) => extractImport(imp)::acc
     }
     def extractImport(symbol: ParserSymbol) : ImportDeclaration = symbol match {
       case NonTerminalSymbol("ImportDeclaration", List(_, name, _)) => ClassImport(extractName(name))
@@ -112,7 +112,7 @@ object AstBuilder {
       case NonTerminalSymbol("ClassBodyDeclarations", List(decl)) => accumulate(decl, acc)
     }
 
-    def reverseAcc(ret: ReturnType)= (ret._1.reverse, ret._2.reverse, ret._3.reverse)
+    
 
     def accumulate(symbol: ParserSymbol, acc: ReturnType) = symbol match {
       case NonTerminalSymbol("ClassBodyDeclaration", List(field @ NonTerminalSymbol("FieldDeclaration", _))) => (extractField(field) :: acc._1, acc._2, acc._3)
@@ -122,7 +122,7 @@ object AstBuilder {
     }
 
     symbol match{
-      case NonTerminalSymbol("AnyClassBody", List(body)) => reverseAcc(recExtractClassBody(body, (Nil, Nil, Nil)))
+      case NonTerminalSymbol("AnyClassBody", List(body)) => recExtractClassBody(body, (Nil, Nil, Nil))
       case NonTerminalSymbol("AnyClassBody", Nil) => (Nil, Nil, Nil)
     }
   }
@@ -133,7 +133,7 @@ object AstBuilder {
       case NonTerminalSymbol("InterfaceBodyDeclarations", List(next, ScopingToken(";"))) => recExtractInterfaceBody(next, acc)
       case NonTerminalSymbol("InterfaceBodyDeclarations", List(ScopingToken(";"))) => acc.reverse
       case NonTerminalSymbol("InterfaceBodyDeclarations", List(next, decl)) => recExtractInterfaceBody(next, extractMethod(decl) :: acc)
-      case NonTerminalSymbol("InterfaceBodyDeclarations", List(decl)) => (extractMethod(decl) :: acc).reverse
+      case NonTerminalSymbol("InterfaceBodyDeclarations", List(decl)) => extractMethod(decl) :: acc
     }
     symbol match {
       case NonTerminalSymbol("AnyInterfaceBody", List(bodyDecl)) => recExtractInterfaceBody(bodyDecl, Nil)
@@ -168,7 +168,7 @@ object AstBuilder {
     @tailrec
     def recExtractParameters(symbol: ParserSymbol, acc: List[Parameter]): List[Parameter] = symbol match {
       case NonTerminalSymbol("ParameterDefs", List(next, _, param)) => recExtractParameters(next, extractParameter(param) :: acc)
-      case NonTerminalSymbol("ParameterDefs", List(param)) => (extractParameter(param) :: acc).reverse
+      case NonTerminalSymbol("ParameterDefs", List(param)) => extractParameter(param) :: acc
     }
 
     def extractParameter(symbol: ParserSymbol): Parameter = symbol match {
@@ -194,7 +194,7 @@ object AstBuilder {
     @tailrec
     def recExtractStatements(symbol: ParserSymbol, acc: List[Statement]) : List[Statement] = symbol match {
       case NonTerminalSymbol("Statements", List(next, statement)) => recExtractStatements(next, extractStatement(statement) :: acc)
-      case NonTerminalSymbol("Statements", List(statement)) =>(extractStatement(statement) :: acc).reverse
+      case NonTerminalSymbol("Statements", List(statement)) =>extractStatement(statement) :: acc
     }
 
 
@@ -271,7 +271,7 @@ object AstBuilder {
       case NonTerminalSymbol("Assignment", List(lhs, _, exp)) => Assignment(simplifyExpression(lhs), simplifyExpression(exp))
       case xs @ NonTerminalSymbol("Name", _) => val name = extractName(xs).path; 
         if(name.tail == Nil)  VariableAccess(name.head) else nameToFieldAccess(name.tail, VariableAccess(name.head))
-      case KeywordToken("this") => This
+      case KeywordToken("this") => This(null)
       case NonTerminalSymbol("FieldAccess", List(pri, _, IdentifierToken(str))) => FieldAccess(simplifyExpression(pri), str)
       case IntegerToken(intStr) => {
         val opIntStr = if (unaryMinus) "-" + intStr
@@ -307,7 +307,7 @@ object AstBuilder {
     @tailrec
     def recExtractArguments(symbol: ParserSymbol, acc: List[Expression]): List[Expression] = symbol match {
       case  NonTerminalSymbol("ArgumentsList", List(next, _, exp)) => recExtractArguments(next, simplifyExpression(exp):: acc)
-      case NonTerminalSymbol("ArgumentsList", List(exp)) => (simplifyExpression(exp) :: acc). reverse
+      case NonTerminalSymbol("ArgumentsList", List(exp)) => simplifyExpression(exp) :: acc
     }
 
     symbol match {

@@ -80,8 +80,10 @@ object TypeLinking {
       debug("IMPORT PACKAGES:")
       packageImports.foreach(x => debug(x._1))
       
-      packageImports.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
-      packageImports
+      val finalImport = importPackage(Name("java"::"lang"::Nil), packageImports)
+      
+      finalImport.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
+      finalImport
     }
 	def linkAst(cu:CompilationUnit, imported:NameMap, possibleImports:NameMap):CompilationUnit = {
 	  debug("LINK AST:")
@@ -124,7 +126,8 @@ object TypeLinking {
 		    case _ => s //any other case!
 		  }
 		  def linkExpression(e:Expression):Expression = e match {
-		    case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
+		    case This(_) => This(RefTypeLinked(cu.packageName, cu.typeName))
+                    case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
 			case BinaryOperation(first, operation, second) => BinaryOperation(linkExpression(first), operation, linkExpression(second))
 			case CastExpression(typeCast, target) => CastExpression(link(typeCast), linkExpression(target))
 			case ArrayAccess(typeCast : Expression, target: Expression) => ArrayAccess(linkExpression(typeCast), linkExpression(target))
@@ -155,7 +158,7 @@ object TypeLinking {
 		  }
 		  linkCompilationUnit(cu)
 	}
-	
+
 	val possibleList = possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 	val possible = possibleList.toMap
 	if (possibleList.length != possible.size)
