@@ -19,15 +19,15 @@ object Joosc {
   val errCodeParseErr = 42
   val errCodeIoErr = 1
 
-  def check(sources: List[Source]): Int = {
+  def check(sources: List[(Source, String)]): Int = {
     val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
     try {
       val compilationUnits = sources.map(source => {
-        val tokens = Scanner.scan(source.mkString)
+        val tokens = Scanner.scan(source._1.mkString)
         debug("=== Printing tokens ===")
         tokens.foreach(debug(_))
         debug("=== Printing ast ===")
-        val ast = AstBuilder.build(Parser.parse(tokens, dfa), source.descr)
+        val ast = AstBuilder.build(Parser.parse(tokens, dfa), source._2)
         //ast.display
         ast
       })
@@ -45,9 +45,9 @@ object Joosc {
       println("Wrong usage")
       System.exit(1)
     }
-    val files = args.map(
+    val files = args.map(name =>
       try {
-        Source.fromFile(_)
+        (Source.fromFile(name), name)
       } catch {
         case e: IOException =>
           Console.err.println("Input error: " + e.getMessage())

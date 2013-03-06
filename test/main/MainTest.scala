@@ -8,8 +8,8 @@ class MainTest extends FunSuite {
     val code = Source.fromString(
 """
   [ } this is shit
-""").withDescription("Foo.java")
-    val ret = Joosc.check(code :: Nil)
+""")
+    val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -21,8 +21,8 @@ class MainTest extends FunSuite {
    char c = 'c';
    println("hello");
   }
- }""").withDescription("Foo.java")
-    val ret = Joosc.check(code :: Nil)
+ }""")
+    val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeSuccess)
   }
   
@@ -33,8 +33,8 @@ class MainTest extends FunSuite {
   public void foo() {
    println("he\llo");
   }
- }""").withDescription("Foo.java")
-    val ret = Joosc.check(code :: Nil)
+ }""")
+    val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -45,8 +45,8 @@ class MainTest extends FunSuite {
   public void foo() {
     char c = 'haa';
   }
- }""").withDescription("Foo.java")
-    val ret = Joosc.check(code :: Nil)
+ }""")
+    val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -57,8 +57,8 @@ class MainTest extends FunSuite {
   public void foo() {
    println("he\"l\nlo");
   }
- }""").withDescription("Foo.java")
-    val ret = Joosc.check(code :: Nil)
+ }""")
+    val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeSuccess)
   }
   test("invalid ascii char") {
@@ -68,8 +68,8 @@ class MainTest extends FunSuite {
   public Foo() {
    println("hel""" + 200.toChar + """lo");
   }
- }""").withDescription("Foo.java")
-    val ret = Joosc.check(code :: Nil)
+ }""")
+    val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeParseErr)
   }
   
@@ -93,8 +93,8 @@ public class Test {
 		}
     }
 }
-""").withDescription("Test.java")
-    val ret = Joosc.check(code :: Nil)
+""")
+    val ret = Joosc.check((code, "Test.java") :: Nil)
     assert(ret === Joosc.errCodeSuccess)
   }*/
 }

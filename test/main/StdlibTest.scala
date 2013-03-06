@@ -2,10 +2,9 @@ package main
 
 import org.scalatest.FunSuite
 import scala.io.Source
-import main.Joosc
 
 class StdlibTest extends FunSuite {
-  val stdlibFiles = List(
+  val stdlibSources = List(
     "test/javaCode/stdlib/2.0/java/lang/System.java",
     "test/javaCode/stdlib/2.0/java/lang/Cloneable.java",
     "test/javaCode/stdlib/2.0/java/lang/Short.java",
@@ -20,8 +19,8 @@ class StdlibTest extends FunSuite {
     "test/javaCode/stdlib/2.0/java/lang/String.java",
     "test/javaCode/stdlib/2.0/java/lang/Class.java",
     "test/javaCode/stdlib/2.0/java/lang/Object.java"
-).map(Source.fromFile(_))
-    
+).map(x => (Source.fromFile(x), x))
+
   test("stdlib test") {
     val code = Source.fromString(
 """
@@ -33,12 +32,7 @@ import java.lang.Object;
    println("hello");
   }
  }
- """).withDescription("Foo.java")
- 
-/*
-
- */
- 
-    assert(Joosc.check(code :: stdlibFiles) == main.Joosc.errCodeSuccess)
-  }
+ """)
+    assert(Joosc.check((code, "Foo.java") :: stdlibSources) == main.Joosc.errCodeSuccess)
+ }
 }
