@@ -11,7 +11,7 @@ class MarmosetTestA1 extends FunSuite {
       if (file.getName.startsWith("Je")) Joosc.errCodeParseErr
       else Joosc.errCodeSuccess
     test(file.getName) {
-      assert(Joosc.check((Source.fromFile(file), file.getPath) :: StdlibFiles.stdlibFiles) === errCode)
+      assert(Joosc.check((Source.fromFile(file), file.getPath) :: Nil /*StdlibFiles.stdlibFiles*/) === errCode)
     }
   })
 }
