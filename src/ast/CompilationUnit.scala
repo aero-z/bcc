@@ -86,11 +86,12 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     Logger.debug("")
     for (meth <- methods) meth.display
   }
-  override lazy val weedResult = super.weedResult_ ++ methods.foldLeft(CheckOk(): WeedResult)((cr, m) => m match {
+  override lazy val weedResult = super.weedResult_ ++
+      methods.foldLeft(CheckOk(): WeedResult)((wr, m) => wr ++ (m match {
              case MethodDeclaration(_,_,_,_,Some(x)) => CheckFail("an interface method cannot have a body")
              case MethodDeclaration(_,_,modifiers,_,_) => WeedResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
              case _ => CheckOk()
-           })
+      }))
 }
 
 case class ClassDefinition(className: String, parent: Option[RefType], interfaces: List[RefType], modifiers: List[Modifier], fields: List[FieldDeclaration], constructors: List[ConstructorDeclaration], methods: List[MethodDeclaration]) extends TypeDefinition(className, modifiers) {
@@ -113,6 +114,14 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
     for (constructor <- constructors) constructor.display
     for (method <- methods) method.display
   }
+  
+  override lazy val weedResult = super.weedResult_ ++
+      methods.foldLeft(CheckOk(): WeedResult)((wr, m) => wr ++ (m match {
+             case MethodDeclaration(_,_,modifiers,_,impl) =>
+               WeedResult(impl.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
+                   "method must have a body if and only if it is neither abstract nor native")
+             case _ => CheckOk()
+      }))
 }
 
 
@@ -134,16 +143,15 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
     Logger.debug("")
     //TODO something about the implementation
   }
-  override lazy val weedResult = Weed.checkDuplicateModifiers(modifiers) ++
-                            Weed.checkPublicProtectedModifier(modifiers) ++
-                            WeedResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
-                                        "a static method cannot be final") ++
-                            WeedResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
-                                        "a native method must be static") ++
-                            WeedResult(!modifiers.contains(Modifier.abstractModifier) || (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier)),
-                                        "an abstract method cannot be static or final") ++
-                            WeedResult(implementation.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
-                                        "method must have a body if and only if it is neither abstract nor native")
+  override lazy val weedResult =
+      Weed.checkDuplicateModifiers(modifiers) ++
+      Weed.checkPublicProtectedModifier(modifiers) ++
+      WeedResult(!modifiers.contains(Modifier.staticModifier) || !modifiers.contains(Modifier.finalModifier),
+        "a static method cannot be final") ++
+      WeedResult(!modifiers.contains(Modifier.nativeModifier) || modifiers.contains(Modifier.staticModifier),
+        "a native method must be static") ++
+      WeedResult(!modifiers.contains(Modifier.abstractModifier) || (!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier)),
+        "an abstract method cannot be static or final")
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
