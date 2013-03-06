@@ -53,8 +53,9 @@ object Joosc {
         debug("=== Printing ast ===")
         val ast = AstBuilder.build(Parser.parse(tokens, dfa), source._2)
         //ast.display
-      })
-      TypeLinking.treatAll(compilationUnits) // TODO
+        ast
+      }) ::: StdlibFiles.stdAst
+      TypeLinking.treatAll(compilationUnits)
       errCodeSuccess
     } catch {
       case e: CompilerError =>
