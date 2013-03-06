@@ -25,6 +25,7 @@ class StdlibTest extends FunSuite {
 """
  public class Foo {
   public Foo() {
+   Object o;
    println("hello");
   }
  }
