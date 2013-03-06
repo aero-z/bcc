@@ -2,6 +2,7 @@
 .DS_Store
 *.class
 *.log
+/.settings
 
 # sbt specific
 dist/*
