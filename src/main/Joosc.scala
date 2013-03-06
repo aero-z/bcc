@@ -11,6 +11,7 @@ import nameResolution._
 import parser._
 import scanner._
 
+
 case class CompilerError(str: String) extends Exception(str)
 
 object Joosc {
@@ -30,7 +31,7 @@ object Joosc {
         //ast.display
         ast
       })
-      TypeLinking.treatAll(compilationUnits) // TODO
+      //TypeLinking.treatAll(compilationUnits) // TODO
       errCodeSuccess
     } catch {
       case e: CompilerError =>

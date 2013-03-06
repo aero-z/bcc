@@ -57,3 +57,10 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
    cus.find(c => c.packageName == pkgName && c.typeDef == className).get.typeDef.get
  }
 }
+
+case object NullType extends Type{
+  def typeName: String = "nullType"
+}
+
+
+

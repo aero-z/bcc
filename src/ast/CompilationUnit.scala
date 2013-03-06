@@ -19,7 +19,7 @@ private object Weed {
 trait VariableDeclaration
 
 //Will be used quite often, is for instance "java.util.String"
-case class Name(path: List[String]) extends Expression {
+case class Name(path: List[String]) extends AstNode {
   override def toString = path.reduce((x, y) => x + "." + y)
   def getCanonicalName():String = path.last
   def appendClassName(className:String) = Name(path ::: List(className))

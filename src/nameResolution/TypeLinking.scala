@@ -126,7 +126,8 @@ object TypeLinking {
 		    case _ => s //any other case!
 		  }
 		  def linkExpression(e:Expression):Expression = e match {
-		    case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
+		    case This(_) => This(RefTypeLinked(cu.packageName, cu.typeName))
+                    case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
 			case BinaryOperation(first, operation, second) => BinaryOperation(linkExpression(first), operation, linkExpression(second))
 			case CastExpression(typeCast, target) => CastExpression(link(typeCast), linkExpression(target))
 			case ArrayAccess(typeCast : Expression, target: Expression) => ArrayAccess(linkExpression(typeCast), linkExpression(target))

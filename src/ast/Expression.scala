@@ -4,17 +4,50 @@ import ast.Operator._
 import scanner.IntegerToken
 
 //Every possible expression
-trait Expression extends AstNode
-case class UnaryOperation(operation : Operator, term : Expression) extends Expression
-case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression
-case class CastExpression(typeCast: Type, target: Expression) extends Expression
-case class ArrayAccess(array : Expression, index: Expression) extends Expression
-case class ArrayCreation(typeName : Type, size: Expression) extends Expression
-case class Assignment(leftHandSide: Expression, rightHandSide: Expression) extends Expression
-case class FieldAccess(accessed : Expression, field: String) extends Expression
+trait Expression extends AstNode{
+  val getType : Type
+}
+case class UnaryOperation(operation : Operator, term : Expression) extends Expression{
+  lazy val getType: Type = term.getType
+}
+case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression{
+  lazy val getType: Type = ???
+}
 
-case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression
-case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression
-case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
-case object This extends Expression
-case class VariableAccess(str: String) extends Expression
+case class CastExpression(typeCast: Type, target: Expression) extends Expression{
+  lazy val getType: Type = typeCast
+}
+
+case class ArrayAccess(array : Expression, index: Expression) extends Expression{
+  lazy val getType: Type = array.getType.asInstanceOf[ArrayType].elementType
+}
+
+case class ArrayCreation(typeName : Type, size: Expression) extends Expression{
+  lazy val getType: Type = ArrayType(typeName)
+}
+
+case class Assignment(leftHandSide: Expression, rightHandSide: Expression) extends Expression{
+  lazy val getType: Type = leftHandSide.getType // if(Type.max(leftHandSide.getType, rightHandSide.getType) == leftHandSide.getType) leftHandSide.getType else throw new CompilerError(s"Loss of precision: $leftHandSide from $rightHandSide") //TODO could be good to have an error is such a case...
+}
+case class FieldAccess(accessed : Expression, field: String) extends Expression{
+  lazy val getType: Type = sys.error("I'm not suppose to know that yet")
+}
+
+case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression{
+  lazy val getType: Type = constructor
+}
+
+case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression{
+  lazy val getType: Type = sys.error("I'm not suppose to know that yet")
+}
+case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression{
+  lazy val getType: Type = BooleanType
+}
+
+case class This(thisType: RefType) extends Expression{
+  lazy val getType: Type = thisType
+}
+
+case class VariableAccess(str: String) extends Expression{
+  lazy val getType: Type = sys.error("I'm not supppose to know that yet")
+}
