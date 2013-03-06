@@ -34,16 +34,16 @@ class MarmosetTestA2 extends FunSuite {
     val testCaseFiles = getFiles(marmDir, 1)
     val failedTests = testCaseFiles.filter(file => {
       println("=== Test case " + file.getName + " ===")
-      val testSources = getFiles(file, -1).map(f => (Source.fromFile(f), f.getName))
-      println("Files:")
+      val testSources = getFiles(file, -1).map(f => (Source.fromFile(f), f.getPath))
+      /*println("Files:")
       testSources.foreach(x=> println("- " + x._2))
-      println("- stdlib files")
+      println("- stdlib files")*/
       val success = Joosc.check(testSources ++: stdlibFiles) == main.Joosc.errCodeSuccess
       if (file.getName.startsWith("Je") != success) {
-        println("PASSED")
+        println("==> PASSED")
         false
       } else {
-        println("FAILED")
+        println("==> FAILED")
         true
       }
     })
