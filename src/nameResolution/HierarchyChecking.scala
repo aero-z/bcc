@@ -7,13 +7,33 @@ class HierarchyException(message:String) extends main.CompilerError(message)
 
 object HierarchyChecking {
 	def checkHierarchy(cus:List[CompilationUnit]) {
+		def getCu(rtl:RefTypeLinked):CompilationUnit = {
+		  cus.find(x => x.packageName.equals(rtl.pkgName) && x.typeName == rtl.className) match {
+		    case Some(cu) => cu
+		    case None => throw new HierarchyException("The TypeLinking should have found that this class cannot be found:"+rtl)
+		  }
+		}
+		def isClass(cu:CompilationUnit):Boolean = cu match {
+		  case CompilationUnit(_, _, Some(c:ClassDefinition), _) => true
+		  case _ => false
+		}
+		def check(cu:CompilationUnit) {
+			cu.typeDef match {
+			  case Some(c:ClassDefinition) =>
+			    c.parent match {
+				  	//A class must not extend an interface
+			    	case Some(rtl:RefTypeLinked) =>
+			    	  if(!rtl.getType(cus).isInstanceOf[ClassDefinition])
+			    	    throw new HierarchyException("The TypeLinking should have found that this class cannot be found:"+rtl)
+			    	case None =>
+			  	}
+			    //c.interfaces.foreach(x => x.)
+			  case Some(i:InterfaceDefinition) => 
+			  case _ => //nothing to do?true
+			}
+		}
+		cus.foreach(check(_))
 		/*
-		cus.forall(c => c.typeDef match {
-		  case Some(c:ClassDefinition) => c.parent
-		  case Some(i:InterfaceDefinition) => 
-		  case _ => //nothing to do?
-		})
-		
 		cu.typeDef.map(_ match {
 			case in:InterfaceDefinition => in.parents //(interfaceName: String, parents: List[RefType],modifiers: List[Modifier], methods: List[MethodDeclaration])
 			case cl:ClassDefinition => cl.parent.map{case }
@@ -21,7 +41,7 @@ object HierarchyChecking {
 	}
 	
 /*
-A class must not extend an interface. (JLS 8.1.3, dOvs simple constraint 1)
+. (JLS 8.1.3, dOvs simple constraint 1)
 A class must not implement a class. (JLS 8.1.4, dOvs simple constraint 2)
 An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3)
 A class must not extend a final class. (JLS 8.1.1.2, 8.1.3, dOvs simple constraint 4)
