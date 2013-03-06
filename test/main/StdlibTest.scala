@@ -18,6 +18,5 @@ package rutabaga.et.salsifi;
  }
  """)
     assert(Joosc.check((code, "Foo.java") :: StdlibFiles.stdlibFiles) == main.Joosc.errCodeSuccess)
- 
   }
 }
