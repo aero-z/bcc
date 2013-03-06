@@ -69,7 +69,7 @@ object TypeLinking {
           importPackage(cu.packageName.get, classImports);
         else
       		classImports
-      val finalImports = packages.foldLeft(myPackage)((map:NameMap, y:Name) => importPackage(y, map))
+      val packageImports = packages.foldLeft(myPackage)((map:NameMap, y:Name) => importPackage(y, map))
       		
       debug("IMPORT SELF:")
       mapSelf.foreach(x => debug(x._1))
@@ -78,11 +78,12 @@ object TypeLinking {
       debug("IMPORT MY PACKAGE:")
       myPackage.foreach(x => debug(x._1))
       debug("IMPORT PACKAGES:")
-      finalImports.foreach(x => debug(x._1))
+      packageImports.foreach(x => debug(x._1))
       
-      //no prefixes
-      finalImports.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, finalImports) case None => })
-      finalImports
+      val finalImport = importPackage(Name("java"::"lang"::Nil), packageImports)
+      
+      finalImport.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
+      finalImport
     }
 	def linkAst(cu:CompilationUnit, imported:NameMap, possibleImports:NameMap):CompilationUnit = {
 	  debug("LINK AST:")
@@ -156,12 +157,11 @@ object TypeLinking {
 		  }
 		  linkCompilationUnit(cu)
 	}
-	
+
 	val possibleList = possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 	val possible = possibleList.toMap
 	if (possibleList.length != possible.size)
 	  debug("Some stuff has been overwritten!")
-	
     debug("all possible imports")
 	possible.foreach(x => debug("name:"+x._1))
 	//val imported = importList(cu.importDeclarations, Map[Name, TypeDefinition]())
