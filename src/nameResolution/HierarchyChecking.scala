@@ -12,6 +12,7 @@ object HierarchyChecking {
     def check(cu: CompilationUnit) {
       //checkAcyclic(cu)
       checkExtendsImplements(cu)
+      checkDuplicateMethods(cu)
     }
     
     def getCu(rtl: RefTypeLinked): CompilationUnit = {
@@ -23,6 +24,15 @@ object HierarchyChecking {
     def isClass(cu: CompilationUnit): Boolean = cu match {
       case CompilationUnit(_, _, Some(c: ClassDefinition), _) => true
       case _ => false
+    }
+    
+    def checkDuplicateMethods(cu: CompilationUnit) {
+      val methods = cu.typeDef match {
+        case Some(ClassDefinition(_,_,_,_,_,_,methods)) => methods
+        case Some(InterfaceDefinition(_,_,_,methods)) => methods
+        case None => Nil
+      }
+      if (methods.map(m => (m.methodName, m.parameters.map(p => p.paramType))).distinct.length != methods.length) throw new HierarchyException("TODO")
     }
     
     def checkExtendsImplements(cu: CompilationUnit) {
