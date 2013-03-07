@@ -52,9 +52,10 @@ abstract class RefType(path:Name) extends Type {
 case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
-case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) {
- def getType(cus:List[CompilationUnit]):TypeDefinition = {
-   cus.find(c => c.packageName == pkgName && c.typeDef == className).get.typeDef.get
+case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) with LinkedExpression {
+  lazy val getType: Type = this
+  def getType(cus:List[CompilationUnit]):TypeDefinition = {
+   cus.find(c => c.packageName == pkgName && c.typeName == className).get.typeDef.get
  }
 }
 

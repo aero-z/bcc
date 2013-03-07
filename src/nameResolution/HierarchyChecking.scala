@@ -77,6 +77,7 @@ object HierarchyChecking {
   }
 
   /*
+   * //A class must not extend an interface
    . (JLS 8.1.3, dOvs simple constraint 1)
    A class must not implement a class. (JLS 8.1.4, dOvs simple constraint 2)
    An interface must not be repeated in an implements clause, or in an extends clause of an interface. (JLS 8.1.4, dOvs simple constraint 3)

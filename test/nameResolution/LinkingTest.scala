@@ -8,27 +8,18 @@ import ast._
 
 class Linking extends FunSuite {
   val classes = List(
-    ("C1.java","""
-package pk1;
+    ("whateve/Main.java","""
+public class Main{
 
-import pk2.C2;
+    public Main(){}
 
-public class C1 extends C2 {
-	public C1() {}
-	public void foo() {
-		C1 f = new C1();
-		C2 a;
-	}
+    public static int test(){
+	return Test.Foo.test();
+    }
+public Main m;
 }
-"""),
-    ("C2.java", """
-package pk2;
 
-import pk1.C1;
-    
-public class C2 extends C1 {
-	public C2() {}
-}
+
 """)
   )
   def printAddress(cu:CompilationUnit) =

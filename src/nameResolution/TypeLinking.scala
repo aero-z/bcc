@@ -89,7 +89,7 @@ object TypeLinking {
 	  debug("LINK AST:")
 	    def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 		  debug("LINK COMPILATIONUNIT:")
-		    CompilationUnit(cu.packageName, cu.importDeclarations, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
+		    CompilationUnit(cu.packageName, imported.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
 		  }
 		  def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 		    case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
@@ -120,7 +120,7 @@ object TypeLinking {
 		    case ExpressionStatement(expression: Expression) =>ExpressionStatement(linkExpression(expression))
 		    case ForStatement(init, condition, incrementation, loop) => ForStatement(init.map(linkStatement(_)), condition.map(linkExpression(_)), incrementation.map(linkExpression(_)), linkStatement(loop))
 		    case IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) => IfStatement(linkExpression(condition), linkStatement(ifStatement), elseStatement.map(linkStatement(_)))
-		    case ReturnStatement(returnExpression) => ReturnStatement(returnExpression.map(linkExpression(_)))
+		    case ReturnStatement(returnExpression) => debug("return");ReturnStatement(returnExpression.map(linkExpression(_)))
 		    case LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) => LocalVariableDeclaration(link(typeName), identifier, initializer.map(linkExpression(_)))
 		    case WhileStatement(condition: Expression, loop: Statement) => WhileStatement(linkExpression(condition), linkStatement(loop))
 		    case _ => s //any other case!
@@ -145,7 +145,7 @@ object TypeLinking {
 		      imported.get(path) match {
 		        case Some(tuple) => RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]
 		        case None => possibleImports.get(path) match {
-		          case Some(tuple) => RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]//if not imported can still be used via direct name!
+		          case Some(tuple) => debug("not a real import"); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]//if not imported can still be used via direct name!
 		          case None => throw new EnvironmentException(path+" not imported yet!")
 		        }
 		      }
