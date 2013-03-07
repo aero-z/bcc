@@ -36,16 +36,26 @@ object TypeLinking {
 	    map + (Name(cu.typeName::Nil) -> (cu.packageName, cu.typeName)) + (fullName -> (cu.packageName, cu.typeName)) //might overwrite the old one
     }
     def importClass(fullname:Name, map:NameMap):NameMap = {
-      println("IMPORT CLASS")
-      val className = fullname.path.last
-      val packageName = fullname match {case Name(x::Nil) => None case Name(xs) => Some(Name(xs.dropRight(1)))}//might be Name(Nil)!
-      possibleImports.find(x => x._1 == packageName && x._2 == className) match {
-        case Some(found) =>
-        case None => throw new EnvironmentException("Error: not part of possible imports: "+fullname)
+      println("from here")
+      map.foreach(println(_))
+      println("to here")
+      println("*"+fullname+"*")
+      if (map.contains(fullname)) {
+        println("CLASS already imported")
+        map
+      } else {
+          println("IMPORT CLASS")
+	      val className = fullname.path.last
+	      val packageName = fullname match {case Name(x::Nil) => None case Name(xs) => Some(Name(xs.dropRight(1)))}//might be Name(Nil)!
+	      possibleImports.find(x => x._1 == packageName && x._2 == className) match {
+	        case Some(found) =>
+	        case None => throw new EnvironmentException("Error: not part of possible imports: "+fullname)
+	      }
+	      if (map.contains(Name(className::Nil))) //should never happen right now...
+	        throw new EnvironmentException("Error: imports with same name: "+className)
+	      map + (Name(className::Nil) -> (packageName, className)) + (fullname -> (packageName, className))
       }
-      if (map.contains(Name(className::Nil))) //should never happen right now...
-        throw new EnvironmentException("Error: imports with same name: "+className)
-      map + (Name(className::Nil) -> (packageName, className)) + (fullname -> (packageName, className))
+      
     }
     def importPackage(packageName:Name, map:NameMap):NameMap = {
       println("IMPORT PACKAGE")
@@ -56,7 +66,10 @@ object TypeLinking {
         else
           map + (fullName -> (Some(packageName), className)) + (Name(className::Nil) -> (Some(packageName), className))
       }
-      possibleImports.filter(_._1 == Some(packageName)).foldLeft(map)((m, i) => rec(i._2, m))
+      possibleImports.filter(_._1 == Some(packageName)) match {
+        case Nil => throw new EnvironmentException("Package not found: "+packageName)
+        case x => x.foldLeft(map)((m, i) => rec(i._2, m))
+      }
     }
     def importAll(list:List[ImportDeclaration]):NameMap = {
       println("IMPORTALL")

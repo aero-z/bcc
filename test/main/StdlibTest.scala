@@ -16,6 +16,6 @@ class StdlibTest extends FunSuite {
   }
  }
  """)
-    assert(Joosc.check((code, "Foo.java") :: Nil/*StdlibFiles.stdlibFiles*/) == main.Joosc.errCodeSuccess)
+    assert(Joosc.check((code, "Foo.java") :: StdlibFiles.stdlibFiles) == main.Joosc.errCodeSuccess)
   }
 }

@@ -8,15 +8,20 @@ import ast._
 
 class Linking extends FunSuite {
   val classes = List(
-    ("whateve/Main.java","""
-public class Main{
-
-    public Main(){}
-
-    public static int test(){
-	return Test.Foo.test();
-    }
-public Main m;
+    ("whateve/Je_2_Locals_Overlapping_DeeplyNested.java","""
+public class Je_2_Locals_Overlapping_DeeplyNested {
+	public Je_2_Locals_Overlapping_DeeplyNested() {}
+	
+	public static int test() {
+		int a = 123;
+		boolean b = true;
+		boolean c = true;
+		boolean d = true;
+		boolean e = true;
+		boolean f = true;
+  		if (b) if (c) if (d) if (e) if (f) { int a = 43; return a+80; }
+		return a;
+	}
 }
 
 
@@ -50,10 +55,9 @@ public Main m;
         case _ => println("Shit")
       }*/
       //goToParent(linked(1).typeDef.get, 0)
-      println(linked(1))
       linked.foreach(printAddress(_))
       
 
-    } catch {case e:Exception => println("The exception: "+e.toString()+" "+e.getMessage())}
+    } catch {case e:Exception => println("The exception: "+e.printStackTrace()+" "+e.getMessage())}
   }
 }
