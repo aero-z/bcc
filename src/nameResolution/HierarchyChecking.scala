@@ -8,6 +8,12 @@ class HierarchyException(message: String) extends main.CompilerError(message)
 
 object HierarchyChecking {
   def checkHierarchy(cus: List[CompilationUnit]) {
+    
+    def check(cu: CompilationUnit) {
+      //checkAcyclic(cu)
+      checkExtendsImplements(cu)
+    }
+    
     def getCu(rtl: RefTypeLinked): CompilationUnit = {
       cus.find(x => x.packageName.equals(rtl.pkgName) && x.typeName == rtl.className) match {
         case Some(cu) => cu
@@ -18,7 +24,8 @@ object HierarchyChecking {
       case CompilationUnit(_, _, Some(c: ClassDefinition), _) => true
       case _ => false
     }
-    def check(cu: CompilationUnit) {
+    
+    def checkExtendsImplements(cu: CompilationUnit) {
       cu.typeDef match {
         case Some(c: ClassDefinition) =>
           (c.parent: @unchecked) match {
