@@ -57,6 +57,7 @@ object Joosc {
       }) ::: StdlibFiles.stdAst
       val typeLinked = TypeLinking.treatAll(compilationUnits)
       
+      HierarchyChecking.checkHierarchy(typeLinked)
       VarResolver.variableLink(typeLinked)
       
       errCodeSuccess
