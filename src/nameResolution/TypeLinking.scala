@@ -39,7 +39,7 @@ object TypeLinking {
       if (map.contains(fullname)) {
         map
       } else {
-          println("IMPORT CLASS")
+          debug("IMPORT CLASS")
 	      val className = fullname.path.last
 	      val packageName = fullname match {case Name(x::Nil) => None case Name(xs) => Some(Name(xs.dropRight(1)))}//might be Name(Nil)!
 	      possibleImports.find(x => x._1 == packageName && x._2 == className) match {

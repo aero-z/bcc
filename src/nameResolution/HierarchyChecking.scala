@@ -52,34 +52,36 @@ object HierarchyChecking {
 
     //We can easily prove that there is no cycle mixed class-interface
     def checkAcyclic(cu: CompilationUnit) {
+
       cu.typeDef match {
         case Some(c: ClassDefinition) =>
-          def checkCycle(classdef: ClassDefinition) {
-            classdef.parent match {
-              case Some(parentType: RefTypeLinked) =>
-                val parent = parentType.getType(cus).asInstanceOf[ClassDefinition]
-                if (parent == c) throw CompilerError("Cycle in class hierarchy")
-                else checkCycle(parent)
+          val child = RefTypeLinked(cu.packageName, cu.typeName)          
+          def checkCycle(classdef: RefTypeLinked, already: List[RefTypeLinked]) {
+            classdef.getType(cus).asInstanceOf[ClassDefinition].parent match {
+              case Some(parent: RefTypeLinked) =>                
+                if (already contains parent) throw CompilerError("Cycle in class hierarchy")
+                else checkCycle(parent, parent :: already)
               case _ => ()
             }
           }
-          checkCycle(c)
-        case Some(i: InterfaceDefinition) =>
-          def checkCycle(interface: InterfaceDefinition) {
-            interface.parents.foreach {
-              case x: RefTypeLinked =>
-
-                if (x.getType(cus).asInstanceOf[InterfaceDefinition] == i) throw CompilerError("Cycle in interface hierarchy")
-                else checkCycle(x.getType(cus).asInstanceOf[InterfaceDefinition])
-            }
-          }
-          checkCycle(i)
-        case None => ()
+          checkCycle(child, Nil)
+         case Some(i: InterfaceDefinition) =>
+           val child = RefTypeLinked(cu.packageName, cu.typeName)
+           def checkCycle(interface: RefTypeLinked, already: List[RefTypeLinked]) {
+             interface.getType(cus).asInstanceOf[InterfaceDefinition].parents.foreach {
+               case parent: RefTypeLinked =>
+                 if (already contains parent) throw CompilerError("Cycle in interface hierarchy")
+                 else checkCycle(parent, parent :: already)
+             } 
+           }
+           checkCycle(child, Nil)
+        case _ => ()
 
       }
 
     }
     cus.foreach(check(_))
+    cus.foreach(checkAcyclic(_))
     /*
      cu.typeDef.map(_ match {
      case in:InterfaceDefinition => in.parents //(interfaceName: String, parents: List[RefType],modifiers: List[Modifier], methods: List[MethodDeclaration])
