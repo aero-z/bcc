@@ -97,8 +97,8 @@ object VarResolver{
 
    
 
-  def linkVariable(varName : String, env : Environment): LinkedVariableOrField ={
-    def checkClassFields(varName: String, classDef: ClassDefinition): Option[LinkedVariableOrField] ={
+  def linkVariable(varName : String, env : Environment): LinkedExpression ={
+    def checkClassFields(varName: String, classDef: ClassDefinition): Option[LinkedExpression] ={
       val field = classDef.fields.find(_.fieldName == varName)
       field match{
         case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName)))
@@ -113,7 +113,12 @@ object VarResolver{
       case Some(x)  => LinkedVariableOrField(varName, x._1, x._2) 
       case None => checkClassFields(varName, env.classDef) match {
         case Some(x) => x 
-        case None => null //env.classDef.importDeclarations
+        case None =>          
+          env.previousCUS.flatMap{
+            case CompilationUnit(p, i, _, t) if(env.pck == p && env.classDef.className == t) => i
+            case _ => Nil}.collectFirst{
+          case LinkImport(name, refType) if name == varName => refType
+        }.getOrElse(throw new CompilerError(s"Variable linking error: no $varName found."))
       }
     }
   
@@ -124,7 +129,8 @@ object VarResolver{
 
 }
 
-case class LinkedVariableOrField(name : String, varType: Type, variablePath : PathToDeclaration) extends Expression{
+
+case class LinkedVariableOrField(name : String, varType: Type, variablePath : PathToDeclaration) extends LinkedExpression{
   lazy val getType: Type = varType
   val children = Nil
 }

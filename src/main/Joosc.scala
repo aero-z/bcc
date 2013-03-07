@@ -34,7 +34,7 @@ object StdlibFiles {
   val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
 
   //def stdlibFiles = stdString.map{case (x, y) => (Source.fromString(x), y)}
-  val stdAst = stdlibFiles.map{case(x, y) => AstBuilder.build(Parser.parse(Scanner.scan(x.mkString), dfa), y)} 
+  val stdAst = stdlibFiles.map{case(x, y) => AstBuilder.build(Parser.parse(Scanner.scan(x.mkString), dfa), y)}
 }
 
 
@@ -55,7 +55,10 @@ object Joosc {
         //ast.display
         ast
       }) ::: StdlibFiles.stdAst
-      TypeLinking.treatAll(compilationUnits)
+      val typeLinked = TypeLinking.treatAll(compilationUnits)
+      
+      VarResolver.variableLink(typeLinked)
+      
       errCodeSuccess
     } catch {
       case e: CompilerError =>

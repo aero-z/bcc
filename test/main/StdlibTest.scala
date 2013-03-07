@@ -5,17 +5,8 @@ import scala.io.Source
 
 class StdlibTest extends FunSuite {
 
-  test("stdlib test") {
-    val code = Source.fromString(
-"""
+  test("stdlib test") {    
+    assert(Joosc.check(StdlibFiles.stdlibFiles) == main.Joosc.errCodeSuccess)
 
- public class Foo {
-  public Foo() {
-   Object o;
-   println("hello");
-  }
- }
- """)
-    assert(Joosc.check((code, "Foo.java") :: Nil/*StdlibFiles.stdlibFiles*/) == main.Joosc.errCodeSuccess)
   }
 }

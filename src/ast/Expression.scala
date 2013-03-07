@@ -7,6 +7,10 @@ import scanner.IntegerToken
 trait Expression extends AstNode{
   val getType : Type
 }
+
+trait LinkedExpression extends Expression
+
+
 case class UnaryOperation(operation : Operator, term : Expression) extends Expression{
   lazy val getType: Type = term.getType
 }
