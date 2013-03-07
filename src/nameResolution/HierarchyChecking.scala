@@ -28,12 +28,16 @@ object HierarchyChecking {
                 throw new HierarchyException("class must not extend an interface")
             case None =>
           }
-          c.interfaces.foreach(_ match {
+          val interfaceDefs = c.interfaces.map(_ match {
             case rtl: RefTypeLinked =>
-              println(rtl)
-              if (!rtl.getType(cus).isInstanceOf[InterfaceDefinition])
+              val typeDef = rtl.getType(cus)
+              if (!typeDef.isInstanceOf[InterfaceDefinition])
                 throw new HierarchyException("class must not implement a class")
+              typeDef
           })
+          if (interfaceDefs.length != interfaceDefs.distinct.length)
+            throw new HierarchyException("duplicate implemented interface")
+
         case Some(i: InterfaceDefinition) =>
         case _ => //nothing to do?true
       }
