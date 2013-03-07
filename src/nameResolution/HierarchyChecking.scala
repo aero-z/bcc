@@ -31,8 +31,11 @@ object HierarchyChecking {
           (c.parent: @unchecked) match {
             //A class must not extend an interface
             case Some(rtl: RefTypeLinked) =>
-              if (!rtl.getType(cus).isInstanceOf[ClassDefinition])
-                throw new HierarchyException("class must not extend an interface")
+              val typeDef = rtl.getType(cus)
+              typeDef match {
+                case _:InterfaceDefinition => throw new HierarchyException("class must not extend an interface")
+                case ClassDefinition(_,_,_,modifiers,_,_,_) => if (modifiers.contains(Modifier.finalModifier)) throw new HierarchyException("class cannot extend final class")
+              }
             case None =>
           }
           val interfaceDefs = c.interfaces.map(_ match {
@@ -46,6 +49,15 @@ object HierarchyChecking {
             throw new HierarchyException("duplicate implemented interface")
 
         case Some(i: InterfaceDefinition) =>
+          val parentDefs = i.parents.map(_ match {
+            case rtl: RefTypeLinked =>
+              val typeDef = rtl.getType(cus)
+              if (!typeDef.isInstanceOf[InterfaceDefinition])
+                throw new HierarchyException("interface must not extend a class")
+              typeDef
+          })
+          if (parentDefs.length != parentDefs.distinct.length)
+            throw new HierarchyException("duplicate extended interface")
         case _ => //nothing to do?true
       }
     }
