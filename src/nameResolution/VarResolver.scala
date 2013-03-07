@@ -3,7 +3,7 @@ package nameResolution
 
 import ast._
 import main.CompilerError
-
+import main.Logger.debug
 
 object VarResolver{
   //( Map from name to new name, what to add to the new name, current class, previous cus)
@@ -37,6 +37,7 @@ object VarResolver{
 
   def linkConstructor(cus: List[CompilationUnit], index: Int, pck: Option[Name], classDef: ClassDefinition): ConstructorDeclaration = {
     val cons = classDef.constructors(index)
+    checkParameters(cons.parameters)
     val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
     val curPos = PathToVariable(pck, classDef.className, index, List(0))
     val env = Environment(parameterMap, curPos, cus, pck, classDef)
@@ -46,6 +47,7 @@ object VarResolver{
 
   def linkMethod(cus: List[CompilationUnit], index: Int, pck: Option[Name], classDef: ClassDefinition) : MethodDeclaration = {
     val meth = classDef.methods(index)
+    checkParameters(meth.parameters)
     val parameterMap = Map(meth.parameters.map{case Parameter(parType, id) => (id, (parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
     val curPos = PathToVariable(pck, classDef.className, index, List(0))
     val env = Environment(parameterMap, curPos, cus, pck, classDef)
@@ -54,7 +56,10 @@ object VarResolver{
   
   def implementationLink(environment: Environment, block: Block): Block = Block(passThroughStatements(block.statements, environment))
 
-  
+  def checkParameters(param: List[Parameter]){
+    val parameterName = param.map(_.id)
+    if(parameterName.size != parameterName.distinct.size) throw new CompilerError("A method have twice the same parameter")
+  }
 
 
   def passThroughStatements(stmts: List[Statement], env: Environment): List[Statement] = stmts match {
@@ -93,18 +98,26 @@ object VarResolver{
    
 
   def linkVariable(varName : String, env : Environment): LinkedVariableOrField ={
-    def checkClassFields(varName: String, classDef: ClassDefinition): LinkedVariableOrField ={
+    def checkClassFields(varName: String, classDef: ClassDefinition): Option[LinkedVariableOrField] ={
       val field = classDef.fields.find(_.fieldName == varName)
       field match{
-        case Some(varDecl) => LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName))
+        case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName)))
           case None => classDef.parent match {
             case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getType(env.previousCUS).asInstanceOf[ClassDefinition])
-            case _ => throw new CompilerError(s"Name resolution exception: $varName does not exists")
+            case _ => None
           }
       }
     }
+    
+    env.symbolMap.get(varName) match {
+      case Some(x)  => LinkedVariableOrField(varName, x._1, x._2) 
+      case None => checkClassFields(varName, env.classDef) match {
+        case Some(x) => x 
+        case None => null //env.classDef.importDeclarations
+      }
+    }
+  
 
-    env.symbolMap.get(varName).map(x => LinkedVariableOrField(varName, x._1, x._2))getOrElse(checkClassFields(varName, env.classDef))
   }
 
 
