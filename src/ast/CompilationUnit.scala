@@ -54,6 +54,7 @@ abstract class ImportDeclaration(name: Name) extends AstNode {
 
 case class ClassImport(name: Name) extends ImportDeclaration(name)
 case class PackageImport(name: Name) extends ImportDeclaration(name)
+case class LinkImport(name:String, refType:RefTypeLinked) extends ImportDeclaration(Name(name::Nil))
 /*
 class Wrapper(typeDef: => TypeDefinition) extends AstNode with NotNull {
 * we need a lazy valuation somewhere
