@@ -52,7 +52,7 @@ object Joosc {
         tokens.foreach(debug(_))
         debug("=== Printing ast ===")
         val ast = AstBuilder.build(Parser.parse(tokens, dfa), source._2)
-        //ast.display
+        ast.display
         ast
       }) ::: StdlibFiles.stdAst
       TypeLinking.treatAll(compilationUnits)

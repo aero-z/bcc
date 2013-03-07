@@ -44,7 +44,7 @@ object TypeLinking {
         case None => throw new EnvironmentException("Error: not part of possible imports: "+fullname)
       }
       if (map.contains(Name(className::Nil))) //should never happen right now...
-        throw new EnvironmentException("Error: imports with same name: "+className)
+        throw new EnvironmentException("imports with same name: "+className)
       map + (Name(className::Nil) -> (packageName, className)) + (fullname -> (packageName, className))
     }
     def importPackage(packageName:Name, map:NameMap):NameMap = {
