@@ -83,6 +83,7 @@ object TypeLinking {
       mapSelf.foreach(x => debug(x._1))
       debug("IMPORT CLASSES:")
       classImports.foreach(x => debug(x._1))
+      //classImports.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
       debug("IMPORT MY PACKAGE:")
       myPackage.foreach(x => debug(x._1))
       debug("IMPORT PACKAGES:")
@@ -90,7 +91,7 @@ object TypeLinking {
       
       val finalImport = importPackage(Name("java"::"lang"::Nil), packageImports)
       
-      //finalImport.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
+      
       finalImport
     }
 	def linkAst(cu:CompilationUnit, imported:NameMap, possibleImports:NameMap):CompilationUnit = {

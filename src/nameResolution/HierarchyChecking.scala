@@ -18,9 +18,14 @@ object HierarchyChecking {
       case CompilationUnit(_, _, Some(c: ClassDefinition), _) => true
       case _ => false
     }
+    def shouldBeAbstract(cu: ClassDefinition) {
+      if (!cu.modifiers.contains(Modifier.abstractModifier))
+        cu.methods.foreach(x => if (x.modifiers.contains(Modifier.abstractModifier)) throw new HierarchyException("Class with abstract methods is not abstract"))
+    }
     def check(cu: CompilationUnit) {
       cu.typeDef match {
         case Some(c: ClassDefinition) =>
+          shouldBeAbstract(c)
           (c.parent: @unchecked) match {
             //A class must not extend an interface
             case Some(rtl: RefTypeLinked) =>
@@ -72,7 +77,7 @@ object HierarchyChecking {
       }
 
     }
-    cus.foreach(check(_))
+    cus.filter(_.typeDef.isDefined).foreach(check(_))
     /*
      cu.typeDef.map(_ match {
      case in:InterfaceDefinition => in.parents //(interfaceName: String, parents: List[RefType],modifiers: List[Modifier], methods: List[MethodDeclaration])

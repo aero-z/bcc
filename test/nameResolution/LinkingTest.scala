@@ -8,22 +8,22 @@ import ast._
 
 class Linking extends FunSuite {
   val classes = List(
-    ("whateve/Je_2_Locals_Overlapping_DeeplyNested.java","""
-public class Je_2_Locals_Overlapping_DeeplyNested {
-	public Je_2_Locals_Overlapping_DeeplyNested() {}
-	
-	public static int test() {
-		int a = 123;
-		boolean b = true;
-		boolean c = true;
-		boolean d = true;
-		boolean e = true;
-		boolean f = true;
-  		if (b) if (c) if (d) if (e) if (f) { int a = 43; return a+80; }
-		return a;
-	}
+    ("A.java","""
+package foo;
+public class A extends Main {
+    public A () {}
 }
+"""),
+    ("Main.java","""
+public class Main {
 
+    public Main () {}
+
+    public static int test() {
+	return 123;
+    }
+
+}
 
 """)
   )
