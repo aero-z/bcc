@@ -8,6 +8,12 @@ class HierarchyException(message: String) extends main.CompilerError(message)
 
 object HierarchyChecking {
   def checkHierarchy(cus: List[CompilationUnit]) {
+    
+    def check(cu: CompilationUnit) {
+      //checkAcyclic(cu)
+      checkExtendsImplements(cu)
+    }
+    
     def getCu(rtl: RefTypeLinked): CompilationUnit = {
       cus.find(x => x.packageName.equals(rtl.pkgName) && x.typeName == rtl.className) match {
         case Some(cu) => cu
@@ -22,15 +28,19 @@ object HierarchyChecking {
       if (!cu.modifiers.contains(Modifier.abstractModifier))
         cu.methods.foreach(x => if (x.modifiers.contains(Modifier.abstractModifier)) throw new HierarchyException("Class with abstract methods is not abstract"))
     }
-    def check(cu: CompilationUnit) {
+    
+    def checkExtendsImplements(cu: CompilationUnit) {
       cu.typeDef match {
         case Some(c: ClassDefinition) =>
           shouldBeAbstract(c)
           (c.parent: @unchecked) match {
             //A class must not extend an interface
             case Some(rtl: RefTypeLinked) =>
-              if (!rtl.getType(cus).isInstanceOf[ClassDefinition])
-                throw new HierarchyException("class must not extend an interface")
+              val typeDef = rtl.getType(cus)
+              typeDef match {
+                case _:InterfaceDefinition => throw new HierarchyException("class must not extend an interface")
+                case ClassDefinition(_,_,_,modifiers,_,_,_) => if (modifiers.contains(Modifier.finalModifier)) throw new HierarchyException("class cannot extend final class")
+              }
             case None =>
           }
           val interfaceDefs = c.interfaces.map(_ match {
@@ -44,40 +54,51 @@ object HierarchyChecking {
             throw new HierarchyException("duplicate implemented interface")
 
         case Some(i: InterfaceDefinition) =>
+          val parentDefs = i.parents.map(_ match {
+            case rtl: RefTypeLinked =>
+              val typeDef = rtl.getType(cus)
+              if (!typeDef.isInstanceOf[InterfaceDefinition])
+                throw new HierarchyException("interface must not extend a class")
+              typeDef
+          })
+          if (parentDefs.length != parentDefs.distinct.length)
+            throw new HierarchyException("duplicate extended interface")
         case _ => //nothing to do?true
       }
     }
 
     //We can easily prove that there is no cycle mixed class-interface
     def checkAcyclic(cu: CompilationUnit) {
+
       cu.typeDef match {
         case Some(c: ClassDefinition) =>
-          def checkCycle(classdef: ClassDefinition) {
-            classdef.parent match {
-              case Some(parentType: RefTypeLinked) =>
-                val parent = parentType.getType(cus).asInstanceOf[ClassDefinition]
-                if (parent == c) throw CompilerError("Cycle in class hierarchy")
-                else checkCycle(parent)
+          val child = RefTypeLinked(cu.packageName, cu.typeName)          
+          def checkCycle(classdef: RefTypeLinked, already: List[RefTypeLinked]) {
+            classdef.getType(cus).asInstanceOf[ClassDefinition].parent match {
+              case Some(parent: RefTypeLinked) =>                
+                if (already contains parent) throw CompilerError("Cycle in class hierarchy")
+                else checkCycle(parent, parent :: already)
               case _ => ()
             }
           }
-          checkCycle(c)
-        case Some(i: InterfaceDefinition) =>
-          def checkCycle(interface: InterfaceDefinition) {
-            interface.parents.foreach {
-              case x: RefTypeLinked =>
-
-                if (x.getType(cus).asInstanceOf[InterfaceDefinition] == i) throw CompilerError("Cycle in interface hierarchy")
-                else checkCycle(x.getType(cus).asInstanceOf[InterfaceDefinition])
-            }
-          }
-          checkCycle(i)
-        case None => ()
+          checkCycle(child, Nil)
+         case Some(i: InterfaceDefinition) =>
+           val child = RefTypeLinked(cu.packageName, cu.typeName)
+           def checkCycle(interface: RefTypeLinked, already: List[RefTypeLinked]) {
+             interface.getType(cus).asInstanceOf[InterfaceDefinition].parents.foreach {
+               case parent: RefTypeLinked =>
+                 if (already contains parent) throw CompilerError("Cycle in interface hierarchy")
+                 else checkCycle(parent, parent :: already)
+             } 
+           }
+           checkCycle(child, Nil)
+        case _ => ()
 
       }
 
     }
     cus.filter(_.typeDef.isDefined).foreach(check(_))
+    cus.foreach(checkAcyclic(_))
     /*
      cu.typeDef.map(_ match {
      case in:InterfaceDefinition => in.parents //(interfaceName: String, parents: List[RefType],modifiers: List[Modifier], methods: List[MethodDeclaration])
