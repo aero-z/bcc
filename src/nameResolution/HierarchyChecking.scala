@@ -12,6 +12,7 @@ object HierarchyChecking {
     def check(cu: CompilationUnit) {
       //checkAcyclic(cu)
       checkExtendsImplements(cu)
+      checkDuplicateMethods(cu)
     }
     
     def getCu(rtl: RefTypeLinked): CompilationUnit = {
@@ -27,6 +28,15 @@ object HierarchyChecking {
     def shouldBeAbstract(cu: ClassDefinition) {
       if (!cu.modifiers.contains(Modifier.abstractModifier))
         cu.methods.foreach(x => if (x.modifiers.contains(Modifier.abstractModifier)) throw new HierarchyException("Class with abstract methods is not abstract"))
+    }
+    
+    def checkDuplicateMethods(cu: CompilationUnit) {
+      val methods = cu.typeDef match {
+        case Some(ClassDefinition(_,_,_,_,_,_,methods)) => methods
+        case Some(InterfaceDefinition(_,_,_,methods)) => methods
+        case None => Nil
+      }
+      if (methods.map(m => (m.methodName, m.parameters.map(p => p.paramType))).distinct.length != methods.length) throw new HierarchyException("TODO")
     }
     
     def checkExtendsImplements(cu: CompilationUnit) {

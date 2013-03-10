@@ -54,7 +54,7 @@ object Joosc {
         val ast = AstBuilder.build(Parser.parse(tokens, dfa), source._2)
         ast.display
         ast
-      }) ::: StdlibFiles.stdAst
+      }) //::: StdlibFiles.stdAst
       val typeLinked = TypeLinking.treatAll(compilationUnits)
       
       HierarchyChecking.checkHierarchy(typeLinked)
