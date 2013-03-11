@@ -60,9 +60,9 @@ object HierarchyChecking {
                 throw new HierarchyException("class must not implement a class")
               typeDef
           })
-          if (interfaceDefs.length != interfaceDefs.distinct.length)
-            throw new HierarchyException("duplicate implemented interface")
-
+          if (c.interfaces.length != c.interfaces.distinct.length)
+             throw new HierarchyException("duplicate implemented interface")
+          
         case Some(i: InterfaceDefinition) =>
           val parentDefs = i.parents.map(_ match {
             case rtl: RefTypeLinked =>
