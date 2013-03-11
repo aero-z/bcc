@@ -795,7 +795,8 @@ class Util {
         return grammar;
     }
     public static Production readProduction(String line, Grammar grammar) {
-        Scanner s = new Scanner(line);
+        @SuppressWarnings("resource") // TODO: ugly but not our problem...
+		Scanner s = new Scanner(line);
         if(!s.hasNext()) throw new Error("Empty line instead of a production");
         String lhs = s.next().intern();
         if(!grammar.isNonTerminal(lhs)) throw new Error("Symbol "+lhs+" was not declared as a non-terminal, but appears on the LHS of production "+line);

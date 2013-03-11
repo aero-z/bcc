@@ -1,3 +1,5 @@
-public class Test implements Object {
+import javatypo.*;
+
+public class Test {
     public Test() {}
 }
