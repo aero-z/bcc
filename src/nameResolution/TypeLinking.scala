@@ -81,7 +81,9 @@ object TypeLinking {
 			debug("LINK AST:")
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
-				CompilationUnit(cu.packageName, imported.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
+				val onDemandList = onDemandImports.flatMap(x => (Name(x._2::Nil), (x._1, x._2)) :: (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)) :: Nil)
+				val newImportDeclarations = (directAccess.toList ::: imported.toList ::: onDemandList).distinct.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList
+				CompilationUnit(cu.packageName, newImportDeclarations, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
 			}
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 				case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
@@ -132,22 +134,23 @@ object TypeLinking {
 			}
 			def link[A <: Type](pt:A):A = pt match { //anything which is not RefType is simpletype
 				case RefTypeUnlinked(name) =>
-					println("LINK REFERENCETYPE")
+					debug("LINK REFERENCETYPE")
 					debug("to be found: "+name)
 					imported.get(name) match {
-						case Some(tuple) => println("case: imported: "+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]
+						case Some(tuple) => debug("case: imported: "+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]
 						case None => //no class import
 							splitFullName(name) match {
 							case (None, cname) => //on demand import 
 								onDemandImports.filter(_._2 == cname) match {
-									case Nil => println("No class found with name: "+cname); throw new EnvironmentException("No class found with name: "+cname)
-									case head :: Nil => println("case: import on demand: "+head); RefTypeLinked(onDemandImports.find(_._2 == cname).get._1, cname).asInstanceOf[A]
-									case head :: second :: tail => println("Two different possible imports found for: "+cname); throw new EnvironmentException("Two different possible imports found for: "+cname)
+									case Nil => debug("No class found with name: "+cname); throw new EnvironmentException("No class found with name: "+cname)
+									case head :: Nil => debug("case: import on demand: "+head); RefTypeLinked(onDemandImports.find(_._2 == cname).get._1, cname).asInstanceOf[A]
+									case head :: second :: tail => debug("Two different possible imports found for: "+cname); throw new EnvironmentException("Two different possible imports found for: "+cname)
 								}
-							case (pname @ Some(n), cname) => //direct access
+							case (pname @ Some(pn), cname) => //direct access
+								checkPrefix(pn, imported)
 								directAccess.get(name) match {
-									case Some(tuple) => println("case: direct access :"+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]//if not imported can still be used via direct name!
-									case None => println("not possible to import: "+name.path); throw new EnvironmentException("not possible to import: "+name.path)
+									case Some(tuple) => debug("case: direct access :"+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]//if not imported can still be used via direct name!
+									case None => debug("not possible to import: "+name.path); throw new EnvironmentException("not possible to import: "+name.path)
 								}
 							}
 					}
@@ -159,32 +162,32 @@ object TypeLinking {
 			}
 			linkCompilationUnit(cu)
 		}
-
+		debug("+++++In "+cu.packageName+" :"+cu.typeName)
 		val possibleList = possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 
 		val classes = cu.importDeclarations.filter{case ClassImport(_) => true case _ => false}.distinct.map(_.getName)
 		val packages = cu.importDeclarations.filter{case PackageImport(_) => true case _ => false}.distinct.map(_.getName)
 
 		val imported = importAll(classes)
-		val onDemandImports = packages.distinct.flatMap(p => possibleImports.filter(_._1 == p))
+		val onDemandImports = packages.distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)))
 		val directAccess = possibleList.toMap //all direct accesses: fullName -> tuple
 
 		if (possibleList.length != directAccess.size)
 			debug("Some stuff has been overwritten!")
-		
-		println("+++++In "+cu.packageName+" :"+cu.typeName)
 		cu.packageName match {
 		  case Some(Name("java"::xs)) =>
 		  case _ =>
-			println("BEFORE LINK AST")
-			println("imported:")
-			imported.foreach(x => println("name:"+x._1))
-			println("on demand:")
-			onDemandImports.foreach(x => println("name:"+x._1+" "+x._2))
-			println("directAccess:")
-			directAccess.foreach(x => println("name:"+x._1))
-			println("//////////////////////")
-			println("")
+			debug("BEFORE LINK AST")
+			debug("imported:")
+			imported.foreach(x => debug("name:"+x._1))
+			debug("packages:")
+			packages.foreach(debug(_))
+			debug("on demand:")
+			onDemandImports.foreach(x => debug("name:"+x._1+" "+x._2))
+			debug("directAccess:")
+			directAccess.foreach(x => debug("name:"+x._1))
+			debug("//////////////////////")
+			debug("")
 		}
 		linkAst(cu, imported, onDemandImports, directAccess)
 	}
