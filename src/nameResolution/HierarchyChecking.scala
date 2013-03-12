@@ -10,9 +10,14 @@ object HierarchyChecking {
   def checkHierarchy(cus: List[CompilationUnit]) {
     
     def check(cu: CompilationUnit) {
-      //checkAcyclic(cu)
       checkExtendsImplements(cu)
+      checkAcyclic(cu)
       checkDuplicateMethods(cu)
+      cu.typeDef match{
+        case Some(cla : ClassDefinition) => checkClass(cla)
+        case Some(in : InterfaceDefinition) => checkInterface(in)
+        case _ => ()
+      }
     }
     
     def getCu(rtl: RefTypeLinked): CompilationUnit = {
@@ -36,7 +41,7 @@ object HierarchyChecking {
         case Some(InterfaceDefinition(_,_,_,methods)) => methods
         case None => Nil
       }
-      if (methods.map(m => (m.methodName, m.parameters.map(p => p.paramType))).distinct.length != methods.length) throw new HierarchyException("TODO")
+      if (methods.map(m => (m.methodName, m.parameters.map(p => p.paramType))).distinct.length != methods.length) throw new HierarchyException(s"HierarchyChecking: ${cu.typeName} contains twice the same signature")
     }
     
     def checkExtendsImplements(cu: CompilationUnit) {
@@ -107,8 +112,50 @@ object HierarchyChecking {
       }
 
     }
+    
+    def checkInterface(in: InterfaceDefinition){
+      checkInterfaceVsObject(in)
+    }
+
+
+
+    def checkInterfaceVsObject(interface: InterfaceDefinition){
+      val objectMethodSig = RefTypeLinked(Some(Name(List("java", "lang"))), "Object").getType(cus).asInstanceOf[ClassDefinition].methods.map(m => (m.methodName, m.parameters.map(_.paramType), (m.returnType, m.modifiers)))
+      interface.methods.foreach{
+        case MethodDeclaration(name, ret, mods, params, None) if(objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType))) => if(! objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType) && x._3._1 == ret && mods.sameElements(x._3._2))) throw CompilerError(s"Hierarchy checking: method $name is not compatible with java.lang.Object")
+        case _ => ()
+      }
+    }
+
+
+    def checkClass(cl: ClassDefinition){
+      checkClassMethodContain(cl)
+    }
+    //Check the rule about all the containing methods
+    def checkClassMethodContain(cl: ClassDefinition){
+      def checkParent(parent: TypeDefinition):Unit ={
+        val (parentMethod, grandParent) = parent match {
+          case ClassDefinition(_, par, ins, _, _, _, meth) => (meth, par ++ ins)
+          case InterfaceDefinition(_, par, _, meth) => (meth, par)
+        }
+        for(m <- cl.methods; mp <- parentMethod) checkMethodPair(m, mp)
+        for(papi <- grandParent) checkParent(papi.asInstanceOf[RefTypeLinked].getType(cus))
+      }
+      
+      def checkMethodPair(meth: MethodDeclaration, parM: MethodDeclaration){
+        if(meth.methodName == parM.methodName && meth.parameters.map(_.paramType) == parM.parameters.map(_.paramType)){
+          //Need some proper investigation...
+          if(meth.returnType != parM.returnType) throw new HierarchyException(s"Hierarchy Checking: divergent return for method ${parM.methodName}")
+          if(parM.modifiers.contains(Modifier.finalModifier)) throw new HierarchyException(s"Hierarchy Checking: overriding a the ${parM.methodName} final method")
+          if(meth.modifiers.contains(Modifier.protectedModifier) && parM.modifiers.contains(Modifier.publicModifier)) throw new HierarchyException(s"Hierarchy checking: protected method overriding public method ${meth.methodName}")
+
+        }
+      }
+      for(par <- cl.parent ++ cl.interfaces) checkParent(par.asInstanceOf[RefTypeLinked].getType(cus))
+    }
+
     cus.filter(_.typeDef.isDefined).foreach(check(_))
-    cus.foreach(checkAcyclic(_))
+    //cus.foreach(checkAcyclic(_))
     /*
      cu.typeDef.map(_ match {
      case in:InterfaceDefinition => in.parents //(interfaceName: String, parents: List[RefType],modifiers: List[Modifier], methods: List[MethodDeclaration])
