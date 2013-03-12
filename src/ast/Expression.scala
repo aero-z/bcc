@@ -34,15 +34,25 @@ case class Assignment(leftHandSide: Expression, rightHandSide: Expression) exten
   lazy val getType: Type = leftHandSide.getType // if(Type.max(leftHandSide.getType, rightHandSide.getType) == leftHandSide.getType) leftHandSide.getType else throw new CompilerError(s"Loss of precision: $leftHandSide from $rightHandSide") //TODO could be good to have an error is such a case...
 }
 case class FieldAccess(accessed : Expression, field: String) extends Expression{
-  lazy val getType: Type = sys.error("I'm not suppose to know that yet")
+  lazy val getType: Type = sys.error("getType is not supposed to be called on type FieldAccess")
 }
 
 case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression{
   lazy val getType: Type = constructor
 }
 
-case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression{
-  lazy val getType: Type = sys.error("I'm not suppose to know that yet")
+/**
+ * method()
+ */
+case class ThisMethodInvocation(thisType: RefType, method : String, arguments: List[Expression]) extends Expression{
+  lazy val getType: Type = ???
+}
+
+/**
+ * (expression).method()
+ */
+case class ExprMethodInvocation(accessed: Expression, method : String, arguments: List[Expression]) extends Expression{
+  lazy val getType: Type = ???
 }
 
 case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression{
@@ -54,5 +64,5 @@ case class This(thisType: RefType) extends Expression{
 }
 
 case class VariableAccess(str: String) extends Expression{
-  lazy val getType: Type = sys.error("I'm not supppose to know that yet")
+  lazy val getType: Type = sys.error("getType is not supposed to be called on type VariableAccess")
 }

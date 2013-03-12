@@ -285,8 +285,8 @@ object AstBuilder {
       case char : CharacterToken => CharacterLiteral(char)
       case NullToken => NullLiteral
       case NonTerminalSymbol("ClassInstanceCreation", List(_, cons, _, arg, _)) => ClassCreation(RefTypeUnlinked(extractName(cons)), extractArguments(arg))
-      case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => MethodInvocation(None, str, extractArguments(arg))
-      case NonTerminalSymbol("MethodInvocation", List(access, _, IdentifierToken(str), _ , arg, _)) => MethodInvocation(Some(simplifyExpression(access)), str, extractArguments(arg))
+      case NonTerminalSymbol("MethodInvocation", List(IdentifierToken(str), _, arg, _)) => ThisMethodInvocation(null, str, extractArguments(arg))
+      case NonTerminalSymbol("MethodInvocation", List(access, _, IdentifierToken(str), _ , arg, _)) => ExprMethodInvocation(simplifyExpression(access), str, extractArguments(arg))
       case NonTerminalSymbol("ArrayAccess", List( array, _, index, _)) => ArrayAccess(simplifyExpression(array), simplifyExpression(index))
       case NonTerminalSymbol("ArrayCreation", List(_, arrayType, _, size, _)) => ArrayCreation(ArrayType(extractType(arrayType)), simplifyExpression(size))
       case NonTerminalSymbol("UnaryExpression", List(OperatorToken(op), exp)) => {

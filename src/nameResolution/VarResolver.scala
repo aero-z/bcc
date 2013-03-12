@@ -89,25 +89,21 @@ object VarResolver{
       case Assignment(lhs, rhs) => Assignment(linkExpression(lhs, env), linkExpression(rhs, env))
       case FieldAccess(acc, field) => FieldAccess(linkExpression(acc, env), field)
       case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_, env)))
-      case MethodInvocation(acc, meth, args) => MethodInvocation(acc.map(linkExpression(_, env)), meth, args.map(linkExpression(_, env)))
+      case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc, env), meth, args.map(linkExpression(_, env)))
+      case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkExpression(_, env)))
       case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
       case x: This => x
       case VariableAccess(name) => linkVariable(name, env)
-      case lit : Literal => lit
+      case lit: Literal => lit
     }
-  } catch{
+  } catch {
     case FieldAccessIsProbablyPckException(path) => exp match {
-      case FieldAccess(_, className) => 
+      case FieldAccess(_, className) =>
         env.previousCUS.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
-      case _ : VariableAccess => throw FieldAccessIsProbablyPckException(path)
+      case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)
       case _ => throw new CompilerError(s"Var resolution, could not find: ${path.reduce(_ + "." + _)}")
     }
-  }
-
-
-
-
-   
+  }   
 
   def linkVariable(varName : String, env : Environment): LinkedExpression ={
     def checkClassFields(varName: String, classDef: ClassDefinition): Option[LinkedExpression] ={
