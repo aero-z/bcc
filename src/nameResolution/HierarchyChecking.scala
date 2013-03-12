@@ -7,6 +7,13 @@ import main._
 class HierarchyException(message: String) extends main.CompilerError(message)
 
 object HierarchyChecking {
+  /*def findMethod(thisType: Type, argTypes: List[Type]) {
+    thisType match {
+      case RefTypeLinked(pkgName: Option[Name], className:String) => ???
+      case _ => throw new HierarchyException("findMethod: thisType must be RefTypeLinked")
+    }
+  }*/
+  
   def checkHierarchy(cus: List[CompilationUnit]) {
     
     def check(cu: CompilationUnit) {
