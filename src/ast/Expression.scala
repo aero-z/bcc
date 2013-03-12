@@ -41,9 +41,19 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
   lazy val getType: Type = constructor
 }
 
-case class MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) extends Expression{
+/**
+ * method()
+ */
+case class ThisMethodInvocation(thisType: RefType, method : String, arguments: List[Expression]) extends Expression{
   lazy val getType: Type = sys.error("I'm not suppose to know that yet")
 }
+/**
+ * (expression).method()
+ */
+case class ExprMethodInvocation(accessed: Expression, method : String, arguments: List[Expression]) extends Expression{
+  lazy val getType: Type = sys.error("I'm not suppose to know that yet")
+}
+
 case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression{
   lazy val getType: Type = BooleanType
 }
