@@ -79,23 +79,31 @@ object VarResolver{
      case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
    }
 
-   def linkExpression(exp: Expression, env: Environment): Expression = exp match {
-     case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp, env))
-     case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f, env), op, linkExpression(s, env))
-     case CastExpression(cast, t) => CastExpression(cast, linkExpression(t, env))
-     case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr, env), linkExpression(ind, env))
-     case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size, env))
-     case Assignment(lhs, rhs) => Assignment(linkExpression(lhs, env), linkExpression(rhs, env))
-     case FieldAccess(acc, field) => FieldAccess(linkExpression(acc, env), field)
-     case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_, env)))
-     case MethodInvocation(acc, meth, args) => MethodInvocation(acc.map(linkExpression(_, env)), meth, args.map(linkExpression(_, env)))
-     case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
-     case x: This => x
-     case VariableAccess(name) => linkVariable(name, env)
-     case lit : Literal => lit
-   }
-
-   
+  def linkExpression(exp: Expression, env: Environment): Expression = try {
+    exp match {
+      case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp, env))
+      case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f, env), op, linkExpression(s, env))
+      case CastExpression(cast, t) => CastExpression(cast, linkExpression(t, env))
+      case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr, env), linkExpression(ind, env))
+      case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size, env))
+      case Assignment(lhs, rhs) => Assignment(linkExpression(lhs, env), linkExpression(rhs, env))
+      case FieldAccess(acc, field) => FieldAccess(linkExpression(acc, env), field)
+      case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_, env)))
+      case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc, env), meth, args.map(linkExpression(_, env)))
+      case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkExpression(_, env)))
+      case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
+      case x: This => x
+      case VariableAccess(name) => linkVariable(name, env)
+      case lit: Literal => lit
+    }
+  } catch {
+    case FieldAccessIsProbablyPckException(path) => exp match {
+      case FieldAccess(_, className) =>
+        env.previousCUS.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
+      case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)
+      case _ => throw new CompilerError(s"Var resolution, could not find: ${path.reduce(_ + "." + _)}")
+    }
+  }   
 
   def linkVariable(varName : String, env : Environment): LinkedExpression ={
     def checkClassFields(varName: String, classDef: ClassDefinition): Option[LinkedExpression] ={
@@ -103,7 +111,7 @@ object VarResolver{
       field match{
         case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName)))
           case None => classDef.parent match {
-            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getType(env.previousCUS).asInstanceOf[ClassDefinition])
+            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getTypeDef(env.previousCUS).asInstanceOf[ClassDefinition])
             case _ => None
           }
       }
@@ -118,20 +126,16 @@ object VarResolver{
             case CompilationUnit(p, i, _, t) if(env.pck == p && env.classDef.className == t) => i
             case _ => Nil}.collectFirst{
           case LinkImport(name, refType) if name == varName => refType
-        }.getOrElse(throw new CompilerError(s"Variable linking error: no $varName found."))
+        }.getOrElse(throw FieldAccessIsProbablyPckException(List(varName)))
       }
     }
-  
-
   }
-
-
-
 }
 
+case class FieldAccessIsProbablyPckException(pck: List[String]) extends Exception
 
 case class LinkedVariableOrField(name : String, varType: Type, variablePath : PathToDeclaration) extends LinkedExpression{
-  lazy val getType: Type = varType
+  def getType(implicit cus: List[CompilationUnit]): Type = varType
   val children = Nil
 }
 

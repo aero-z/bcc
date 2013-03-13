@@ -1,3 +1,8 @@
-public class Test implements Object {
-    public Test() {}
+import javatypo.*;
+
+public class Test {
+    public Test() {
+    	Object o = new Test();
+    	int i = o;
+    }
 }

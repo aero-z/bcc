@@ -143,8 +143,10 @@ object TypeLinking {
 				case Assignment(leftHandSide: Expression, rightHandSide: Expression) => Assignment(linkExpression(leftHandSide), linkExpression(rightHandSide))
 				case ClassCreation(constructor: RefType, parameters: List[Expression]) => ClassCreation(link(constructor), parameters.map(linkExpression(_)))
 				case FieldAccess(accessed : Expression, field: String) => FieldAccess(linkExpression(accessed), field)
-				case MethodInvocation(accessed: Option[Expression], method : String, arguments: List[Expression]) => MethodInvocation(accessed.map(linkExpression(_)), method, arguments.map(linkExpression(_)))
+				case ExprMethodInvocation(accessed: Expression, method : String, arguments: List[Expression]) => ExprMethodInvocation(linkExpression(accessed), method, arguments.map(linkExpression(_)))
+				case ThisMethodInvocation(null, method : String, arguments: List[Expression]) => ThisMethodInvocation(RefTypeLinked(cu.packageName, cu.typeName), method, arguments.map(linkExpression(_)))
 				case InstanceOfCall(exp: Expression, typeChecked: Type) => InstanceOfCall(linkExpression(exp), link(typeChecked))
+				case This(null) => This(RefTypeLinked(cu.packageName, cu.typeName))
 				case _ => e //return expression by default
 			}
 			def link[A <: Type](pt:A):A = pt match { //anything which is not RefType is simpletype
