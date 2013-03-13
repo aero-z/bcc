@@ -58,7 +58,7 @@ object HierarchyChecking {
           (c.parent: @unchecked) match {
             //A class must not extend an interface
             case Some(rtl: RefTypeLinked) =>
-              val typeDef = rtl.getType(cus)
+              val typeDef = rtl.getTypeDef(cus)
               typeDef match {
                 case _:InterfaceDefinition => throw new HierarchyException("class must not extend an interface")
                 case ClassDefinition(_,_,_,modifiers,_,_,_) => if (modifiers.contains(Modifier.finalModifier)) throw new HierarchyException("class cannot extend final class")
@@ -67,7 +67,7 @@ object HierarchyChecking {
           }
           val interfaceDefs = c.interfaces.map(_ match {
             case rtl: RefTypeLinked =>
-              val typeDef = rtl.getType(cus)
+              val typeDef = rtl.getTypeDef(cus)
               if (!typeDef.isInstanceOf[InterfaceDefinition])
                 throw new HierarchyException("class must not implement a class")
               typeDef
@@ -78,7 +78,7 @@ object HierarchyChecking {
         case Some(i: InterfaceDefinition) =>
           val parentDefs = i.parents.map(_ match {
             case rtl: RefTypeLinked =>
-              val typeDef = rtl.getType(cus)
+              val typeDef = rtl.getTypeDef(cus)
               if (!typeDef.isInstanceOf[InterfaceDefinition])
                 throw new HierarchyException("interface must not extend a class")
               typeDef
@@ -96,7 +96,7 @@ object HierarchyChecking {
         case Some(c: ClassDefinition) =>
           val child = RefTypeLinked(cu.packageName, cu.typeName)          
           def checkCycle(classdef: RefTypeLinked, already: List[RefTypeLinked]) {
-            classdef.getType(cus).asInstanceOf[ClassDefinition].parent match {
+            classdef.getTypeDef(cus).asInstanceOf[ClassDefinition].parent match {
               case Some(parent: RefTypeLinked) =>                
                 if (already contains parent) throw CompilerError("Cycle in class hierarchy")
                 else checkCycle(parent, parent :: already)
@@ -107,7 +107,7 @@ object HierarchyChecking {
          case Some(i: InterfaceDefinition) =>
            val child = RefTypeLinked(cu.packageName, cu.typeName)
            def checkCycle(interface: RefTypeLinked, already: List[RefTypeLinked]) {
-             interface.getType(cus).asInstanceOf[InterfaceDefinition].parents.foreach {
+             interface.getTypeDef(cus).asInstanceOf[InterfaceDefinition].parents.foreach {
                case parent: RefTypeLinked =>
                  if (already contains parent) throw CompilerError("Cycle in interface hierarchy")
                  else checkCycle(parent, parent :: already)
@@ -127,7 +127,7 @@ object HierarchyChecking {
 
 
     def checkInterfaceVsObject(interface: InterfaceDefinition){
-      val objectMethodSig = RefTypeLinked(Some(Name(List("java", "lang"))), "Object").getType(cus).asInstanceOf[ClassDefinition].methods.map(m => (m.methodName, m.parameters.map(_.paramType), (m.returnType, m.modifiers)))
+      val objectMethodSig = RefTypeLinked(Some(Name(List("java", "lang"))), "Object").getTypeDef(cus).asInstanceOf[ClassDefinition].methods.map(m => (m.methodName, m.parameters.map(_.paramType), (m.returnType, m.modifiers)))
       interface.methods.foreach{
         case MethodDeclaration(name, ret, mods, params, None) if(objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType))) => if(! objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType) && x._3._1 == ret && mods.sameElements(x._3._2))) throw CompilerError(s"Hierarchy checking: method $name is not compatible with java.lang.Object")
         case _ => ()
@@ -147,7 +147,7 @@ object HierarchyChecking {
           case InterfaceDefinition(_, par, _, meth) => (meth, par)
         }
         for(m <- cl.methods; mp <- parentMethod) checkMethodPair(m, mp)
-        for(papi <- grandParent) checkParent(papi.asInstanceOf[RefTypeLinked].getType(cus))
+        for(papi <- grandParent) checkParent(papi.asInstanceOf[RefTypeLinked].getTypeDef(cus))
       }
       
       def checkMethodPair(meth: MethodDeclaration, parM: MethodDeclaration){
@@ -161,7 +161,7 @@ object HierarchyChecking {
 
         }
       }
-      for(par <- cl.parent ++ cl.interfaces) checkParent(par.asInstanceOf[RefTypeLinked].getType(cus))
+      for(par <- cl.parent ++ cl.interfaces) checkParent(par.asInstanceOf[RefTypeLinked].getTypeDef(cus))
     }
 
    def checkAbstractMethodOverride(cl: ClassDefinition){
