@@ -22,12 +22,12 @@ object TypeLinking {
 	}
 	def linkCompilationUnit(cu:CompilationUnit, possibleImports:List[(Option[Name], String)]):CompilationUnit = {
 		debug("LINKCOMPILATIONSUNIT:")
-		def checkPrefix(name:Name, map:NameMap) {
+		/*def checkPrefix(name:Name, map:NameMap) {
 			for (i <- (1 to name.path.length by 1)) { //everything except the full name
 				if (map.get(Name(name.path.take(i))).isDefined)
 					throw new EnvironmentException("Error: imported prefix: "+map.get(Name(name.path.take(i))).get)
 			}
-		}
+		}*/
 		def importClass(fullName:Name, map:NameMap):NameMap = {
 			//already distinct!
 			debug("IMPORT CLASS")
@@ -79,6 +79,21 @@ object TypeLinking {
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
+			/*def checkPrefix(names:List[String]):Int = names match {
+			  case Nil => 0 //recursive functions need return type
+			  case x :: Nil =>
+			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
+			    if (onDemandImports.filter(x => x._1 == None && x._2 == x).length != 0) throw new EnvironmentException("invalid prefix: "+x)
+			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
+			    0 //end of recursion
+			  case x :: xs => //at least 2 elements
+			    val possibleClass = names.last;
+			    val possiblePackage = names.dropRight(1)
+			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
+			    if (onDemandImports.filter(x => x._1 == Some(xs) && x._2 == x).length != 0) throw new EnvironmentException("invalid prefix: "+x)
+			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
+			    checkPrefix(xs);
+			}*/
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
 				val onDemandList = onDemandImports.flatMap(x => (Name(x._2::Nil), (x._1, x._2)) :: (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)) :: Nil)
@@ -147,7 +162,7 @@ object TypeLinking {
 									case head :: second :: tail => debug("Two different possible imports found for: "+cname); throw new EnvironmentException("Two different possible imports found for: "+cname)
 								}
 							case (pname @ Some(pn), cname) => //direct access
-								checkPrefix(pn, imported)
+								//checkPrefix(pn, imported)
 								directAccess.get(name) match {
 									case Some(tuple) => debug("case: direct access :"+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]//if not imported can still be used via direct name!
 									case None => debug("not possible to import: "+name.path); throw new EnvironmentException("not possible to import: "+name.path)
@@ -160,16 +175,23 @@ object TypeLinking {
 				case ArrayType(elementType) => debug("arraytype -> no link:"); ArrayType(link(elementType)).asInstanceOf[A]
 				case x => debug("Simple type, no link:"); x
 			}
-			linkCompilationUnit(cu)
+			//get strict prefix of all 
+			val y = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).distinct.map{case Name(x) => x}.filter(_ != Nil)
+			y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
+			
+			linkCompilationUnit(cu);
 		}
 		debug("+++++In "+cu.packageName+" :"+cu.typeName)
+		
+		
 		val possibleList = possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 
 		val classes = cu.importDeclarations.filter{case ClassImport(_) => true case _ => false}.distinct.map(_.getName)
 		val packages = cu.importDeclarations.filter{case PackageImport(_) => true case _ => false}.distinct.map(_.getName)
 
 		val imported = importAll(classes)
-		val onDemandImports = packages.distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)))
+		//check for "empty" packages as well:
+		val onDemandImports = packages.distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => throw new EnvironmentException("empty import"+p) case x => x})
 		val directAccess = possibleList.toMap //all direct accesses: fullName -> tuple
 
 		if (possibleList.length != directAccess.size)
