@@ -4,12 +4,12 @@ import scala.io.Source
 import java.io.File
 import scanner.Scanner
 import java.io.IOException
-
 import ast._
 import main.Logger.debug
 import nameResolution._
 import parser._
 import scanner._
+import typecheck.TypeChecker
 
 
 case class CompilerError(str: String) extends Exception(str)
@@ -58,7 +58,9 @@ object Joosc {
       val typeLinked = TypeLinking.treatAll(compilationUnits)
       
       HierarchyChecking.checkHierarchy(typeLinked)
-      VarResolver.variableLink(typeLinked)
+      val varLinked = VarResolver.variableLink(typeLinked)
+      varLinked.foreach(_.display)
+      TypeChecker.check(varLinked)
       
       errCodeSuccess
     } catch {

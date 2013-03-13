@@ -795,7 +795,7 @@ class Util {
         return grammar;
     }
     public static Production readProduction(String line, Grammar grammar) {
-        @SuppressWarnings("resource") // TODO: ugly but not our problem...
+        @SuppressWarnings("resource") // NOTE: ugly but not our problem...
 		Scanner s = new Scanner(line);
         if(!s.hasNext()) throw new Error("Empty line instead of a production");
         String lhs = s.next().intern();

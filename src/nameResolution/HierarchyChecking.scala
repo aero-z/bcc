@@ -172,16 +172,16 @@ object HierarchyChecking {
        typeDef match {
          case cl: ClassDefinition => 
            val methSig = cl.methods.filter(_.modifiers.contains(Modifier.abstractModifier)).map(getSignature(_))           
-           (cl.parent.toList ::: cl.interfaces).flatMap(x => findAbstractMethod(x.asInstanceOf[RefTypeLinked].getType(cus))) ::: methSig
+           (cl.parent.toList ::: cl.interfaces).flatMap(x => findAbstractMethod(x.asInstanceOf[RefTypeLinked].getTypeDef(cus))) ::: methSig
          case in: InterfaceDefinition => 
            val methSig = in.methods.map(getSignature(_))           
-           in.parents.flatMap(x => findAbstractMethod(x.asInstanceOf[RefTypeLinked].getType(cus))) ::: methSig
+           in.parents.flatMap(x => findAbstractMethod(x.asInstanceOf[RefTypeLinked].getTypeDef(cus))) ::: methSig
        }
        
      }
      def findConcreteMethod(cl: ClassDefinition): List[Signature] = {
        val conMethod = cl.methods.filter(! _.modifiers.contains(Modifier.abstractModifier)).map(getSignature(_))
-       cl.parent.map(x => findConcreteMethod(x.asInstanceOf[RefTypeLinked].getType(cus).asInstanceOf[ClassDefinition])).toList.flatten ::: conMethod
+       cl.parent.map(x => findConcreteMethod(x.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[ClassDefinition])).toList.flatten ::: conMethod
      }
      if(!cl.modifiers.contains(Modifier.abstractModifier)){
        val ameth = findAbstractMethod(cl)
