@@ -59,7 +59,7 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
  }
 }
 
-case object NullType extends Type{
+case object NullType extends Type {
   def typeName: String = "nullType"
 }
 

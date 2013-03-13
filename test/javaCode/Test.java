@@ -1,8 +1,12 @@
-import javatypo.*;
-
 public class Test {
-    public Test() {
-    	Object o = new Test();
-    	int i = o;
-    }
+	public int foo;
+	public Test() {}
+	
+	public static int test() {
+		Test Test = new Test();
+		Test.foo = 123;
+		Test = null;
+		return Test.foo;
+	}
 }
+

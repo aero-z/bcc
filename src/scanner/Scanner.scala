@@ -5,7 +5,7 @@ import scala.annotation.tailrec
 object Scanner {
 
   def scan(code: String): List[Token] = {
-    if (!checkEncoding(code)) throw CompilerError("bad encoding") // TODO
+    if (!checkEncoding(code)) throw CompilerError("bad encoding")
     categorize(generateTokens(code))
   }
 
