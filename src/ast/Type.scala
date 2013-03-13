@@ -1,6 +1,6 @@
 package ast
 
-abstract class Type extends AstNode{
+abstract class Type extends AstNode {
     def typeName:String
 }
 
@@ -17,31 +17,31 @@ object PrimitiveType{
   }
 }
 
-case object IntType extends PrimitiveType{
+case object IntType extends PrimitiveType {
     def typeName: String = "int"
 }
 
-case object BooleanType extends PrimitiveType{
+case object BooleanType extends PrimitiveType {
     def typeName: String = "boolean"
 }
 
-case object ByteType extends PrimitiveType{
+case object ByteType extends PrimitiveType {
     def typeName: String = "byte"
 }
 
-case object ShortType extends PrimitiveType{
+case object ShortType extends PrimitiveType {
     def typeName: String = "short"
 }
 
-case object CharType extends PrimitiveType{
+case object CharType extends PrimitiveType {
     def typeName: String = "char"
 }
 
-case object VoidType extends PrimitiveType{
+case object VoidType extends PrimitiveType {
   def typeName: String = "void"
 }
 
-case class ArrayType(elementType: Type) extends Type{
+case class ArrayType(elementType: Type) extends Type {
   def typeName: String = elementType.typeName + "[]"
 }
 
@@ -53,8 +53,8 @@ case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
 case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) with LinkedExpression {
-  lazy val getType: Type = this
-  def getType(cus:List[CompilationUnit]):TypeDefinition = {
+  def getType(implicit cus: List[CompilationUnit]): Type = this
+  def getTypeDef(implicit cus:List[CompilationUnit]): TypeDefinition = {
    cus.find(c => c.packageName == pkgName && c.typeName == className).get.typeDef.get
  }
 }

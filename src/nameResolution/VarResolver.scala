@@ -111,7 +111,7 @@ object VarResolver{
       field match{
         case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName)))
           case None => classDef.parent match {
-            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getType(env.previousCUS).asInstanceOf[ClassDefinition])
+            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getTypeDef(env.previousCUS).asInstanceOf[ClassDefinition])
             case _ => None
           }
       }
@@ -129,18 +129,13 @@ object VarResolver{
         }.getOrElse(throw FieldAccessIsProbablyPckException(List(varName)))
       }
     }
-  
-
   }
-
-
-
 }
 
 case class FieldAccessIsProbablyPckException(pck: List[String]) extends Exception
 
 case class LinkedVariableOrField(name : String, varType: Type, variablePath : PathToDeclaration) extends LinkedExpression{
-  lazy val getType: Type = varType
+  def getType(implicit cus: List[CompilationUnit]): Type = varType
   val children = Nil
 }
 
