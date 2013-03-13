@@ -87,7 +87,9 @@ object TypeLinking {
 			}
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 				case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
-				case cd:ClassDefinition =>debug("LINK CLASS:"); ClassDefinition(cd.className, cd.parent.map(link(_)), cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_))) 
+				case cd:ClassDefinition =>debug("LINK CLASS:"); ClassDefinition(cd.className,
+                                  if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object") None else Some(cd.parent.map(link(_)).getOrElse(RefTypeLinked(Some(Name(List("java", "lang"))), "Object"))),
+                                    cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_)))
 			}
 			def linkMethod(md:MethodDeclaration):MethodDeclaration = {
 				debug("LINK METHOD:")

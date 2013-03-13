@@ -137,6 +137,7 @@ object HierarchyChecking {
 
     def checkClass(cl: ClassDefinition){
       checkClassMethodContain(cl)
+      checkAbstractMethodOverride(cl)
     }
     //Check the rule about all the containing methods
     def checkClassMethodContain(cl: ClassDefinition){
@@ -151,15 +152,43 @@ object HierarchyChecking {
       
       def checkMethodPair(meth: MethodDeclaration, parM: MethodDeclaration){
         if(meth.methodName == parM.methodName && meth.parameters.map(_.paramType) == parM.parameters.map(_.paramType)){
+          
           //Need some proper investigation...
           if(meth.returnType != parM.returnType) throw new HierarchyException(s"Hierarchy Checking: divergent return for method ${parM.methodName}")
-          if(parM.modifiers.contains(Modifier.finalModifier)) throw new HierarchyException(s"Hierarchy Checking: overriding a the ${parM.methodName} final method")
+          if(parM.modifiers.contains(Modifier.finalModifier)) throw new HierarchyException(s"Hierarchy Checking: overriding the ${parM.methodName} final method")
           if(meth.modifiers.contains(Modifier.protectedModifier) && parM.modifiers.contains(Modifier.publicModifier)) throw new HierarchyException(s"Hierarchy checking: protected method overriding public method ${meth.methodName}")
+          
 
         }
       }
       for(par <- cl.parent ++ cl.interfaces) checkParent(par.asInstanceOf[RefTypeLinked].getType(cus))
     }
+
+   def checkAbstractMethodOverride(cl: ClassDefinition){
+     type Signature = (String, List[Type])
+     def getSignature(meth : MethodDeclaration) = (meth.methodName, meth.parameters.map(_.paramType))
+     val defineMethodSig = cl.methods.map(getSignature(_))
+     def findAbstractMethod(typeDef: TypeDefinition): List[Signature] = {
+       typeDef match {
+         case cl: ClassDefinition => 
+           val methSig = cl.methods.filter(_.modifiers.contains(Modifier.abstractModifier)).map(getSignature(_))           
+           (cl.parent.toList ::: cl.interfaces).flatMap(x => findAbstractMethod(x.asInstanceOf[RefTypeLinked].getType(cus))) ::: methSig
+         case in: InterfaceDefinition => 
+           val methSig = in.methods.map(getSignature(_))           
+           in.parents.flatMap(x => findAbstractMethod(x.asInstanceOf[RefTypeLinked].getType(cus))) ::: methSig
+       }
+       
+     }
+     def findConcreteMethod(cl: ClassDefinition): List[Signature] = {
+       val conMethod = cl.methods.filter(! _.modifiers.contains(Modifier.abstractModifier)).map(getSignature(_))
+       cl.parent.map(x => findConcreteMethod(x.asInstanceOf[RefTypeLinked].getType(cus).asInstanceOf[ClassDefinition])).toList.flatten ::: conMethod
+     }
+     if(!cl.modifiers.contains(Modifier.abstractModifier)){
+       val ameth = findAbstractMethod(cl)
+       val cmeth = findConcreteMethod(cl)
+       if(!ameth.forall(cmeth.contains(_))) throw new HierarchyException("Hierarchy Checking: Abstract method not override")
+     }
+   }
 
     cus.filter(_.typeDef.isDefined).foreach(check(_))
     //cus.foreach(checkAcyclic(_))
