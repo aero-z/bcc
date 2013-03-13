@@ -79,7 +79,7 @@ object TypeLinking {
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
-			/*def checkPrefix(names:List[String]):Int = names match {
+			def checkPrefix(names:List[String]):Int = names match {
 			  case Nil => 0 //recursive functions need return type
 			  case x :: Nil =>
 			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
@@ -93,7 +93,7 @@ object TypeLinking {
 			    if (onDemandImports.filter(x => x._1 == Some(xs) && x._2 == x).length != 0) throw new EnvironmentException("invalid prefix: "+x)
 			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
 			    checkPrefix(xs);
-			}*/
+			}
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
 				val onDemandList = onDemandImports.flatMap(x => (Name(x._2::Nil), (x._1, x._2)) :: (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)) :: Nil)
@@ -179,8 +179,8 @@ object TypeLinking {
 			}
 			//get strict prefix of all 
 			val y = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).distinct.map{case Name(x) => x}.filter(_ != Nil)
-			y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
-			
+			//y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
+			val discard = y.foreach(checkPrefix(_))
 			linkCompilationUnit(cu);
 		}
 		debug("+++++In "+cu.packageName+" :"+cu.typeName)

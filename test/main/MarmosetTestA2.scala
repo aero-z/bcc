@@ -23,8 +23,10 @@ class MarmosetTestA2 extends FunSuite {
     println("- stdlib files")
     */
     val errCode =
-      if (file.getName.startsWith("Je")) Joosc.errCodeParseErr
-      else                               Joosc.errCodeSuccess
+      if (file.getName.startsWith("Je"))
+        Joosc.errCodeParseErr
+      else
+        Joosc.errCodeSuccess
     test(file.getName) {
       assert(Joosc.check(testSources.toList) === errCode)
     }
