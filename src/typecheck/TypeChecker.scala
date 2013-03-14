@@ -6,17 +6,7 @@ import main.CompilerError
 object TypeChecker {
   def check(cus: List[CompilationUnit]) = {
     implicit val compUnits = cus
-    def checkField(f: FieldDeclaration) = {
-      // TODO ???
-    }
-    def checkConstructor(c: ConstructorDeclaration) = {
-      // TODO ???
-    }
-    /*def checkExpression(e: Expression) = e match {
-      case Assignment(lhs, rhs) =>
-        if (lhs.getType != rhs.getType && rhs.getType != NullType) throw CompilerError("types don't match")
-      case _ =>
-    }*/
+    
     val errCondType = "condition expression must have type boolean"
     val errRetType = "return doesn't match"
     val errTypeMismatch = "type mismatch"
@@ -43,10 +33,17 @@ object TypeChecker {
         if (cond.getType != BooleanType) throw CompilerError(errCondType)
         checkStatement(loop, retType)
     }
+      
+    def checkField(f: FieldDeclaration) = {
+      f.initializer.foreach(x => if (x != f.fieldType) throw CompilerError(errTypeMismatch))
+    }
+    def checkConstructor(c: ConstructorDeclaration) = {
+      checkStatement(c.implementation, None)
+    }
     def checkMethod(m: MethodDeclaration) = {
       m.implementation match {
         case Some(b: Block) => checkStatement(b, Some(m.returnType))
-        case _ =>
+        case _ => // nothing to check
       }
     }
     cus.foreach(_ match {
@@ -54,7 +51,7 @@ object TypeChecker {
         fields.foreach(checkField)
         constructors.foreach(checkConstructor)
         methods.foreach(checkMethod)
-      case _ =>
+      case _ => // nothing to check
     })
   }
 }
