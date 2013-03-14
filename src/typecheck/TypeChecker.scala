@@ -28,14 +28,14 @@ object TypeChecker {
         if (retExpr.map(_.getType) != retType)
           throw CompilerError(errRetType) // + s" (retType = $retType, retExpr = $retExpr)")
       case LocalVariableDeclaration(thetype, _, init) =>
-        init.foreach(x => if (x.getType != thetype) throw CompilerError(errTypeMismatch))
+        init.foreach(x => if (x.getType != thetype) throw CompilerError(errTypeMismatch+" localVariableDeclaration:: "+x.getType+" != "+thetype))
       case WhileStatement(cond, loop) =>
         if (cond.getType != BooleanType) throw CompilerError(errCondType)
         checkStatement(loop, retType)
     }
       
     def checkField(f: FieldDeclaration) = {
-      f.initializer.foreach(x => if (x != f.fieldType) throw CompilerError(errTypeMismatch))
+      f.initializer.foreach(x => if (x != f.fieldType) throw CompilerError(errTypeMismatch+" checkField: "+f.fieldName+" != "+x))
     }
     def checkConstructor(c: ConstructorDeclaration) = {
       checkStatement(c.implementation, None)

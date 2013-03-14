@@ -293,7 +293,7 @@ object AstBuilder {
         val operator = Operator.fromString(op)
         val expression = simplifyExpression(exp, true)
         (operator, expression) match {
-          case (Operator.minus, n @ NumberLiteral(int)) => n
+          case (MinusOperator, n @ NumberLiteral(int)) => n
           case _ => UnaryOperation(operator, expression)
         }
       }

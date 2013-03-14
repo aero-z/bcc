@@ -4,15 +4,30 @@ import org.scalatest.FunSuite
 import scala.io.Source
 
 class MainTest extends FunSuite {
+  test("fancy test") {
+    val code = Source.fromString(
+"""
+public class Test {
+    public Test() {}
+    public static int test() {
+		Test a = new Test();
+		boolean c = a instanceof Test;
+    }
+}
+""")
+    val ret = Joosc.check((code, "Test.java") :: StdlibFiles.stdlibFiles)
+    assert(ret === Joosc.errCodeSuccess)
+  }
+  /*
   test("invalid code") {
     val code = Source.fromString(
 """
   [ } this is shit
 """)
-    val ret = Joosc.check((code, "Foo.java") :: Nil)
+    val ret = Joosc.check((code, "Foo.java") :: StdlibFiles.stdlibFiles)
     assert(ret === Joosc.errCodeParseErr)
   }
-  
+
   test("simple code") {
     val code = Source.fromString(
 """
@@ -73,28 +88,6 @@ class MainTest extends FunSuite {
     assert(ret === Joosc.errCodeParseErr)
   }
   
-  /*
-  test("fancy test") {
-    val code = Source.fromString(
-"""
-public class Test {
-    public Test() {}
-    public static int test() {	
-		boolean b = true;
-		boolean e = false;
-		Object a = new Test();
-		boolean c = e || a instanceof Test;
-		boolean d = b && a instanceof Test;	
-		if (c && d){
-		    return 123;
-		}
-		else {
-		    return 12378;
-		}
-    }
-}
-""")
-    val ret = Joosc.check((code, "Test.java") :: Nil)
-    assert(ret === Joosc.errCodeSuccess)
-  }*/
+
+  */
 }

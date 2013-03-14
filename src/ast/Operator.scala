@@ -1,54 +1,52 @@
 package ast
 
 //If the operations are the same for all types maybe we don't need to differ them
-trait IntegerOperator extends ShortOperator
-trait ShortOperator extends ByteOperator
-trait ByteOperator
-trait CharOperator extends ByteOperator
+trait ArithmeticOperator
 trait CompareOperator
+trait BooleanOperator
 
 object Operator {
     def fromString(str: String): Operator = str match {
-        case "+" => PlusOperator()
-        case  "-" => MinusOperator()
-        case "^"=> BitXorOperator()
-        case "&"=> BitAndOperator()
-        case "|"=> BitOrOperator()
-        case "!"=> InverseOperator()
-        case "*"=> StarOperator() 
-        case "/"=> DivOperator()
-        case "%"=> ModOperator()
-        case "<"=> SmallerOperator()
-        case ">"=> GreaterOperator()
-        case "=="=> EqualOperator()
-        case "!="=> NotEqualOperator()
-        case "&&"=> AndOperator()
-        case "||"=> OrOperator()
-        case "<="=> LessEqualOperator()
-        case ">="=> GreaterEqualOperator()
+        case "+" => PlusOperator
+        case  "-" => MinusOperator
+        case "^"=> BitXorOperator
+        case "&"=> BitAndOperator
+        case "|"=> BitOrOperator
+        case "!"=> InverseOperator
+        case "*"=> StarOperator
+        case "/"=> DivOperator
+        case "%"=> ModOperator
+        case "<"=> SmallerOperator
+        case ">"=> GreaterOperator
+        case "=="=> EqualOperator
+        case "!="=> NotEqualOperator
+        case "&&"=> AndOperator
+        case "||"=> OrOperator
+        case "<="=> LessEqualOperator
+        case ">="=> GreaterEqualOperator
     }
 }
 
 abstract class Operator(s:String) {
-  def toString = s
+  override def toString = s
 }
-case class PlusOperator() extends Operator("+") with ByteOperator
-case class MinusOperator() extends Operator("-") with ByteOperator
-case class BitXorOperator() extends Operator("")
-case class BitAndOperator() extends Operator("&")
-case class BitOrOperator() extends Operator("|")
-case class InverseOperator() extends Operator("!")
-case class StarOperator() extends Operator("*")
-case class DivOperator() extends Operator("/")
-case class ModOperator() extends Operator("%")
-case class SmallerOperator() extends Operator("<") with ComparatorOperator
-case class GreaterOperator() extends Operator(">") with ComparatorOperator
-case class EqualOperator() extends Operator("==") with ComparatorOperator
-case class NotEqualOperator() extends Operator("!=") with ComparatorOperator
-case class AndOperator() extends Operator("&&") with ComparatorOperator
-case class OrOperator() extends Operator("||") with ComparatorOperator
-case class LessEqualOperator() extends Operator("<=") with ComparatorOperator
-case class GreaterEqualOperator() extends Operator(">=") with ComparatorOperator
+case object PlusOperator extends Operator("+") with ArithmeticOperator
+case object MinusOperator extends Operator("-") with ArithmeticOperator
+case object BitXorOperator extends Operator("^") with BooleanOperator
+case object BitAndOperator extends Operator("&") with BooleanOperator
+case object BitOrOperator extends Operator("|") with BooleanOperator
+case object InverseOperator extends Operator("!") //unary -> special case!
+case object StarOperator extends Operator("*") with ArithmeticOperator
+case object DivOperator extends Operator("/") with ArithmeticOperator
+case object ModOperator extends Operator("%") with ArithmeticOperator
+case object SmallerOperator extends Operator("<") with CompareOperator
+case object GreaterOperator extends Operator(">") with CompareOperator
+case object EqualOperator extends Operator("==") with CompareOperator
+case object NotEqualOperator extends Operator("!=") with CompareOperator
+case object AndOperator extends Operator("&&") with BooleanOperator
+case object OrOperator extends Operator("||") with BooleanOperator
+case object LessEqualOperator extends Operator("<=") with CompareOperator
+case object GreaterEqualOperator extends Operator(">=") with CompareOperator
 
 /*
 object Operator extends Enumeration {
