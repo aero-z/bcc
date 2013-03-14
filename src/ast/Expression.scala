@@ -7,7 +7,7 @@ import typecheck.TypeCheckingError
 import typecheck.TypeChecker
 
 //Every possible expression
-trait Expression extends AstNode{
+trait Expression extends AstNode {
   /**
    * get type of expression AND check for type errors
    */
@@ -16,29 +16,31 @@ trait Expression extends AstNode{
 
 trait LinkedExpression extends Expression
 
-case class UnaryOperation(operation : Operator, term : Expression) extends Expression {
+case class UnaryOperation(operation: Operator, term: Expression) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = term.getType
 }
 
 case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression {
-  val Str = RefTypeLinked(Some(Name("java"::"lang"::Nil)), "String")
+  val Str = RefTypeLinked(Some(Name("java" :: "lang" :: Nil)), "String")
   def getType(implicit cus: List[CompilationUnit]): Type = (first.getType, operation, second.getType) match {
     case (_, PlusOperator, Str) => Str
     case (Str, PlusOperator, _) => Str
-    
-    case (_:ByteTrait, op:ArithmeticOperator, _:ByteTrait) => ByteType
-    case (_:ByteTrait, op:CompareOperator, _:ByteTrait) => BooleanType
-    case (_:ShortTrait, op:ArithmeticOperator, _:ShortTrait) => ShortType //includes widening!
-    case (_:ShortTrait, op:CompareOperator, _:ShortTrait) => BooleanType
-    case (_:IntegerTrait, op:ArithmeticOperator, _:IntegerTrait) => IntType //includes widening!
-    case (_:IntegerTrait, op:CompareOperator, _:IntegerTrait) => BooleanType
-    
+
+    case (_: ByteTrait,    _: ArithmeticOperator, _: ByteTrait)    => ByteType
+    case (_: ByteTrait,    _: CompareOperator,    _: ByteTrait)    => BooleanType
+    case (_: ShortTrait,   _: ArithmeticOperator, _: ShortTrait)   => ShortType //includes widening!
+    case (_: ShortTrait,   _: CompareOperator,    _: ShortTrait)   => BooleanType
+    case (_: IntegerTrait, _: ArithmeticOperator, _: IntegerTrait) => IntType //includes widening!
+    case (_: IntegerTrait, _: CompareOperator,    _: IntegerTrait) => BooleanType
+
     case (BooleanType, _: BooleanOperator, BooleanType) => BooleanType
-    
-    case (_, _:CompareOperator, _) if (first.getType == second.getType) => BooleanType
-    case (_, _:CompareOperator, NullType) => BooleanType
-    case (NullType, _:CompareOperator, _)  => BooleanType
-    
+
+    case (_,            _: CompareOperator, _) if (first.getType == second.getType) => BooleanType
+    case (_: RefType,   _: CompareOperator, NullType)     => BooleanType
+    case (NullType,     _: CompareOperator, _: RefType)   => BooleanType
+    case (_: ArrayType, _: CompareOperator, NullType)     => BooleanType
+    case (NullType,     _: CompareOperator, _: ArrayType) => BooleanType
+
     case (x, op, y) => throw new TypeCheckingError(s"no operation $op found for arguments $x and $y")
   }
 }
@@ -47,11 +49,11 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
   def getType(implicit cus: List[CompilationUnit]): Type = typeCast
 }
 
-case class ArrayAccess(array : Expression, index: Expression) extends Expression {
+case class ArrayAccess(array: Expression, index: Expression) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = array.getType.asInstanceOf[ArrayType].elementType
 }
 
-case class ArrayCreation(typeName : Type, size: Expression) extends Expression {
+case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = typeName
 }
 
@@ -60,10 +62,10 @@ case class Assignment(leftHandSide: Expression, rightHandSide: Expression) exten
     if (!TypeChecker.checkTypeMatch(leftHandSide.getType, rightHandSide.getType)) throw new TypeCheckingError(s"assignment: types don't match (expected ${leftHandSide.getType}, found ${rightHandSide.getType})\nLHS expression: $leftHandSide\nRHS expression: $rightHandSide")
     else leftHandSide.getType
 }
-case class FieldAccess(accessed : Expression, field: String) extends Expression {
+case class FieldAccess(accessed: Expression, field: String) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = accessed.getType match {
-    case r:RefType => Util.findField(r, field)
-    case a:ArrayType if (field == "length") => IntType
+    case r: RefType => Util.findField(r, field)
+    case a: ArrayType if (field == "length") => IntType
     case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
   }
 }
@@ -75,7 +77,7 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
 private object Util {
   def findField(refType: RefType, name: String)(implicit cus: List[CompilationUnit]): Type = {
     refType match {
-      case t: RefTypeLinked => 
+      case t: RefTypeLinked =>
         t.getTypeDef match {
           case ClassDefinition(_, parent, _, _, fields, _, _) =>
             fields.find(_.fieldName == name) match {
@@ -85,7 +87,7 @@ private object Util {
               }
               case Some(field) => field.fieldType
             }
-           case _ => sys.error("type linking did something bad")
+          case _ => sys.error("type linking did something bad")
         }
     }
   }
@@ -94,7 +96,7 @@ private object Util {
       true
     }
     refType match {
-      case t: RefTypeLinked => 
+      case t: RefTypeLinked =>
         t.getTypeDef match {
           case ClassDefinition(_, parent, _, _, _, _, methods) =>
             val matchingMethods = methods.filter(_ match {
@@ -118,16 +120,16 @@ private object Util {
 /**
  * method()
  */
-case class ThisMethodInvocation(thisType: RefType, method : String, arguments: List[Expression]) extends Expression {
+case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = Util.findMethod(thisType, method, arguments)
 }
 
 /**
  * (expression).method()
  */
-case class ExprMethodInvocation(accessed: Expression, method : String, arguments: List[Expression]) extends Expression {
+case class ExprMethodInvocation(accessed: Expression, method: String, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = accessed.getType match {
-    case r:RefType => Util.findMethod(r, method, arguments)
+    case r: RefType => Util.findMethod(r, method, arguments)
     case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
   }
 }
