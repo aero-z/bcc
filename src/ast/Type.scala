@@ -7,7 +7,7 @@ abstract class Type extends AstNode {
 abstract class PrimitiveType extends Type
 
 object PrimitiveType{
-  def fromString(str: String): PrimitiveType = str match{
+  def fromString(str: String): Type = str match{
     case "int" => IntType
     case "boolean" => BooleanType
     case "byte" => ByteType
@@ -17,7 +17,14 @@ object PrimitiveType{
   }
 }
 
-case object IntType extends PrimitiveType {
+//byte < short < int
+//byte < char
+trait IntegerTrait extends ShortTrait
+trait ShortTrait extends ByteTrait
+trait CharTrait extends ByteTrait
+trait ByteTrait
+
+case object IntType extends PrimitiveType with IntegerTrait {
     def typeName: String = "int"
 }
 
@@ -25,19 +32,19 @@ case object BooleanType extends PrimitiveType {
     def typeName: String = "boolean"
 }
 
-case object ByteType extends PrimitiveType {
+case object ByteType extends PrimitiveType with ByteTrait {
     def typeName: String = "byte"
 }
 
-case object ShortType extends PrimitiveType {
+case object ShortType extends PrimitiveType with ShortTrait {
     def typeName: String = "short"
 }
 
-case object CharType extends PrimitiveType {
+case object CharType extends PrimitiveType with CharTrait {
     def typeName: String = "char"
 }
 
-case object VoidType extends PrimitiveType {
+case object VoidType extends Type {
   def typeName: String = "void"
 }
 
@@ -62,6 +69,3 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
 case object NullType extends Type {
   def typeName: String = "nullType"
 }
-
-
-
