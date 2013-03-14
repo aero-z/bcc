@@ -2,10 +2,12 @@ package nameResolution
 
 import ast._
 import main.Logger.debug
+import main.Joosc
 
 class EnvironmentException(message:String) extends main.CompilerError(message)
 
 object TypeLinking {
+	val linkJavaLang = true && Joosc.addStdLib
 	type NameMap = Map[Name, (Option[Name], String)]
 	def treatAll(cus:List[CompilationUnit]):List[CompilationUnit] = {
 		debug("CREATE POSSIBLE IMPORTS:")
@@ -75,7 +77,10 @@ object TypeLinking {
 			debug("IMPORT MY PACKAGE:")
 			myPackage.foreach(x => debug(x._1))
 
-			importPackage(Some(Name("java"::"lang"::Nil)), myPackage) //always import java.lang.*!
+			if (linkJavaLang)
+			  importPackage(Some(Name("java"::"lang"::Nil)), myPackage) //always import java.lang.*!
+			else
+			  myPackage
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
@@ -103,7 +108,8 @@ object TypeLinking {
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 				case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
 				case cd:ClassDefinition =>debug("LINK CLASS:"); ClassDefinition(cd.className,
-                                  if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object") None else Some(cd.parent.map(link(_)).getOrElse(RefTypeLinked(Some(Name(List("java", "lang"))), "Object"))),
+                                  if (linkJavaLang) if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object") None else Some(cd.parent.map(link(_)).getOrElse(RefTypeLinked(Some(Name(List("java", "lang"))), "Object")))
+                                  else cd.parent.map(link(_)),
                                     cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_)))
 			}
 			def linkMethod(md:MethodDeclaration):MethodDeclaration = {

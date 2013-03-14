@@ -17,12 +17,10 @@ object PrimitiveType{
   }
 }
 
-//byte < short < int
 trait IntegerTrait
 trait ShortTrait extends IntegerTrait
-//byte < char
-trait CharTrait
-trait ByteTrait extends ShortTrait with CharTrait
+trait ByteTrait extends ShortTrait
+trait CharTrait extends IntegerTrait
 
 case object IntType extends PrimitiveType with IntegerTrait {
     def typeName: String = "int"

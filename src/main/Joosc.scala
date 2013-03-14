@@ -39,6 +39,8 @@ object StdlibFiles {
 
 
 object Joosc {
+  val addStdLib = true
+  
   val errCodeSuccess = 0
   val errCodeParseErr = 42
   val errCodeIoErr = 1
@@ -54,7 +56,7 @@ object Joosc {
         val ast = AstBuilder.build(Parser.parse(tokens, dfa), source._2)
         ast.display
         ast
-      }) ::: StdlibFiles.stdAst
+      }) ::: (if (addStdLib) StdlibFiles.stdAst else Nil)
       val typeLinked = TypeLinking.treatAll(compilationUnits)
       
       HierarchyChecking.checkHierarchy(typeLinked)

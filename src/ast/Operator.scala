@@ -8,12 +8,12 @@ trait BooleanOperator
 object Operator {
     def fromString(str: String): Operator = str match {
         case "+" => PlusOperator
-        case  "-" => MinusOperator
+        case "-" => MinusOperator
         case "^"=> BitXorOperator
         case "&"=> BitAndOperator
         case "|"=> BitOrOperator
         case "!"=> InverseOperator
-        case "*"=> StarOperator
+        case "*"=> StarOperator 
         case "/"=> DivOperator
         case "%"=> ModOperator
         case "<"=> SmallerOperator
@@ -43,8 +43,8 @@ case object SmallerOperator extends Operator("<") with CompareOperator
 case object GreaterOperator extends Operator(">") with CompareOperator
 case object EqualOperator extends Operator("==") with CompareOperator
 case object NotEqualOperator extends Operator("!=") with CompareOperator
-case object AndOperator extends Operator("&&") with BooleanOperator
-case object OrOperator extends Operator("||") with BooleanOperator
+case object AndOperator extends Operator("&&") with BooleanOperator //CompareOperator?
+case object OrOperator extends Operator("||") with BooleanOperator //CompareOperator?
 case object LessEqualOperator extends Operator("<=") with CompareOperator
 case object GreaterEqualOperator extends Operator(">=") with CompareOperator
 
