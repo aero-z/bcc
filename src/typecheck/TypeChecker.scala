@@ -52,7 +52,7 @@ object TypeChecker {
     def errCondType(thetype: Type) = s"condition expression must have type boolean (got $thetype)"
     def errRetType(expected: Type, found: Type) = s"return doesn't match (expected $expected, found $found)"
     def errTypeMismatch(expected: Type, found: Type) = s"type mismatch (expected $expected, found $found)"
-    def checkStatement(s: Statement, retType: Type)(implicit isStatic: Boolean, classDef: ClassDefinition): Unit = s match {
+    def checkStatement(s: Statement, retType: Type)(implicit isStatic: Boolean, myType: RefTypeLinked): Unit = s match {
       case Block(statements) => statements.foreach(checkStatement(_, retType))
       case EmptyStatement =>
       case ExpressionStatement(expr) =>
@@ -82,15 +82,15 @@ object TypeChecker {
         checkStatement(loop, retType)
     }
 
-    def checkField(f: FieldDeclaration)(implicit classDef: ClassDefinition) = {
+    def checkField(f: FieldDeclaration)(implicit myType: RefTypeLinked) = {
       implicit val isStatic = f.modifiers.contains(Modifier.staticModifier)
       f.initializer.foreach(x => if (!checkTypeMatch(f.fieldType, x.getType)) throw new TypeCheckingError(errTypeMismatch(f.fieldType, x.getType)))
     }
-    def checkConstructor(c: ConstructorDeclaration)(implicit classDef: ClassDefinition) = {
+    def checkConstructor(c: ConstructorDeclaration)(implicit myType: RefTypeLinked) = {
       implicit val isStatic = false
       checkStatement(c.implementation, VoidType)
     }
-    def checkMethod(m: MethodDeclaration)(implicit classDef: ClassDefinition) = {
+    def checkMethod(m: MethodDeclaration)(implicit myType: RefTypeLinked) = {
       implicit val isStatic = m.modifiers.contains(Modifier.staticModifier)
       m.implementation match {
         case Some(b: Block) => checkStatement(b, m.returnType)
@@ -98,9 +98,9 @@ object TypeChecker {
       }
     }
     cus.foreach(_ match {
-      case CompilationUnit(_, _, Some(cd @ ClassDefinition(className, parent, _, _, fields, constructors, methods)), _) =>
+      case CompilationUnit(packageName, _, Some(cd @ ClassDefinition(className, parent, _, _, fields, constructors, methods)), _) =>
         //println("=> Checking "+className)
-        implicit val classDef = cd
+        implicit val myType = RefTypeLinked(packageName, className)
         parent.foreach(p => if (!p.asInstanceOf[RefTypeLinked].getTypeDef.asInstanceOf[ClassDefinition].constructors.exists(c =>
           c.parameters.isEmpty)) // implicit super();
           throw new TypeCheckingError("parent class has no default constructor")
