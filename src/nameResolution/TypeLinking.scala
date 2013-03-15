@@ -4,7 +4,7 @@ import ast._
 import main.Logger.debug
 import main.Joosc
 
-class EnvironmentException(message:String) extends main.CompilerError(message)
+class EnvironmentException(message:String) extends main.CompilerError(message, "Environment building")
 
 object TypeLinking {
 	val linkJavaLang = true
@@ -35,9 +35,9 @@ object TypeLinking {
 			debug("IMPORT CLASS")
 			val (packageName, className) = splitFullName(fullName)
 			if (map.contains(Name(className::Nil))) //imports with the same name!
-				throw new EnvironmentException("Error: imports with same name: "+className)
+				throw new EnvironmentException("imports with same name: "+className)
 			if (!possibleImports.contains((packageName, className)))
-				throw new EnvironmentException("Error: not part of possible imports: "+fullName)
+				throw new EnvironmentException("not part of possible imports: "+fullName)
 			map + (Name(className::Nil) -> (packageName, className)) + (fullName -> (packageName, className))
 		}
 		//you CANNOT import classes from the default package into named packages

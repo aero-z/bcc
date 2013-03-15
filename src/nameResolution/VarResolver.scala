@@ -5,6 +5,8 @@ import ast._
 import main.CompilerError
 import main.Logger.debug
 
+case class NameLinkingException(mess: String) extends CompilerError(mess, "Name Linking")
+
 object VarResolver{
   //( Map from name to new name, what to add to the new name, current class, previous cus)
   case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathToVariable, pck: Option[Name], classDef: ClassDefinition){
@@ -15,7 +17,7 @@ object VarResolver{
       case Environment(sm, PathToVariable(pck, cn, ind, list), cpck, cd) =>Environment(sm, PathToVariable(pck, cn, ind, (list.head + 1) :: list.tail), cpck, cd)
     }
     def update(stmt: Statement) : Environment = stmt match {
-      case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw new CompilerError(s"Name resolution exception: ${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
+      case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw NameLinkingException(s"${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
       case _ => inc
     }
   }
@@ -25,7 +27,7 @@ object VarResolver{
 
     def checkFields(fields: List[FieldDeclaration]): Unit = {
       val fieldName = fields.map(_.fieldName)
-      if(fieldName.distinct.size != fieldName.size) throw new CompilerError("There is two fields with the same name")
+      if(fieldName.distinct.size != fieldName.size) throw NameLinkingException("There is two fields with the same name")
     }
     
 
@@ -61,7 +63,7 @@ object VarResolver{
           currentPath :: previousPath,
         if(isStatic(field)) currentPath :: previousStatPath else previousStatPath)
       }catch{
-        case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
+        case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
       }
       
       def linkAssignment(exp: Expression)(possibleDecl: List[PathToField], currentDecl: List[PathToField]) : Expression = try {
@@ -86,7 +88,7 @@ object VarResolver{
           case FieldAccess(_, className) =>
             cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
           case _ : VariableAccess => throw FieldAccessIsProbablyPckException(path)
-          case _ => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
+          case _ => throw new NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
         }
       }
       
@@ -132,7 +134,7 @@ object VarResolver{
 
     def checkParameters(param: List[Parameter]){
       val parameterName = param.map(_.id)
-      if(parameterName.size != parameterName.distinct.size) throw new CompilerError("A method have twice the same parameter")
+      if(parameterName.size != parameterName.distinct.size) throw NameLinkingException("A method have twice the same parameter")
     }
 
 
@@ -151,7 +153,7 @@ object VarResolver{
       case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_, env)))
       case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env)))
       case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
-    }}catch { case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Hierarchy checking: can not find ${path.reduce(_ + "." + _)}")
+    }}catch { case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Can not find ${path.reduce(_ + "." + _)}")
     }
 
     def linkExpression(exp: Expression, env: Environment): Expression = try {
@@ -176,7 +178,7 @@ object VarResolver{
         case FieldAccess(_, className) =>
           cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
         case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)
-        case _ => throw new CompilerError(s"Var resolution, could not find: ${path.reduce(_ + "." + _)}")
+        case _ => throw NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
       }
     }
 

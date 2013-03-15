@@ -5,6 +5,7 @@ import scanner.EndToken
 import main.CompilerError
 import scala.annotation.tailrec
 
+case class ParserException(mess: String) extends CompilerError(mess, "Parser")
 object Parser {
 
   val debugEnabled = false
@@ -27,7 +28,7 @@ object Parser {
           val (stackRemain, newSymbol) = reduce(stack, rule);
           parseRec(stackRemain, newSymbol :: input)
         case ErrorAction() =>
-          throw CompilerError(s"invalid input: ${input.head} state: ${stack.head._2}")
+          throw ParserException(s"invalid input: ${input.head} state: ${stack.head._2} remain: $input")
       }
     }
     def reduce(stack: List[(ParserSymbol, Dfa.State)], rule: Rule): (List[(ParserSymbol, Dfa.State)], ParserSymbol) = {

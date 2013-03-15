@@ -3,7 +3,7 @@ package typecheck
 import ast._
 import main.CompilerError
 
-class TypeCheckingError(message: String) extends CompilerError(message)
+class TypeCheckingError(message: String) extends CompilerError(message, "Type checking")
 
 object TypeChecker {
 
@@ -56,7 +56,7 @@ object TypeChecker {
       case Block(statements) => statements.foreach(checkStatement(_, retType))
       case EmptyStatement =>
       case ExpressionStatement(expr) =>
-        expr.getType
+        expr.getType        
       case ForStatement(init, cond, incr, loop) =>
         init.foreach(checkStatement(_, retType))
         cond.foreach(x => if (!checkTypeMatch(BooleanType, x.getType)) throw new TypeCheckingError(errCondType(x.getType)))

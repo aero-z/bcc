@@ -6,7 +6,7 @@ import ast.Modifier._
 import scala.annotation.tailrec
 import main.CompilerError
 import java.io.File
-import main.CompilerError
+
 
 object AstBuilder {
   // Start the extraction of the parse tree.
@@ -14,7 +14,7 @@ object AstBuilder {
     case NonTerminalSymbol("CompilationUnit", List(pack, imp, typeDef)) =>
       val fileName = (new File(filePath)).getName()
       val dotIndex = fileName.lastIndexOf('.')
-      if (dotIndex < 0) throw CompilerError("file name must end with .java")
+      if (dotIndex < 0) throw new AstBuildingException("file name must end with .java")
       val typeName = fileName.substring(0,dotIndex)
       CompilationUnit(extractPackage(pack), extractImports(imp), extractTypeDefinition(typeDef), typeName)
     case _ => throw new AstBuildingException("That is not a compilation unit")
@@ -277,7 +277,7 @@ object AstBuilder {
         val opIntStr = if (unaryMinus) "-" + intStr
                        else intStr
         val int = try { opIntStr.toInt }
-                  catch { case _: Throwable => throw CompilerError("bad integer literal "+opIntStr); ??? }
+                  catch { case _: Throwable => throw AstBuildingException("bad integer literal "+opIntStr) }
         NumberLiteral(int)
       }
       case st : StringToken => StringLiteral(st)
@@ -317,6 +317,6 @@ object AstBuilder {
 
   }
 
-  class AstBuildingException(msg: String) extends CompilerError(msg)
+  case class AstBuildingException(msg: String) extends CompilerError(msg, "Ast building")
 
 }

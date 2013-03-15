@@ -12,7 +12,9 @@ import scanner._
 import typecheck.TypeChecker
 
 
-case class CompilerError(str: String) extends Exception(str)
+abstract class CompilerError(mess: String, typeErr: String) extends Exception(mess){
+  val errorMessage = s"[$typeErr]: $mess"
+}
 
 object StdlibFiles {
   val stdlibFiles = List(
@@ -67,7 +69,7 @@ object Joosc {
       errCodeSuccess
     } catch {
       case e: CompilerError =>
-        Console.err.println("Compilation error: " + e.getMessage())
+        Console.err.println(e.errorMessage)
         errCodeParseErr
     }
   }
