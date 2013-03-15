@@ -87,7 +87,7 @@ object VarResolver{
       
       def linkVar(name: String, previousField: List[PathToField]) : LinkedExpression = {
         previousField.find(_.fieldName == name) match{
-          case Some(path) => LinkedVariableOrField(name, path.refType.getType(cus).asInstanceOf[ClassDefinition].fields.find(_.fieldName == name).get.fieldType, path)
+          case Some(path) => LinkedVariableOrField(name, path.refType.getTypeDef(cus).asInstanceOf[ClassDefinition].fields.find(_.fieldName == name).get.fieldType, path)
           case None => imp.collectFirst{
             case LinkImport(typeName, refType) if name == typeName => refType
           }.getOrElse(throw FieldAccessIsProbablyPckException(List(name)))
