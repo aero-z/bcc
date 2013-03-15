@@ -51,7 +51,7 @@ private object Util {
     refType match {
       case t: RefTypeLinked =>
         val (parents, methods) = t.getTypeDef match {
-          case ClassDefinition(_, parent, _, _, _, _, methods) => (parent.toList, methods)
+          case ClassDefinition(_, parent, interfaces, _, _, _, methods) => (interfaces ::: parent.toList, methods)
           case InterfaceDefinition(_, parents, _, methods) => (parents, methods)
         }
         
@@ -187,8 +187,9 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
         val f = Util.findField(r, field)
         val fIsProtected = f.modifiers.contains(Modifier.protectedModifier)
         val fIsStatic    = f.modifiers.contains(Modifier.staticModifier)
-        if (fIsProtected && !TypeChecker.checkTypeMatch(r, myType))
-          throw new TypeCheckingError("trying to access protected field in a different class")
+        if (!TypeChecker.checkTypeMatch(myType, r))
+          if (fIsProtected && !TypeChecker.checkTypeMatch(r, myType))
+            throw new TypeCheckingError("trying to access protected field in a different class")
         if (accessed.isInstanceOf[RefType] && !fIsStatic)
           throw new TypeCheckingError("trying to access non-static field in an type")
         else if (!accessed.isInstanceOf[RefType] && fIsStatic)
@@ -242,9 +243,16 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
     accessed.getType match {
       case r: RefType =>
         val m = Util.findMethodThrows(r, method, arguments)
-        if (accessed.isInstanceOf[RefType] && !m.modifiers.contains(Modifier.staticModifier))
+        val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
+        val mIsProtected = m.modifiers.contains(Modifier.protectedModifier)
+
+        if (!TypeChecker.checkTypeMatch(myType, r))
+          if (mIsProtected && !TypeChecker.checkTypeMatch(r, myType))
+            throw new TypeCheckingError("trying to access protected field in a different class")
+        
+        if (accessed.isInstanceOf[RefType] && !mIsStatic)
           throw new TypeCheckingError("trying to access non-static method in an type")
-        else if (!accessed.isInstanceOf[RefType] && m.modifiers.contains(Modifier.staticModifier))
+        else if (!accessed.isInstanceOf[RefType] && mIsStatic)
           throw new TypeCheckingError("trying to access static method in an instance")
         else
           m.returnType
@@ -293,10 +301,8 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
       case PathToField(refType, _) =>
         val f = Util.findField(refType, name)
         val fIsStatic = f.modifiers.contains(Modifier.staticModifier)
-        if (isStatic && !fIsStatic)
+        if (isStatic)
           throw new TypeCheckingError("trying to access non-static field in a static block (implicit this)")
-        else if (!isStatic && fIsStatic)
-          throw new TypeCheckingError("trying to access static field in a non-static block (implicit this)")
       case _ =>
     }
     varType
