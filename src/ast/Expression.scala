@@ -23,23 +23,26 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
 case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression {
   val Str = RefTypeLinked(Some(Name("java" :: "lang" :: Nil)), "String")
   def getType(implicit cus: List[CompilationUnit]): Type = (first.getType, operation, second.getType) match {
-    case (t, PlusOperator, Str) => if (t!=VoidType) Str else throw new TypeCheckingError("void cannot be converted to String!")
-    case (Str, PlusOperator, t) => if (t!=VoidType) Str else throw new TypeCheckingError("void cannot be converted to String!")
+    case (t,   PlusOperator, Str) => if (t != VoidType) Str else throw new TypeCheckingError("void cannot be converted to String!")
+    case (Str, PlusOperator, t)   => if (t != VoidType) Str else throw new TypeCheckingError("void cannot be converted to String!")
     case (_: ByteTrait,    _: ArithmeticOperator, _: ByteTrait)    => ByteType
     case (_: ByteTrait,    _: CompareOperator,    _: ByteTrait)    => BooleanType
     case (_: ShortTrait,   _: ArithmeticOperator, _: ShortTrait)   => ShortType //includes widening!
     case (_: ShortTrait,   _: CompareOperator,    _: ShortTrait)   => BooleanType
+    case (_: CharTrait,    _: ArithmeticOperator, _: CharTrait)    => CharType
+    case (_: CharTrait,    _: CompareOperator,    _: CharTrait)    => BooleanType
     case (_: IntegerTrait, _: ArithmeticOperator, _: IntegerTrait) => IntType //includes widening!
     case (_: IntegerTrait, _: CompareOperator,    _: IntegerTrait) => BooleanType
 
     case (BooleanType,     _: BooleanOperator,       BooleanType) => BooleanType
 
-    //case (_,            _: CompareOperator, _) if (first.getType == second.getType) => BooleanType //did you check this? Only == works
-    case (_,               EqualOperator, _) if (first.getType == second.getType) => BooleanType
-    //case (_: RefType,   _: CompareOperator, NullType)     => BooleanType //no, null is not a type!
-    case (NullType,     _: CompareOperator, _: RefType)   => BooleanType
-    //case (_: ArrayType, _: CompareOperator, NullType)     => BooleanType //no!
-    case (NullType,     _: CompareOperator, _: ArrayType) => BooleanType
+    case (_, EqualOperator | NotEqualOperator, _) if (first.getType == second.getType && first.getType != VoidType) => BooleanType
+
+    case (_: RefType,   EqualOperator | NotEqualOperator,    NullType)  => BooleanType
+    case (   NullType,  EqualOperator | NotEqualOperator, _: RefType)   => BooleanType
+    case (_: ArrayType, EqualOperator | NotEqualOperator,    NullType)  => BooleanType
+    case (   NullType,  EqualOperator | NotEqualOperator, _: ArrayType) => BooleanType
+    case (   NullType,  EqualOperator | NotEqualOperator,    NullType)  => BooleanType
 
     case (x, op, y) => throw new TypeCheckingError(s"no operation $op found for arguments $x and $y")
   }
@@ -52,6 +55,7 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
     case (ShortType, _:ShortTrait) => ShortType
     case (IntType, _:IntegerTrait) => IntType
     case (BooleanType, BooleanType) => BooleanType
+    case (CharType, IntType) => CharType
     //all other primitive casts are imposible!
     case (_:PrimitiveType, _:PrimitiveType) => throw new TypeCheckingError("impossile cast: ("+typeCast+") "+target.getType)
     case _ => typeCast//TODO: reference types -> give errors
@@ -148,7 +152,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
   def getType(implicit cus: List[CompilationUnit]): Type = (exp.getType, typeChecked) match {
     case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
     case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
-    case (typeChecked, _) => typeChecked //instanceof himself
+    case (`typeChecked`, _) => typeChecked //instanceof himself
     case (NullType, _) => BooleanType //always false btw
     case (_, NullType) => throw new TypeCheckingError("instanceOf impossible with nulltype and ")
     case (VoidType, _) => throw new TypeCheckingError("instanceOf: void is not the instance of anything ")
