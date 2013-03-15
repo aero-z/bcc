@@ -69,5 +69,7 @@ case object NullType extends Type {
 }
 
 object Java {
-	val Object = RefTypeLinked(Some(Name(List("java", "lang"))), "Object")
+	val Object       = RefTypeLinked(Some(Name(List("java", "lang"))), "Object")
+	val Cloneable    = RefTypeLinked(Some(Name(List("java", "lang"))), "Cloneable")
+	val Serializable = RefTypeLinked(Some(Name(List("java", "io"))), "Serializable")
 }

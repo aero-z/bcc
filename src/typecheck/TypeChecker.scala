@@ -7,10 +7,45 @@ class TypeCheckingError(message: String) extends CompilerError(message)
 
 object TypeChecker {
   
-  def checkTypeMatch(expected: Type, found: Type) =
-    expected == found ||
-    (found == NullType && (expected.isInstanceOf[RefType] || expected.isInstanceOf[ArrayType])) ||
-    (expected == Java.Object && found.isInstanceOf[ArrayType])
+  def findMother(find:RefTypeLinked, cus:List[CompilationUnit], current:RefTypeLinked):Boolean = {
+    if (find == current) //found!
+      true
+    else
+      cus.find(cu => cu.packageName == current.pkgName && cu.typeName == current.typeName) match {
+        case None => false
+        case Some(CompilationUnit(packageName, importDeclarations, typeDef, typeName)) => typeDef match {
+          case None => false
+          case Some(ClassDefinition(className, parent, interfaces, _, _, _, _)) => (parent.toList ::: interfaces) match {
+            case Nil => false
+            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
+          }
+          case Some(InterfaceDefinition(name, parents,_, _)) => parents match {
+            case Nil => false
+            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
+          }
+        }
+      }
+  }
+  
+  def checkTypeMatch(expected: Type, found: Type)(implicit cus:List[CompilationUnit]): Boolean = {
+   (expected, found) match {
+     case (x, y) if (x == y) => true
+     case (x: RefTypeLinked, y: RefTypeLinked) => findMother(x, cus, y)
+     case (ArrayType(x: RefTypeLinked), ArrayType(y: RefTypeLinked)) => findMother(x, cus, y)
+     case (ArrayType(x), ArrayType(y)) => (x == y)
+     case (_: RefTypeLinked, NullType) => true
+     case (_: ArrayType, NullType) => true
+     case (Java.Object, _: ArrayType) => true
+     case (Java.Cloneable, _: ArrayType) => true
+     case (Java.Serializable, _: ArrayType) => true
+     case (IntType, _: IntegerTrait) => true
+     case (ShortType, _: ShortTrait) => true
+     case (ByteType, _: ByteTrait) => true
+     case (CharType, _: CharTrait) => true
+     // TODO: think about void
+     case _ => false
+    }
+  }    
       
   def check(cus: List[CompilationUnit]) = {
     implicit val compUnits = cus

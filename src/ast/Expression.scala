@@ -50,16 +50,9 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
 
 case class CastExpression(typeCast: Type, target: Expression) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = (typeCast, target.getType) match {
-    /*case (ByteType, _:ByteTrait) => ByteType
-    case (CharType, _:CharTrait) => CharType
-    case (ShortType, _:ShortTrait) => ShortType
-    case (IntType, _:IntegerTrait) => IntType
-    case (BooleanType, BooleanType) => BooleanType
-    case (CharType, IntType) => CharType*/
-    case (_: IntegerTrait, _: IntegerTrait) => typeCast
-    //all other primitive casts are imposible!
-    case (_:PrimitiveType, _:PrimitiveType) => throw new TypeCheckingError("impossile cast: ("+typeCast+") "+target.getType)
-    case (mom:RefTypeLinked, me:RefTypeLinked) => if (Util.findMother(mom, cus, me)||Util.findMother(mom, cus, me)) mom else throw new TypeCheckingError("impossible cast for refTypes: ("+mom+")"+me)
+    case (x, y) if (TypeChecker.checkTypeMatch(x, y)) => typeCast
+    case (x, y) if (TypeChecker.checkTypeMatch(y, x)) => typeCast
+    case _ => throw new TypeCheckingError("impossile cast: ("+typeCast+") "+target.getType)
   }
 }
 
@@ -89,25 +82,6 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
 }
 
 private object Util {
-  def findMother(find:RefTypeLinked, cus:List[CompilationUnit], current:RefTypeLinked):Boolean = {
-    if (find == current) //found!
-      true
-    else
-      cus.find(cu => cu.packageName == current.pkgName && cu.typeName == current.typeName) match {
-        case None => false
-        case Some(CompilationUnit(packageName, importDeclarations, typeDef, typeName)) => typeDef match {
-          case None => false
-          case Some(ClassDefinition(className, parent, interfaces, _, _, _, _)) => (parent.toList ::: interfaces) match {
-            case Nil => false
-            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
-          }
-          case Some(InterfaceDefinition(name, parents,_, _)) => parents match {
-            case Nil => false
-            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
-          }
-        }
-      }
-  }
   def findField(refType: RefType, name: String)(implicit cus: List[CompilationUnit]): Type = {
     refType match {
       case t: RefTypeLinked =>
@@ -169,6 +143,15 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
 
 case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = (exp.getType, typeChecked) match {
+      
+    case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
+    case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
+    case (_, NullType|VoidType) => throw new TypeCheckingError("cannot cast to void or null")
+
+    case (x, y) if (TypeChecker.checkTypeMatch(x, y)) => BooleanType
+    case (x, y) if (TypeChecker.checkTypeMatch(y, x)) => BooleanType
+    case _ => throw new TypeCheckingError("Cannot instanceOf with:"+exp.getType+" and "+typeChecked)
+    /*
     case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
     case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
     case (`typeChecked`, _) => BooleanType //instanceof himself
@@ -179,6 +162,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
     case (_:ArrayType, _:ArrayType) => BooleanType
     case (parent:RefTypeLinked, child:RefTypeLinked) => BooleanType
     case _ => throw new TypeCheckingError("Cannot instanceOf with:"+exp.getType+" and "+typeChecked)
+    */
   }
 }
 
