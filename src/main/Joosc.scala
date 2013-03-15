@@ -69,7 +69,7 @@ object Joosc {
       errCodeSuccess
     } catch {
       case e: CompilerError =>
-        Console.err.println(e.errorMessage)
+        Console.err.println(e.errorMessage)//+"\n"+e.printStackTrace())
         errCodeParseErr
     }
   }

@@ -66,9 +66,9 @@ object TypeLinking {
 			val emptyMap = Map[Name, (Option[Name], String)]()
 			val fullName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName)
 			val myMap = emptyMap + (Name(cu.typeName::Nil) -> (cu.packageName, cu.typeName)) + (fullName -> (cu.packageName, cu.typeName)) //might overwrite the old one
+			//don't import yourself again
 			val classImports = classes.filter(_ != fullName).foldLeft(myMap)((map:NameMap, y:Name) => importClass(y, map))
 			val myPackage = importPackage(cu.packageName, classImports)
-
 			debug("IMPORT SELF:")
 			myMap.foreach(x => debug(x._1))
 			debug("IMPORT CLASSES:")
@@ -102,7 +102,7 @@ object TypeLinking {
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
 				val onDemandList = onDemandImports.flatMap(x => (Name(x._2::Nil), (x._1, x._2)) :: (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)) :: Nil)
-				val newImportDeclarations = (directAccess.toList ::: imported.toList ::: onDemandList).distinct.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList
+				val newImportDeclarations = (directAccess.toList.filter(_._1 != None) ::: imported.toList ::: onDemandList).distinct.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList
 				CompilationUnit(cu.packageName, newImportDeclarations, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
 			}
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
@@ -196,7 +196,11 @@ object TypeLinking {
 		debug("+++++In "+cu.packageName+" :"+cu.typeName)
 		
 		
-		val possibleList = possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
+		val possibleList =
+		  if (cu.packageName == None)
+		    possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
+		  else
+		    possibleImports.filter(_._1 != None).map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 
 		val classes = cu.importDeclarations.filter{case ClassImport(_) => true case _ => false}.distinct.map(_.getName)
 		val packages = cu.importDeclarations.filter{case PackageImport(_) => true case _ => false}.distinct.map(_.getName)
