@@ -84,20 +84,20 @@ object TypeLinking {
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
-			def checkPrefix(names:List[String]):Int = names match {
+			def checkPrefix(names:List[String]):Int = names match { //return type should be discarted!
 			  case Nil => 0 //recursive functions need return type
 			  case x :: Nil =>
-			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
-			    if (onDemandImports.filter(x => x._1 == None && x._2 == x).length != 0) throw new EnvironmentException("invalid prefix: "+x)
-			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
+			    //if (imported.get(Name(names)).isDefined && (imported.get(Name(names)).get._1 != None)) throw new EnvironmentException("invalid prefix: "+x+" clashed with: "+imported.get(Name(names)).get)
+			    //default package stuff!! if (onDemandImports.filter(x => x._1 == None && x._2 == x).length != 0 && ) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+onDemandImports.filter(x => x._1 == None && x._2 == x).head)
+			    //if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with: "+directAccess.get(Name(names)).get)
 			    0 //end of recursion
 			  case x :: xs => //at least 2 elements
 			    val possibleClass = names.last;
 			    val possiblePackage = names.dropRight(1)
-			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
-			    if (onDemandImports.filter(x => x._1 == Some(xs) && x._2 == x).length != 0) throw new EnvironmentException("invalid prefix: "+x)
-			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x)
-			    checkPrefix(xs);
+			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+imported.get(Name(names)).get)
+			    if (onDemandImports.filter(x => x._1 == Some(Name(possiblePackage)) && x._2 == possibleClass).length != 0) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+possiblePackage+" -> "+possibleClass)
+			    //if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with:"+directAccess.get(Name(names)))
+			    checkPrefix(possiblePackage);
 			}
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
@@ -172,7 +172,7 @@ object TypeLinking {
 									case head :: second :: tail => debug("Two different possible imports found for: "+cname); throw new EnvironmentException("Two different possible imports found for: "+cname)
 								}
 							case (pname @ Some(pn), cname) => //direct access
-								//checkPrefix(pn, imported)
+								val discard = checkPrefix(pn.path.dropRight(1)) //runtime check if there is a prefix
 								directAccess.get(name) match {
 									case Some(tuple) => debug("case: direct access :"+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]//if not imported can still be used via direct name!
 									case None => debug("not possible to import: "+name.path); throw new EnvironmentException("not possible to import: "+name.path)
@@ -185,8 +185,10 @@ object TypeLinking {
 				case ArrayType(elementType) => debug("arraytype -> no link:"); ArrayType(link(elementType)).asInstanceOf[A]
 				case x => debug("Simple type, no link:"); x
 			}
-			//get strict prefix of all 
-			val prefixes = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).map{case Name(xs) => xs.dropRight(1)}.filter(_ != Nil).distinct
+			//get strict prefix of all
+			
+			val prefixes = (imported.keys.toList :::onDemandImports.map(x => x._1.getOrElse(Name(Nil)).appendClassName(x._2))).map(_.path.dropRight(1))
+			//val prefixes = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).map{case Name(xs) => xs.dropRight(1)}.filter(_ != Nil).distinct
 			//y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
 			val discard = prefixes.foreach(checkPrefix(_))
 			linkCompilationUnit(cu);
