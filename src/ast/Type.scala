@@ -67,3 +67,7 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
 case object NullType extends Type {
   def typeName: String = "nullType"
 }
+
+object Java {
+	val Object = RefTypeLinked(Some(Name(List("java", "lang"))), "Object")
+}

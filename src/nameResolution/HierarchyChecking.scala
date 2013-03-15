@@ -123,11 +123,9 @@ object HierarchyChecking {
     def checkInterface(in: InterfaceDefinition){
       checkInterfaceVsObject(in)
     }
-
-
-
+    
     def checkInterfaceVsObject(interface: InterfaceDefinition){
-      val objectMethodSig = RefTypeLinked(Some(Name(List("java", "lang"))), "Object").getTypeDef(cus).asInstanceOf[ClassDefinition].methods.map(m => (m.methodName, m.parameters.map(_.paramType), (m.returnType, m.modifiers)))
+      val objectMethodSig = Java.Object.getTypeDef(cus).asInstanceOf[ClassDefinition].methods.map(m => (m.methodName, m.parameters.map(_.paramType), (m.returnType, m.modifiers)))
       interface.methods.foreach{
         case MethodDeclaration(name, ret, mods, params, None) if(objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType))) => if(! objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType) && x._3._1 == ret && mods.sameElements(x._3._2))) throw CompilerError(s"Hierarchy checking: method $name is not compatible with java.lang.Object")
         case _ => ()

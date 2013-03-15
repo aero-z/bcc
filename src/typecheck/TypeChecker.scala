@@ -9,7 +9,8 @@ object TypeChecker {
   
   def checkTypeMatch(expected: Type, found: Type) =
     expected == found ||
-    (found == NullType && expected.isInstanceOf[RefType])
+    (found == NullType && (expected.isInstanceOf[RefType] || expected.isInstanceOf[ArrayType])) ||
+    (expected == Java.Object && found.isInstanceOf[ArrayType])
       
   def check(cus: List[CompilationUnit]) = {
     implicit val compUnits = cus
@@ -44,7 +45,7 @@ object TypeChecker {
     }
       
     def checkField(f: FieldDeclaration) = {
-      f.initializer.foreach(x => if (x.getType != f.fieldType) throw new TypeCheckingError(errTypeMismatch(f.fieldType, x.getType)))
+      f.initializer.foreach(x => if (!checkTypeMatch(f.fieldType, x.getType)) throw new TypeCheckingError(errTypeMismatch(f.fieldType, x.getType)))
     }
     def checkConstructor(c: ConstructorDeclaration) = {
       checkStatement(c.implementation, None)
