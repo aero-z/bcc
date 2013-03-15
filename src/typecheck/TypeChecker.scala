@@ -67,7 +67,12 @@ object TypeChecker {
         checkStatement(ifblock, retType)
         elseblock.foreach(checkStatement(_, retType))
       case ReturnStatement(retExpr) =>
-        val retExprType = retExpr.map(_.getType).getOrElse(VoidType)
+        val retExprType = retExpr match {
+          case Some(expr) =>
+            if (expr.getType == VoidType) throw new TypeCheckingError("cannot return void value")
+            else expr.getType
+          case None => VoidType
+        }
         if (!checkTypeMatch(retType, retExprType))
           throw new TypeCheckingError(errRetType(retType, retExprType))
       case LocalVariableDeclaration(thetype, _, init) =>
