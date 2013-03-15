@@ -63,6 +63,7 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
   def getType(implicit cus: List[CompilationUnit]): Type = {
     (operation, term.getType) match {
       case (InverseOperator, BooleanType) => BooleanType
+      case (InverseOperator, _:IntegerTrait) => BooleanType
       case (MinusOperator, t:IntegerTrait) => t
       case (op,t) => throw new TypeCheckingError(s"invalid unary operation ($op, $t)")
     }
@@ -136,8 +137,13 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
 
 case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = {
-    if (!constructor.asInstanceOf[RefTypeLinked].getTypeDef.asInstanceOf[ClassDefinition].constructors.exists(c => Util.compParams(c.parameters, arguments)))
-      throw new TypeCheckingError("found no contructor that matches parameters")
+    constructor.asInstanceOf[RefTypeLinked].getTypeDef match {
+      case ClassDefinition(_, _, _, _, _, constructors, _) => 
+        if (!constructors.exists(c => Util.compParams(c.parameters, arguments)))
+          throw new TypeCheckingError("found no contructor that matches parameters")
+      case _:InterfaceDefinition =>
+        throw new TypeCheckingError("cannot instantiate interface")
+    }
     constructor
   }
 }
