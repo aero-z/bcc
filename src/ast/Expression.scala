@@ -88,7 +88,8 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
     
     //case (_, EqualOperator | NotEqualOperator, _) if (first.getType == second.getType && first.getType != VoidType) => BooleanType
 
-    case (_: RefType,   EqualOperator | NotEqualOperator, _: RefType)   => BooleanType
+    case (x: RefType,   EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(x, y)) => BooleanType
+    case (x: RefType,   EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(y, x)) => BooleanType
     case (_: RefType,   EqualOperator | NotEqualOperator,    NullType)  => BooleanType
     case (   NullType,  EqualOperator | NotEqualOperator, _: RefType)   => BooleanType
     case (_: ArrayType, EqualOperator | NotEqualOperator,    NullType)  => BooleanType
