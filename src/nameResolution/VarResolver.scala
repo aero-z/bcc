@@ -52,21 +52,22 @@ object VarResolver{
       checkFields(classDef.fields)
       
       def linkFieldAssignment(previousField: List[FieldDeclaration], previousPath: List[PathToField], previousStatPath: List[PathToField], field : FieldDeclaration) = try{
-        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers, field.initializer.map(linkAssignment(_)(if(isStatic(field)) parStatic ::: previousStatPath else parStatic ::: parNonStat ::: previousPath))) :: previousField,
-          PathToField(RefTypeLinked(pck, classDef.className), field.fieldName) :: previousPath,
-        if(isStatic(field)) PathToField(RefTypeLinked(pck, classDef.className), field.fieldName):: previousStatPath else previousStatPath)
+        val currentPath = PathToField(RefTypeLinked(pck, classDef.className), field.fieldName)
+        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers, field.initializer.map(linkAssignment(_)(if(isStatic(field)) previousStatPath else previousPath, currentPath))) :: previousField,
+          currentPath :: previousPath,
+        if(isStatic(field)) currentPath :: previousStatPath else previousStatPath)
       }catch{
         case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
       }
       
-      def linkAssignment(exp: Expression)(implicit possibleDecl: List[PathToField]) : Expression = try {
+      def linkAssignment(exp: Expression)(implicit possibleDecl: List[PathToField], currentDecl: PathToField) : Expression = try {
         exp match {
           case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp))
           case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f), op, linkAssignment(s))
           case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t))
           case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr), linkAssignment(ind))
           case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size))
-          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs), linkAssignment(rhs))
+          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs)(currentDecl :: possibleDecl, currentDecl), linkAssignment(rhs))
           case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc), field)
           case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)))
           case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc), meth, args.map(linkAssignment(_)))
@@ -95,7 +96,7 @@ object VarResolver{
       }
           
 
-      classDef.fields.foldLeft((List[FieldDeclaration](), List[PathToField](), List[PathToField]())){
+      classDef.fields.foldLeft((List[FieldDeclaration](), parStatic, parNonStat ::: parStatic)){
         case ((decl, path, nonPath), fi) => linkFieldAssignment(decl, path, nonPath, fi)
       }._1.reverse
     
