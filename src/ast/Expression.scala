@@ -157,9 +157,13 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
     case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceof incompatible with primitive type: "+p)
     case (_, NullType|VoidType) => throw new TypeCheckingError("cannot cast to void or null")
 
-    case (x, y) if (TypeChecker.checkTypeMatch(x, y)) => BooleanType
+    case (x, y) if (TypeChecker.checkTypeMatch(x, y)) =>
+      println("x,y: "+x+" "+y)
+      BooleanType
     case (x, y) if (TypeChecker.checkTypeMatch(y, x)) => BooleanType
-    case _ => throw new TypeCheckingError("Cannot instance of with:"+exp.getType+" and "+typeChecked)
+
+    case _ => throw new TypeCheckingError("Cannot instanceof with: "+exp.getType+" instanceof "+typeChecked)
+
   }
 }
 
