@@ -7,128 +7,209 @@ import main.Logger.debug
 
 object VarResolver{
   //( Map from name to new name, what to add to the new name, current class, previous cus)
-  case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathToVariable, previousCUS: List[CompilationUnit],pck: Option[Name], classDef: ClassDefinition){
+  case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathToVariable, pck: Option[Name], classDef: ClassDefinition){
     def open : Environment = this match {
-      case Environment(sm, PathToVariable(pck, cn, ind, list), pcus, cpck,  cd) =>Environment(sm, PathToVariable(pck, cn, ind, 0 :: list), pcus, cpck, cd)      
+      case Environment(sm, PathToVariable(pck, cn, ind, list), cpck,  cd) =>Environment(sm, PathToVariable(pck, cn, ind, 0 :: list), cpck, cd)
     }
     def inc : Environment = this match {
-      case Environment(sm, PathToVariable(pck, cn, ind, list), pcus, cpck, cd) =>Environment(sm, PathToVariable(pck, cn, ind, (list.head + 1) :: list.tail), pcus, cpck, cd)
+      case Environment(sm, PathToVariable(pck, cn, ind, list), cpck, cd) =>Environment(sm, PathToVariable(pck, cn, ind, (list.head + 1) :: list.tail), cpck, cd)
     }
     def update(stmt: Statement) : Environment = stmt match {
-      case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw new CompilerError(s"Name resolution exception: ${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition,  previousCUS, pck, classDef).inc
+      case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw new CompilerError(s"Name resolution exception: ${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
       case _ => inc
-
     }
   }
 
-  def variableLink(cus: List[CompilationUnit]): List[CompilationUnit] = cus.map{
-    case cu @ CompilationUnit(pck, imp, Some(classDef @ ClassDefinition(name, parent, interfaces, modifiers, fields, constructors, methods)), fileName) => checkFields(fields); CompilationUnit(pck, imp,
-      Some(ClassDefinition(name, parent, interfaces, modifiers, fields,
-        constructors.zipWithIndex.map{case (_, index) => linkConstructor(cus, index, pck, classDef)},
-        methods.zipWithIndex.map{case (_, index) => linkMethod(cus, index, pck, classDef)}))
-        , fileName)
-    case x => x
-  }
-
-  def checkFields(fields: List[FieldDeclaration]): Unit = {
-    val fieldName = fields.map(_.fieldName)
-    if(fieldName.distinct.size != fieldName.size) throw new CompilerError("There is two fields with the same name")
-  }
-
-  def linkConstructor(cus: List[CompilationUnit], index: Int, pck: Option[Name], classDef: ClassDefinition): ConstructorDeclaration = {
-    val cons = classDef.constructors(index)
-    checkParameters(cons.parameters)
-    val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
-    val curPos = PathToVariable(pck, classDef.className, index, List(0))
-    val env = Environment(parameterMap, curPos, cus, pck, classDef)
-    ConstructorDeclaration(cons.modifiers, cons.parameters, implementationLink(env, cons.implementation))
-  }
+  def variableLink(cus: List[CompilationUnit]): List[CompilationUnit] = {
 
 
-  def linkMethod(cus: List[CompilationUnit], index: Int, pck: Option[Name], classDef: ClassDefinition) : MethodDeclaration = {
-    val meth = classDef.methods(index)
-    checkParameters(meth.parameters)
-    val parameterMap = Map(meth.parameters.map{case Parameter(parType, id) => (id, (parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
-    val curPos = PathToVariable(pck, classDef.className, index, List(0))
-    val env = Environment(parameterMap, curPos, cus, pck, classDef)
-    MethodDeclaration(meth.methodName, meth.returnType, meth.modifiers, meth.parameters, meth.implementation.map(implementationLink(env, _)))
-  }
-  
-  def implementationLink(environment: Environment, block: Block): Block = Block(passThroughStatements(block.statements, environment))
-
-  def checkParameters(param: List[Parameter]){
-    val parameterName = param.map(_.id)
-    if(parameterName.size != parameterName.distinct.size) throw new CompilerError("A method have twice the same parameter")
-  }
-
-
-  def passThroughStatements(stmts: List[Statement], env: Environment): List[Statement] = stmts match {
-    case x :: xs => linkStatement(x, env) :: passThroughStatements(xs, env.update(x))
-    case Nil => Nil
-  }
-
-   def linkStatement(stmt: Statement, env: Environment) : Statement = stmt match {
-     case Block(stmts) => Block(passThroughStatements(stmts, env.open))
-     case EmptyStatement => EmptyStatement
-     case ExpressionStatement(exp) => ExpressionStatement(linkExpression(exp, env))
-     case ForStatement(init, cond, inc, stmt) => val forEnv = init.foldLeft(env.open)(_.update(_));
-       ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_, forEnv.inc )), inc.map(linkExpression(_, forEnv.inc.inc)), linkStatement(stmt, forEnv.inc.inc.inc))
-     case IfStatement(cond, ifStmt, elseStmt) => IfStatement(linkExpression(cond, env), linkStatement(ifStmt, env.open), elseStmt.map(linkStatement(_, env.open.inc)))
-     case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_, env)))
-     case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env)))
-     case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
-   }
-
-  def linkExpression(exp: Expression, env: Environment): Expression = try {
-    exp match {
-      case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp, env))
-      case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f, env), op, linkExpression(s, env))
-      case CastExpression(cast, t) => CastExpression(cast, linkExpression(t, env))
-      case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr, env), linkExpression(ind, env))
-      case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size, env))
-      case Assignment(lhs, rhs) => Assignment(linkExpression(lhs, env), linkExpression(rhs, env))
-      case FieldAccess(acc, field) => FieldAccess(linkExpression(acc, env), field)
-      case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_, env)))
-      case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc, env), meth, args.map(linkExpression(_, env)))
-      case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkExpression(_, env)))
-      case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
-      case x: This => x
-      case VariableAccess(name) => linkVariable(name, env)
-      case lit: Literal => lit
+    def checkFields(fields: List[FieldDeclaration]): Unit = {
+      val fieldName = fields.map(_.fieldName)
+      if(fieldName.distinct.size != fieldName.size) throw new CompilerError("There is two fields with the same name")
     }
-  } catch {
-    case FieldAccessIsProbablyPckException(path) => exp match {
-      case FieldAccess(_, className) =>
-        env.previousCUS.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
-      case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)
-      case _ => throw new CompilerError(s"Var resolution, could not find: ${path.reduce(_ + "." + _)}")
-    }
-  }   
 
-  def linkVariable(varName : String, env : Environment): LinkedExpression ={
-    def checkClassFields(varName: String, classDef: ClassDefinition): Option[LinkedExpression] ={
-      val field = classDef.fields.find(_.fieldName == varName)
-      field match{
-        case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(env.pck, env.classDef.className, varDecl.fieldName)))
-          case None => classDef.parent match {
-            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType.getTypeDef(env.previousCUS).asInstanceOf[ClassDefinition])
-            case _ => None
+    def linkFields(imp: List[ImportDeclaration], classDef: ClassDefinition, pck : Option[Name]): List[FieldDeclaration] = {
+      def isStatic(field: FieldDeclaration) = field.modifiers.contains(Modifier.staticModifier)
+      def remove(children: List[PathToField], parents: List[PathToField]) = parents.filter(p => children.forall(_.fieldName != p.fieldName) && classDef.fields.forall(p.fieldName != _.fieldName))
+
+      val (parStatic, parNonStat): (List[PathToField] ,List[PathToField]) = {
+        def rec(refType: RefTypeLinked, staticAcc: List[PathToField], acc: List[PathToField]): (List[PathToField], List[PathToField]) = {
+          val classDef = refType.getTypeDef(cus).asInstanceOf[ClassDefinition]
+
+          val par = classDef.fields.partition(isStatic(_))
+          val (newStat, newNon) = (par._1.map(fi => PathToField(refType, fi.fieldName)), par._2.map(fi => PathToField(refType, fi.fieldName)))          
+          classDef.parent match {
+            case Some(ref : RefTypeLinked) => rec(ref, newStat ::: staticAcc, newStat ::: newNon ::: acc)
+            case  _ => (remove(acc, newStat) ::: staticAcc, remove(acc, newNon ::: newStat) ::: acc)
           }
+        }
+        classDef.parent match {
+          case Some(ref: RefTypeLinked) => rec(ref, Nil, Nil)
+          case _ => (Nil, Nil)
+        }
       }
+
+      checkFields(classDef.fields)
+      
+      def linkFieldAssignment(previousField: List[FieldDeclaration], previousPath: List[PathToField], previousStatPath: List[PathToField], field : FieldDeclaration) = try{
+        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers, field.initializer.map(linkAssignment(_)(if(isStatic(field)) parStatic ::: previousStatPath else parStatic ::: parNonStat ::: previousPath))) :: previousField,
+          PathToField(RefTypeLinked(pck, classDef.className), field.fieldName) :: previousPath,
+        if(isStatic(field)) PathToField(RefTypeLinked(pck, classDef.className), field.fieldName):: previousStatPath else previousStatPath)
+      }catch{
+        case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
+      }
+      
+      def linkAssignment(exp: Expression)(implicit possibleDecl: List[PathToField]) : Expression = try {
+        exp match {
+          case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp))
+          case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f), op, linkAssignment(s))
+          case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t))
+          case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr), linkAssignment(ind))
+          case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size))
+          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs), linkAssignment(rhs))
+          case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc), field)
+          case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)))
+          case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc), meth, args.map(linkAssignment(_)))
+          case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkAssignment(_)))
+          case InstanceOfCall(exp, check) => InstanceOfCall(linkAssignment(exp), check)          
+          case VariableAccess(name) => linkVar(name, possibleDecl)
+          case lit: Literal => lit
+          case x : This => x
+        }
+      }catch {
+        case FieldAccessIsProbablyPckException(path) => exp match {
+          case FieldAccess(_, className) =>
+            cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
+          case _ : VariableAccess => throw FieldAccessIsProbablyPckException(path)
+          case _ => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
+        }
+      }
+      
+      def linkVar(name: String, previousField: List[PathToField]) : LinkedExpression = {
+        previousField.find(_.fieldName == name) match{
+          case Some(path) => LinkedVariableOrField(name, path.refType.getTypeDef(cus).asInstanceOf[ClassDefinition].fields.find(_.fieldName == name).get.fieldType, path)
+          case None => imp.collectFirst{
+            case LinkImport(typeName, refType) if name == typeName => refType
+          }.getOrElse(throw FieldAccessIsProbablyPckException(List(name)))
+        }
+      }
+          
+
+      classDef.fields.foldLeft((List[FieldDeclaration](), List[PathToField](), List[PathToField]())){
+        case ((decl, path, nonPath), fi) => linkFieldAssignment(decl, path, nonPath, fi)
+      }._1.reverse
+    
+    }
+
+
+    
+
+    def linkConstructor(index: Int, pck: Option[Name], classDef: ClassDefinition): ConstructorDeclaration = {
+      val cons = classDef.constructors(index)
+      checkParameters(cons.parameters)
+      val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
+      val curPos = PathToVariable(pck, classDef.className, index, List(0))
+      val env = Environment(parameterMap, curPos, pck, classDef)
+      ConstructorDeclaration(cons.modifiers, cons.parameters, implementationLink(env, cons.implementation))
+    }
+
+
+    def linkMethod(index: Int, pck: Option[Name], classDef: ClassDefinition) : MethodDeclaration = {
+      val meth = classDef.methods(index)
+      checkParameters(meth.parameters)
+      val parameterMap = Map(meth.parameters.map{case Parameter(parType, id) => (id, (parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
+      val curPos = PathToVariable(pck, classDef.className, index, List(0))
+      val env = Environment(parameterMap, curPos, pck, classDef)
+      MethodDeclaration(meth.methodName, meth.returnType, meth.modifiers, meth.parameters, meth.implementation.map(implementationLink(env, _)))
     }
     
-    env.symbolMap.get(varName) match {
-      case Some(x)  => LinkedVariableOrField(varName, x._1, x._2) 
-      case None => checkClassFields(varName, env.classDef) match {
-        case Some(x) => x 
-        case None =>          
-          env.previousCUS.flatMap{
-            case CompilationUnit(p, i, _, t) if(env.pck == p && env.classDef.className == t) => i
-            case _ => Nil}.collectFirst{
-          case LinkImport(name, refType) if name == varName => refType
-        }.getOrElse(throw FieldAccessIsProbablyPckException(List(varName)))
+    def implementationLink(environment: Environment, block: Block): Block = Block(passThroughStatements(block.statements, environment))
+
+    def checkParameters(param: List[Parameter]){
+      val parameterName = param.map(_.id)
+      if(parameterName.size != parameterName.distinct.size) throw new CompilerError("A method have twice the same parameter")
+    }
+
+
+    def passThroughStatements(stmts: List[Statement], env: Environment): List[Statement] = stmts match {
+      case x :: xs => linkStatement(x, env) :: passThroughStatements(xs, env.update(x))
+      case Nil => Nil
+    }
+
+    def linkStatement(stmt: Statement, env: Environment) : Statement = try {stmt match {
+      case Block(stmts) => Block(passThroughStatements(stmts, env.open))
+      case EmptyStatement => EmptyStatement
+      case ExpressionStatement(exp) => ExpressionStatement(linkExpression(exp, env))
+      case ForStatement(init, cond, inc, stmt) => val forEnv = init.foldLeft(env.open)(_.update(_));
+        ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_, forEnv.inc )), inc.map(linkExpression(_, forEnv.inc.inc)), linkStatement(stmt, forEnv.inc.inc.inc))
+      case IfStatement(cond, ifStmt, elseStmt) => IfStatement(linkExpression(cond, env), linkStatement(ifStmt, env.open), elseStmt.map(linkStatement(_, env.open.inc)))
+      case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_, env)))
+      case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env)))
+      case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
+    }}catch { case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Hierarchy checking: can not find ${path.reduce(_ + "." + _)}")
+    }
+
+    def linkExpression(exp: Expression, env: Environment): Expression = try {
+      exp match {
+        case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp, env))
+        case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f, env), op, linkExpression(s, env))
+        case CastExpression(cast, t) => CastExpression(cast, linkExpression(t, env))
+        case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr, env), linkExpression(ind, env))
+        case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size, env))
+        case Assignment(lhs, rhs) => Assignment(linkExpression(lhs, env), linkExpression(rhs, env))
+        case FieldAccess(acc, field) => FieldAccess(linkExpression(acc, env), field)
+        case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_, env)))
+        case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc, env), meth, args.map(linkExpression(_, env)))
+        case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkExpression(_, env)))
+        case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
+        case x: This => x
+        case VariableAccess(name) => linkVariable(name, env)
+        case lit: Literal => lit
+      }
+    } catch {
+      case FieldAccessIsProbablyPckException(path) => exp match {
+        case FieldAccess(_, className) =>
+          cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
+        case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)
+        case _ => throw new CompilerError(s"Var resolution, could not find: ${path.reduce(_ + "." + _)}")
       }
     }
+
+    def linkVariable(varName : String, env : Environment): LinkedExpression ={
+      def checkClassFields(varName: String, refType: RefTypeLinked): Option[LinkedExpression] ={
+        val classDef = refType.getTypeDef(cus).asInstanceOf[ClassDefinition]
+        val field = classDef.fields.find(_.fieldName == varName)
+        field match{
+          case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(refType, varDecl.fieldName)))
+          case None => classDef.parent match {
+            case Some(refType: RefTypeLinked) => checkClassFields(varName, refType)
+            case _ => None
+          }
+        }
+      }
+      
+      env.symbolMap.get(varName) match {
+        case Some(x)  => LinkedVariableOrField(varName, x._1, x._2)
+        case None => checkClassFields(varName, RefTypeLinked(env.pck, env.classDef.className)) match {
+          case Some(x) => x
+          case None =>
+            cus.flatMap{
+              case CompilationUnit(p, i, _, t) if(env.pck == p && env.classDef.className == t) => i
+              case _ => Nil}.collectFirst{
+              case LinkImport(name, refType) if name == varName => refType
+            }.getOrElse(throw FieldAccessIsProbablyPckException(List(varName)))        
+        }
+      }
+    }
+    cus.map{
+      case cu @ CompilationUnit(pck, imp, Some(classDef @ ClassDefinition(name, parent, interfaces, modifiers, fields, constructors, methods)), fileName) => CompilationUnit(pck, imp,
+        Some(ClassDefinition(name, parent, interfaces, modifiers, linkFields(imp, classDef, pck),
+          constructors.zipWithIndex.map{case (_, index) => linkConstructor(index, pck, classDef)},
+          methods.zipWithIndex.map{case (_, index) => linkMethod(index, pck, classDef)}))
+          , fileName)
+      case x => x
+    }
+
   }
 }
 
@@ -141,7 +222,7 @@ case class LinkedVariableOrField(name : String, varType: Type, variablePath : Pa
 
 abstract class PathToDeclaration
 
-case class PathToField(pck: Option[Name], classDef: String, fieldName: String) extends PathToDeclaration
+case class PathToField(refType: RefTypeLinked, fieldName: String) extends PathToDeclaration
 
 
 
