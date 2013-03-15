@@ -152,7 +152,7 @@ object VarResolver{
         ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_, forEnv.inc )), inc.map(linkExpression(_, forEnv.inc.inc)), linkStatement(stmt, forEnv.inc.inc.inc))
       case IfStatement(cond, ifStmt, elseStmt) => IfStatement(linkExpression(cond, env), linkStatement(ifStmt, env.open), elseStmt.map(linkStatement(_, env.open.inc)))
       case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_, env)))
-      case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env)))
+      case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env.update(stmt))))
       case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
     }}catch { case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Can not find ${path.reduce(_ + "." + _)}")
     }
