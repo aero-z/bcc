@@ -59,9 +59,8 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
     case (_: IntegerTrait, _: IntegerTrait) => typeCast
     //all other primitive casts are imposible!
     case (_:PrimitiveType, _:PrimitiveType) => throw new TypeCheckingError("impossile cast: ("+typeCast+") "+target.getType)
-    case _ => typeCast // TODO: reference types -> give errors
+    case (mom:RefTypeLinked, me:RefTypeLinked) => if (Util.findMother(mom, cus, me)||Util.findMother(mom, cus, me)) mom else throw new TypeCheckingError("impossible cast for refTypes: ("+mom+")"+me)
   }
-  //check if cast is possible!
 }
 
 case class ArrayAccess(array: Expression, index: Expression) extends Expression {
@@ -90,6 +89,25 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
 }
 
 private object Util {
+  def findMother(find:RefTypeLinked, cus:List[CompilationUnit], current:RefTypeLinked):Boolean = {
+    if (find == current) //found!
+      true
+    else
+      cus.find(cu => cu.packageName == current.pkgName && cu.typeName == current.typeName) match {
+        case None => false
+        case Some(CompilationUnit(packageName, importDeclarations, typeDef, typeName)) => typeDef match {
+          case None => false
+          case Some(ClassDefinition(className, parent, interfaces, _, _, _, _)) => (parent.toList ::: interfaces) match {
+            case Nil => false
+            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
+          }
+          case Some(InterfaceDefinition(name, parents,_, _)) => parents match {
+            case Nil => false
+            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
+          }
+        }
+      }
+  }
   def findField(refType: RefType, name: String)(implicit cus: List[CompilationUnit]): Type = {
     refType match {
       case t: RefTypeLinked =>
