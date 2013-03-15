@@ -68,6 +68,7 @@ object VarResolver{
       
       def linkAssignment(exp: Expression)(possibleDecl: List[PathToField], currentDecl: List[PathToField]) : Expression = try {
         exp match {
+          case ParenthesizedExpression(exp) => ParenthesizedExpression(linkAssignment(exp)(possibleDecl, currentDecl))
           case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp)(possibleDecl, currentDecl))
           case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f)(possibleDecl, currentDecl), op, linkAssignment(s)(possibleDecl, currentDecl))
           case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t)(possibleDecl, currentDecl))
@@ -95,7 +96,7 @@ object VarResolver{
       def linkVar(name: String, previousField: List[PathToField]) : LinkedExpression = {
         previousField.find(_.fieldName == name) match{
           case Some(path) => LinkedVariableOrField(name, path.refType.getTypeDef(cus).asInstanceOf[ClassDefinition].fields.find(_.fieldName == name).get.fieldType, path)
-          case None => imp.collectFirst{
+          case None => if((statPresentPath ::: nonPresentField).exists(_.fieldName == name)) throw NameLinkingException("Forward reference") else  imp.collectFirst{
             case LinkImport(typeName, refType) if name == typeName => refType
           }.getOrElse(throw FieldAccessIsProbablyPckException(List(name)))
         }
@@ -158,6 +159,7 @@ object VarResolver{
 
     def linkExpression(exp: Expression, env: Environment): Expression = try {
       exp match {
+        case ParenthesizedExpression(exp) => ParenthesizedExpression(linkExpression(exp, env))
         case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp, env))
         case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f, env), op, linkExpression(s, env))
         case CastExpression(cast, t) => CastExpression(cast, linkExpression(t, env))

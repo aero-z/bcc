@@ -143,6 +143,7 @@ object TypeLinking {
 				case _ => s //any other case!
 			}
 			def linkExpression(e:Expression):Expression = e match {
+                          case ParenthesizedExpression(exp) => ParenthesizedExpression(linkExpression(exp))
 				case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
 				case BinaryOperation(first, operation, second) => BinaryOperation(linkExpression(first), operation, linkExpression(second))
 				case CastExpression(typeCast, target) => CastExpression(link(typeCast), linkExpression(target))
