@@ -17,7 +17,13 @@ trait Expression extends AstNode {
 trait LinkedExpression extends Expression
 
 case class UnaryOperation(operation: Operator, term: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit]): Type = term.getType
+  def getType(implicit cus: List[CompilationUnit]): Type = {
+    (operation, term.getType) match {
+      case (InverseOperator, BooleanType) => BooleanType
+      case (MinusOperator, t:IntegerTrait) => t
+      case (op,t) => throw new TypeCheckingError(s"invalid unary operation ($op, $t)")
+    }
+  }
 }
 
 case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression {
@@ -57,7 +63,10 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
 }
 
 case class ArrayAccess(array: Expression, index: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit]): Type = array.getType.asInstanceOf[ArrayType].elementType
+  def getType(implicit cus: List[CompilationUnit]): Type = (array.getType, index.getType) match {
+    case (ArrayType(e), _: IntegerTrait) => e
+    case (at, it) => throw new TypeCheckingError(s"type error in array access $at[$it]")
+  }
 }
 
 case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
@@ -137,32 +146,20 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
 case class ExprMethodInvocation(accessed: Expression, method: String, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = accessed.getType match {
     case r: RefType => Util.findMethod(r, method, arguments)
-    case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
+    case x => throw new TypeCheckingError(s"trying access member of non-reference type ($accessed of type $x)")
   }
 }
 
 case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = (exp.getType, typeChecked) match {
       
-    case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
-    case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
+    case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceof incompatible with primitive type: "+p)
+    case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceof incompatible with primitive type: "+p)
     case (_, NullType|VoidType) => throw new TypeCheckingError("cannot cast to void or null")
 
     case (x, y) if (TypeChecker.checkTypeMatch(x, y)) => BooleanType
     case (x, y) if (TypeChecker.checkTypeMatch(y, x)) => BooleanType
-    case _ => throw new TypeCheckingError("Cannot instanceOf with:"+exp.getType+" and "+typeChecked)
-    /*
-    case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
-    case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
-    case (`typeChecked`, _) => BooleanType //instanceof himself
-    case (NullType, _) => BooleanType //always false btw
-    case (_, NullType) => throw new TypeCheckingError("instanceOf impossible with nulltype and ")
-    case (VoidType, _) => throw new TypeCheckingError("instanceOf: void is not the instance of anything ")
-    case (_, VoidType) => throw new TypeCheckingError("instanceOf: nothing can be a subtype of void ")
-    case (_:ArrayType, _:ArrayType) => BooleanType
-    case (parent:RefTypeLinked, child:RefTypeLinked) => BooleanType
-    case _ => throw new TypeCheckingError("Cannot instanceOf with:"+exp.getType+" and "+typeChecked)
-    */
+    case _ => throw new TypeCheckingError("Cannot instance of with:"+exp.getType+" and "+typeChecked)
   }
 }
 
