@@ -264,7 +264,7 @@ object AstBuilder {
     val recExId = binaryExpId ::: List("LeftHandSide", "PrimaryNoNewArray", "Literal", "Primary", "PostFixExpression", "UnaryExpression", "UnaryExpressionNotPlusMinus", "StatementExpression", "Expression", "AssignmentExpression")
 
     expressionSymbol match {
-      case NonTerminalSymbol("ParenthesizedExpression", List(_,exp, _)) => simplifyExpression(exp)
+      case NonTerminalSymbol("ParenthesizedExpression", List(_,exp, _)) => ParenthesizedExpression(simplifyExpression(exp))
       case NonTerminalSymbol("RelationalExpression", List(exp, KeywordToken("instanceof"), reftype)) => InstanceOfCall(simplifyExpression(exp), extractType(reftype))
       case NonTerminalSymbol( str, List(exp)) if recExId contains str => simplifyExpression(exp, unaryMinus)
       case NonTerminalSymbol( str, List(exp1, OperatorToken(op), exp2)) if binaryExpId contains str => BinaryOperation(simplifyExpression(exp1), Operator.fromString(op), simplifyExpression(exp2))
