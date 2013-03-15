@@ -7,7 +7,7 @@ import main.Joosc
 class EnvironmentException(message:String) extends main.CompilerError(message)
 
 object TypeLinking {
-	val linkJavaLang = true && Joosc.addStdLib
+	val linkJavaLang = Joosc.addStdLib
 	type NameMap = Map[Name, (Option[Name], String)]
 	def treatAll(cus:List[CompilationUnit]):List[CompilationUnit] = {
 		debug("CREATE POSSIBLE IMPORTS:")

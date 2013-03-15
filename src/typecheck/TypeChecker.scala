@@ -10,22 +10,20 @@ object TypeChecker {
   def findMother(find:RefTypeLinked, cus:List[CompilationUnit], current:RefTypeLinked):Boolean = {
     if (find == current) //found!
       true
-    else
-      cus.find(cu => cu.packageName == current.pkgName && cu.typeName == current.typeName) match {
-        case None => false
-        case Some(CompilationUnit(packageName, importDeclarations, typeDef, typeName)) => typeDef match {
-          case None => false
-          case Some(ClassDefinition(className, parent, interfaces, _, _, _, _)) => (parent.toList ::: interfaces) match {
+    else 
+      current.getTypeDef(cus) match {
+          case ClassDefinition(className, parent, interfaces, _, _, _, _) =>
+            (parent.toList ::: interfaces) match {
             case Nil => false
-            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
+            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce((x,y) => x||y)
           }
-          case Some(InterfaceDefinition(name, parents,_, _)) => parents match {
-            case Nil => false
-            case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce(_||_)
-          }
+          case InterfaceDefinition(name, parents,_, _) =>
+            parents match {
+              case Nil => false
+              case list => list.map(x => findMother(find, cus, x.asInstanceOf[RefTypeLinked])).reduce((x,y) => x||y)
+            }
         }
-      }
-  }
+    }
   
   def checkTypeMatch(expected: Type, found: Type)(implicit cus:List[CompilationUnit]): Boolean = {
    (expected, found) match {
