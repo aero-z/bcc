@@ -58,7 +58,7 @@ case class RefTypeUnlinked(path: Name) extends RefType(path) {
 }
 
 case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefType(Name(pkgName.getOrElse(Name(Nil)).path ::: className::Nil)) with LinkedExpression {
-  def getType(implicit cus: List[CompilationUnit]): Type = this
+  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, classDef: ClassDefinition): Type = this
   def getTypeDef(implicit cus:List[CompilationUnit]): TypeDefinition = {
    cus.find(c => c.packageName == pkgName && c.typeName == className).get.typeDef.get
  }

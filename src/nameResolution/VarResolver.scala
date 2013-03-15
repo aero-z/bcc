@@ -222,16 +222,9 @@ object VarResolver{
 
 case class FieldAccessIsProbablyPckException(pck: List[String]) extends Exception
 
-case class LinkedVariableOrField(name : String, varType: Type, variablePath : PathToDeclaration) extends LinkedExpression{
-  def getType(implicit cus: List[CompilationUnit]): Type = varType
-  val children = Nil
-}
-
 abstract class PathToDeclaration
 
 case class PathToField(refType: RefTypeLinked, fieldName: String) extends PathToDeclaration
-
-
 
 case class PathToParameter(pck: Option[Name], classDef: String, consIndex: Int, parameterName: String) extends PathToDeclaration
 //Warning Reversed list of statement!!!
