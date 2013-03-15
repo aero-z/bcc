@@ -5,6 +5,9 @@ import scanner.IntegerToken
 import typecheck.TypeCheckingError
 import typecheck.TypeCheckingError
 import typecheck.TypeChecker
+import nameResolution.LinkedVariableOrField
+import nameResolution.PathToField
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError
 
 //Every possible expression
 trait Expression extends AstNode {
@@ -124,10 +127,16 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
 }
 
 case class Assignment(leftHandSide: Expression, rightHandSide: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit]): Type =
+  def getType(implicit cus: List[CompilationUnit]): Type = {
+    leftHandSide match {
+      case FieldAccess(LinkedVariableOrField(_, _:ArrayType, _), "length") => throw new TypeCheckingError("length field of an array is final")
+      case _ =>
+    }
     if (!TypeChecker.checkTypeMatch(leftHandSide.getType, rightHandSide.getType)) throw new TypeCheckingError(s"assignment: types don't match (expected ${leftHandSide.getType}, found ${rightHandSide.getType})\nLHS expression: $leftHandSide\nRHS expression: $rightHandSide")
     else leftHandSide.getType
+  }
 }
+
 case class FieldAccess(accessed: Expression, field: String) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = accessed.getType match {
     case r: RefType => Util.findField(r, field)
