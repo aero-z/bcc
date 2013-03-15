@@ -39,7 +39,7 @@ private object Util {
         }
     }
   }
-  def findMethod(refType: RefType, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit]): Type = {
+  def findMethod(refType: RefType, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit]): MethodDeclaration = {
     refType match {
       case t: RefTypeLinked =>
         t.getTypeDef match {
@@ -53,7 +53,7 @@ private object Util {
                 case Some(parentType) => findMethod(parentType, name, arguments)
                 case None => throw new TypeCheckingError("no matching method found")
               }
-              case m => matchingMethods.head.returnType
+              case m => matchingMethods.head
             }
           case _ => sys.error("type linking did something bad")
         }
@@ -162,7 +162,7 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
  * method()
  */
 case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
-  def getType(implicit cus: List[CompilationUnit]): Type = Util.findMethod(thisType, method, arguments)
+  def getType(implicit cus: List[CompilationUnit]): Type = Util.findMethod(thisType, method, arguments).returnType
 }
 
 /**
@@ -170,7 +170,14 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
  */
 case class ExprMethodInvocation(accessed: Expression, method: String, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = accessed.getType match {
-    case r: RefType => Util.findMethod(r, method, arguments)
+    case r: RefType =>
+      val m = Util.findMethod(r, method, arguments)
+      if (accessed.isInstanceOf[RefType] && !m.modifiers.contains(Modifier.staticModifier))
+        throw new TypeCheckingError("trying to access non-static method in an type")
+      else if (!accessed.isInstanceOf[RefType] && m.modifiers.contains(Modifier.staticModifier))
+        throw new TypeCheckingError("trying to access static method in an instance")
+      else
+        m.returnType
     case x => throw new TypeCheckingError(s"trying access member of non-reference type ($accessed of type $x)")
   }
 }
