@@ -147,7 +147,7 @@ object AstBuilder {
   }
 
   def extractConstructor(symbol: ParserSymbol) : ConstructorDeclaration = symbol match {
-    case NonTerminalSymbol("ConstructorDeclaration", List(mod, IdentifierToken(id), _, params, _, block)) => ConstructorDeclaration(extractModifiers(mod), extractParameters(params), extractBlock(block))
+    case NonTerminalSymbol("ConstructorDeclaration", List(mod, IdentifierToken(id), _, params, _, block)) => ConstructorDeclaration(id, extractModifiers(mod), extractParameters(params), extractBlock(block))
   }
 
   def extractMethod(symbol: ParserSymbol) : MethodDeclaration = symbol match {

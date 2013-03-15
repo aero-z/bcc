@@ -110,7 +110,7 @@ object VarResolver{
       val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
       val curPos = PathToVariable(pck, classDef.className, index, List(0))
       val env = Environment(parameterMap, curPos, pck, classDef)
-      ConstructorDeclaration(cons.modifiers, cons.parameters, implementationLink(env, cons.implementation))
+      ConstructorDeclaration(cons.name, cons.modifiers, cons.parameters, implementationLink(env, cons.implementation))
     }
 
 

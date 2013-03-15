@@ -5,7 +5,7 @@ import scanner._
 import parser._
 import scala.io.Source
 import ast.AstBuilder
-import ast.CheckOk
+import ast.WeedOk
 import main.CompilerError
 
 class WeedTest extends FunSuite {

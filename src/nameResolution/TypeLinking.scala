@@ -122,7 +122,7 @@ object TypeLinking {
 			}
 			def linkConstructor(cd:ConstructorDeclaration):ConstructorDeclaration = {
 				debug("LINK CONSTRUCTOR:")
-				ConstructorDeclaration(cd.modifiers, cd.parameters.map(linkParameter(_)), linkBlock(cd.implementation)) 
+				ConstructorDeclaration(cd.name, cd.modifiers, cd.parameters.map(linkParameter(_)), linkBlock(cd.implementation)) 
 			}
 			def linkParameter(parameter:Parameter):Parameter = {
 				debug("LINK PARAMETER:")

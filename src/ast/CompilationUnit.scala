@@ -43,7 +43,7 @@ case class CompilationUnit(packageName: Option[Name], importDeclarations: List[I
     for (typeDefinition <- typeDef) typeDefinition.display
   }
   override lazy val weedResult = typeDef match {
-    case None => CheckOk()
+    case None => WeedOk()
     case Some(x) => WeedResult(x.getName() == typeName, "file name and class name don't match")
   }
 }
@@ -88,10 +88,10 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
     for (meth <- methods) meth.display
   }
   override lazy val weedResult = super.weedResult_ ++
-      methods.foldLeft(CheckOk(): WeedResult)((wr, m) => wr ++ (m match {
-             case MethodDeclaration(_,_,_,_,Some(x)) => CheckFail("an interface method cannot have a body")
+      methods.foldLeft(WeedOk(): WeedResult)((wr, m) => wr ++ (m match {
+             case MethodDeclaration(_,_,_,_,Some(x)) => WeedFail("an interface method cannot have a body")
              case MethodDeclaration(_,_,modifiers,_,_) => WeedResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
-             case _ => CheckOk()
+             case _ => WeedOk()
       }))
 }
 
@@ -117,12 +117,12 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
   }
   
   override lazy val weedResult = super.weedResult_ ++
-      methods.foldLeft(CheckOk(): WeedResult)((wr, m) => wr ++ (m match {
+      methods.foldLeft(WeedOk(): WeedResult)((wr, m) => wr ++ (m match {
              case MethodDeclaration(_,_,modifiers,_,impl) =>
                WeedResult(impl.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
                    "method must have a body if and only if it is neither abstract nor native")
-             case _ => CheckOk()
-      }))
+             case _ => WeedOk()
+      })) ++ WeedResult(!constructors.exists(_.name != className), "constructors must have same name as the class")
 }
 
 
@@ -175,7 +175,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[
                             WeedResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
 }
 
-case class ConstructorDeclaration(modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
+case class ConstructorDeclaration(name: String, modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
