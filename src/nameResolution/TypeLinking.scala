@@ -108,7 +108,7 @@ object TypeLinking {
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 				case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
 				case cd:ClassDefinition =>debug("LINK CLASS:"); ClassDefinition(cd.className,
-                                  if (linkJavaLang) if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object") None else Some(cd.parent.map(link(_)).getOrElse(RefTypeLinked(Some(Name(List("java", "lang"))), "Object")))
+                                  if (linkJavaLang) if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object") None else Some(cd.parent.map(link(_)).getOrElse(Java.Object))
                                   else cd.parent.map(link(_)),
                                     cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_)))
 			}
@@ -186,9 +186,9 @@ object TypeLinking {
 				case x => debug("Simple type, no link:"); x
 			}
 			//get strict prefix of all 
-			val y = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).distinct.map{case Name(x) => x}.filter(_ != Nil)
+			val prefixes = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).map{case Name(xs) => xs.dropRight(1)}.filter(_ != Nil).distinct
 			//y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
-			val discard = y.foreach(checkPrefix(_))
+			val discard = prefixes.foreach(checkPrefix(_))
 			linkCompilationUnit(cu);
 		}
 		debug("+++++In "+cu.packageName+" :"+cu.typeName)

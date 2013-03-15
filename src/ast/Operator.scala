@@ -1,8 +1,8 @@
 package ast
 
 //If the operations are the same for all types maybe we don't need to differ them
-trait CompareOperator
 trait ArithmeticOperator
+trait CompareOperator
 trait BooleanOperator
 
 object Operator {
@@ -28,14 +28,14 @@ object Operator {
 }
 
 abstract class Operator(s:String) {
-  //def toString = s
+  override def toString = s
 }
 case object PlusOperator extends Operator("+") with ArithmeticOperator
 case object MinusOperator extends Operator("-") with ArithmeticOperator
-case object BitXorOperator extends Operator("") with BooleanOperator
+case object BitXorOperator extends Operator("^") with BooleanOperator
 case object BitAndOperator extends Operator("&") with BooleanOperator
 case object BitOrOperator extends Operator("|") with BooleanOperator
-case object InverseOperator extends Operator("!")
+case object InverseOperator extends Operator("!") //unary -> special case!
 case object StarOperator extends Operator("*") with ArithmeticOperator
 case object DivOperator extends Operator("/") with ArithmeticOperator
 case object ModOperator extends Operator("%") with ArithmeticOperator
@@ -43,8 +43,8 @@ case object SmallerOperator extends Operator("<") with CompareOperator
 case object GreaterOperator extends Operator(">") with CompareOperator
 case object EqualOperator extends Operator("==") with CompareOperator
 case object NotEqualOperator extends Operator("!=") with CompareOperator
-case object AndOperator extends Operator("&&") with CompareOperator
-case object OrOperator extends Operator("||") with CompareOperator
+case object AndOperator extends Operator("&&") with BooleanOperator //CompareOperator?
+case object OrOperator extends Operator("||") with BooleanOperator //CompareOperator?
 case object LessEqualOperator extends Operator("<=") with CompareOperator
 case object GreaterEqualOperator extends Operator(">=") with CompareOperator
 

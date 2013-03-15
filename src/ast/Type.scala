@@ -17,8 +17,6 @@ object PrimitiveType{
   }
 }
 
-//byte < short < int
-//byte < char
 trait IntegerTrait
 trait ShortTrait extends IntegerTrait
 trait ByteTrait extends ShortTrait
@@ -68,4 +66,10 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
 
 case object NullType extends Type {
   def typeName: String = "nullType"
+}
+
+object Java {
+	val Object       = RefTypeLinked(Some(Name(List("java", "lang"))), "Object")
+	val Cloneable    = RefTypeLinked(Some(Name(List("java", "lang"))), "Cloneable")
+	val Serializable = RefTypeLinked(Some(Name(List("java", "io"))), "Serializable")
 }
