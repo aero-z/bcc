@@ -174,7 +174,7 @@ object VarResolver{
         case lit: Literal => lit
       }
     } catch {
-      case FieldAccessIsProbablyPckException(path) => exp match {
+      case FieldAccessIsProbablyPckException(path) =>  exp match {
         case FieldAccess(_, className) =>
           cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
         case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)

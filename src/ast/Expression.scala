@@ -206,9 +206,11 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
 case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     constructor.asInstanceOf[RefTypeLinked].getTypeDef match {
-      case ClassDefinition(_, _, _, _, _, constructors, _) =>
+      case ClassDefinition(_, _, _, mods, _, constructors, _) =>
         if (!constructors.exists(c => Util.compParams(c.parameters, arguments)))
           throw new TypeCheckingError("found no contructor that matches parameters")
+        if(mods.contains(Modifier.abstractModifier))
+          throw new TypeCheckingError("cannot instantiate abstract class")
       case _: InterfaceDefinition =>
         throw new TypeCheckingError("cannot instantiate interface")
     }
@@ -223,10 +225,10 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     val m = Util.findMethodThrows(thisType, method, arguments)
     val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
-    if (isStatic && !mIsStatic)
+    if (isStatic/* && !mIsStatic*/)
       throw new TypeCheckingError("trying to access non-static method in a static block (implicit this)")
-    else if (!isStatic && mIsStatic)
-      throw new TypeCheckingError("trying to access static method in a non-static block (implicit this)")
+//    else if (!isStatic && mIsStatic)
+//      throw new TypeCheckingError("trying to access static method in a non-static block (implicit this)")
     else
       m.returnType
   }
