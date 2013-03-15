@@ -95,8 +95,12 @@ object TypeChecker {
       }
     }
     cus.foreach(_ match {
-      case CompilationUnit(_, _, Some(ClassDefinition(className, _, _, _, fields, constructors, methods)), _) =>
+      case CompilationUnit(_, _, Some(ClassDefinition(className, parent, _, _, fields, constructors, methods)), _) =>
         //println("=> Checking "+className)
+        parent.foreach(p => if (!p.asInstanceOf[RefTypeLinked].getTypeDef.asInstanceOf[ClassDefinition].constructors.exists(c =>
+          c.parameters.isEmpty)) // implicit super();
+          throw new TypeCheckingError("parent class has no default constructor")
+        )
         fields.foreach(checkField)
         constructors.foreach(checkConstructor)
         methods.foreach(checkMethod)
