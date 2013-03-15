@@ -4,7 +4,7 @@ import ast._
 import main.Logger.debug
 import main._
 
-class HierarchyException(message: String) extends main.CompilerError(message)
+case class HierarchyException(message: String) extends main.CompilerError(message, "Hierarchy Checking")
 
 object HierarchyChecking {
   /*def findMethod(thisType: Type, argTypes: List[Type]) {
@@ -98,7 +98,7 @@ object HierarchyChecking {
           def checkCycle(classdef: RefTypeLinked, already: List[RefTypeLinked]) {
             classdef.getTypeDef(cus).asInstanceOf[ClassDefinition].parent match {
               case Some(parent: RefTypeLinked) =>                
-                if (already contains parent) throw CompilerError("Cycle in class hierarchy")
+                if (already contains parent) throw HierarchyException("Cycle in class hierarchy")
                 else checkCycle(parent, parent :: already)
               case _ => ()
             }
@@ -109,7 +109,7 @@ object HierarchyChecking {
            def checkCycle(interface: RefTypeLinked, already: List[RefTypeLinked]) {
              interface.getTypeDef(cus).asInstanceOf[InterfaceDefinition].parents.foreach {
                case parent: RefTypeLinked =>
-                 if (already contains parent) throw CompilerError("Cycle in interface hierarchy")
+                 if (already contains parent) throw HierarchyException("Cycle in interface hierarchy")
                  else checkCycle(parent, parent :: already)
              } 
            }
@@ -127,7 +127,7 @@ object HierarchyChecking {
     def checkInterfaceVsObject(interface: InterfaceDefinition){
       val objectMethodSig = Java.Object.getTypeDef(cus).asInstanceOf[ClassDefinition].methods.map(m => (m.methodName, m.parameters.map(_.paramType), (m.returnType, m.modifiers)))
       interface.methods.foreach{
-        case MethodDeclaration(name, ret, mods, params, None) if(objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType))) => if(! objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType) && x._3._1 == ret && mods.sameElements(x._3._2))) throw CompilerError(s"Hierarchy checking: method $name is not compatible with java.lang.Object")
+        case MethodDeclaration(name, ret, mods, params, None) if(objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType))) => if(! objectMethodSig.exists( x => x._1 == name && x._2 == params.map(_.paramType) && x._3._1 == ret && mods.sameElements(x._3._2))) throw HierarchyException(s"Hierarchy checking: method $name is not compatible with java.lang.Object")
         case _ => ()
       }
     }

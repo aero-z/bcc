@@ -5,6 +5,8 @@ import ast._
 import main.CompilerError
 import main.Logger.debug
 
+case class NameLinkingException(mess: String) extends CompilerError(mess, "Name Linking")
+
 object VarResolver{
   //( Map from name to new name, what to add to the new name, current class, previous cus)
   case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathToVariable, pck: Option[Name], classDef: ClassDefinition){
@@ -15,7 +17,7 @@ object VarResolver{
       case Environment(sm, PathToVariable(pck, cn, ind, list), cpck, cd) =>Environment(sm, PathToVariable(pck, cn, ind, (list.head + 1) :: list.tail), cpck, cd)
     }
     def update(stmt: Statement) : Environment = stmt match {
-      case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw new CompilerError(s"Name resolution exception: ${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
+      case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw NameLinkingException(s"${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
       case _ => inc
     }
   }
@@ -25,8 +27,9 @@ object VarResolver{
 
     def checkFields(fields: List[FieldDeclaration]): Unit = {
       val fieldName = fields.map(_.fieldName)
-      if(fieldName.distinct.size != fieldName.size) throw new CompilerError("There is two fields with the same name")
+      if(fieldName.distinct.size != fieldName.size) throw NameLinkingException("There is two fields with the same name")
     }
+    
 
     def linkFields(imp: List[ImportDeclaration], classDef: ClassDefinition, pck : Option[Name]): List[FieldDeclaration] = {
       def isStatic(field: FieldDeclaration) = field.modifiers.contains(Modifier.staticModifier)
@@ -50,29 +53,32 @@ object VarResolver{
       }
 
       checkFields(classDef.fields)
-      
+      val currPath = classDef.fields.partition(isStatic(_))
+      val (statPresentPath, nonPresentField) = (currPath._1.map(fi => PathToField(RefTypeLinked(pck, classDef.className), fi.fieldName)), currPath._2.map(fi => PathToField(RefTypeLinked(pck, classDef.className), fi.fieldName)))
       def linkFieldAssignment(previousField: List[FieldDeclaration], previousPath: List[PathToField], previousStatPath: List[PathToField], field : FieldDeclaration) = try{
         val currentPath = PathToField(RefTypeLinked(pck, classDef.className), field.fieldName)
-        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers, field.initializer.map(linkAssignment(_)(if(isStatic(field)) previousStatPath else previousPath, currentPath))) :: previousField,
+        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers,
+          field.initializer.map(linkAssignment(_)(if(isStatic(field)) previousStatPath else previousPath, 
+            if(isStatic(field)) statPresentPath else statPresentPath ::: nonPresentField))) :: previousField, 
           currentPath :: previousPath,
         if(isStatic(field)) currentPath :: previousStatPath else previousStatPath)
       }catch{
-        case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
+        case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
       }
       
-      def linkAssignment(exp: Expression)(implicit possibleDecl: List[PathToField], currentDecl: PathToField) : Expression = try {
+      def linkAssignment(exp: Expression)(possibleDecl: List[PathToField], currentDecl: List[PathToField]) : Expression = try {
         exp match {
-          case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp))
-          case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f), op, linkAssignment(s))
-          case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t))
-          case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr), linkAssignment(ind))
-          case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size))
-          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs)(currentDecl :: possibleDecl, currentDecl), linkAssignment(rhs))
-          case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc), field)
-          case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)))
-          case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc), meth, args.map(linkAssignment(_)))
-          case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkAssignment(_)))
-          case InstanceOfCall(exp, check) => InstanceOfCall(linkAssignment(exp), check)          
+          case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp)(possibleDecl, currentDecl))
+          case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f)(possibleDecl, currentDecl), op, linkAssignment(s)(possibleDecl, currentDecl))
+          case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t)(possibleDecl, currentDecl))
+          case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr)(possibleDecl, currentDecl), linkAssignment(ind)(possibleDecl, currentDecl))
+          case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size)(possibleDecl, currentDecl))
+          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs)(currentDecl ::: possibleDecl, currentDecl), linkAssignment(rhs)(possibleDecl, currentDecl))
+          case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc)(possibleDecl, currentDecl), field)
+          case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
+          case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc)(possibleDecl, currentDecl), meth, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
+          case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
+          case InstanceOfCall(exp, check) => InstanceOfCall(linkAssignment(exp)(possibleDecl, currentDecl), check)          
           case VariableAccess(name) => linkVar(name, possibleDecl)
           case lit: Literal => lit
           case x : This => x
@@ -82,7 +88,7 @@ object VarResolver{
           case FieldAccess(_, className) =>
             cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
           case _ : VariableAccess => throw FieldAccessIsProbablyPckException(path)
-          case _ => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
+          case _ => throw new NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
         }
       }
       
@@ -128,7 +134,7 @@ object VarResolver{
 
     def checkParameters(param: List[Parameter]){
       val parameterName = param.map(_.id)
-      if(parameterName.size != parameterName.distinct.size) throw new CompilerError("A method have twice the same parameter")
+      if(parameterName.size != parameterName.distinct.size) throw NameLinkingException("A method have twice the same parameter")
     }
 
 
@@ -147,7 +153,7 @@ object VarResolver{
       case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_, env)))
       case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env)))
       case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
-    }}catch { case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Hierarchy checking: can not find ${path.reduce(_ + "." + _)}")
+    }}catch { case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Can not find ${path.reduce(_ + "." + _)}")
     }
 
     def linkExpression(exp: Expression, env: Environment): Expression = try {
@@ -172,7 +178,7 @@ object VarResolver{
         case FieldAccess(_, className) =>
           cus.find(cu => cu.packageName == Some(Name(path)) && cu.typeName == className).map(_ => RefTypeLinked(Some(Name(path)), className)).getOrElse(throw FieldAccessIsProbablyPckException(path :+ className))
         case _: VariableAccess => throw FieldAccessIsProbablyPckException(path)
-        case _ => throw new CompilerError(s"Var resolution, could not find: ${path.reduce(_ + "." + _)}")
+        case _ => throw NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
       }
     }
 
@@ -216,16 +222,9 @@ object VarResolver{
 
 case class FieldAccessIsProbablyPckException(pck: List[String]) extends Exception
 
-case class LinkedVariableOrField(name : String, varType: Type, variablePath : PathToDeclaration) extends LinkedExpression{
-  def getType(implicit cus: List[CompilationUnit]): Type = varType
-  val children = Nil
-}
-
 abstract class PathToDeclaration
 
 case class PathToField(refType: RefTypeLinked, fieldName: String) extends PathToDeclaration
-
-
 
 case class PathToParameter(pck: Option[Name], classDef: String, consIndex: Int, parameterName: String) extends PathToDeclaration
 //Warning Reversed list of statement!!!

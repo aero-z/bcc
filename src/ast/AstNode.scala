@@ -38,8 +38,10 @@ trait AstNode {
   {
     weedResult match {
       case WeedOk() =>
-      case WeedFail(err) => throw CompilerError(err)
+      case WeedFail(err) => throw WeedingException(err)
       case null => throw new RuntimeException("weedResult must be early defined")
     }
   }
 }
+
+case class WeedingException(mess: String) extends CompilerError(mess, "Weeding")
