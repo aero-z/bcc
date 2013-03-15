@@ -226,10 +226,8 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     val m = Util.findMethodThrows(thisType, method, arguments)
     val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
-    if (isStatic/* && !mIsStatic*/)
+    if (isStatic)
       throw new TypeCheckingError("trying to access non-static method in a static block (implicit this)")
-//    else if (!isStatic && mIsStatic)
-//      throw new TypeCheckingError("trying to access static method in a non-static block (implicit this)")
     else
       m.returnType
   }
@@ -310,3 +308,10 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   val children = Nil
 }
 
+case class ParenthesizedExpression(exp: Expression) extends Expression {
+  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = exp match {
+    case _ : RefTypeLinked => throw new TypeCheckingError("illegal start of a type")
+    case _ => exp.getType
+  }
+  val children = List(exp)
+}
