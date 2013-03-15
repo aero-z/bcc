@@ -102,7 +102,7 @@ object TypeLinking {
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
 				val onDemandList = onDemandImports.flatMap(x => (Name(x._2::Nil), (x._1, x._2)) :: (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)) :: Nil)
-				val newImportDeclarations = (directAccess.toList.filter(_._1 != None) ::: imported.toList ::: onDemandList).distinct.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList
+				val newImportDeclarations = (directAccess.toList ::: imported.toList ::: onDemandList).distinct.map(x => LinkImport(x._1.path.reduce((x,y)=>x+"."+y), RefTypeLinked(x._2._1, x._2._2))).toList
 				CompilationUnit(cu.packageName, newImportDeclarations, cu.typeDef.map(linkTypeDefinition(_)), cu.typeName)
 			}
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
@@ -200,7 +200,7 @@ object TypeLinking {
 		  if (cu.packageName == None)
 		    possibleImports.map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 		  else
-		    possibleImports.filter(_._1 != None).map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
+		    possibleImports.filter(_._1.isDefined).map(x => (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)))
 
 		val classes = cu.importDeclarations.filter{case ClassImport(_) => true case _ => false}.distinct.map(_.getName)
 		val packages = cu.importDeclarations.filter{case PackageImport(_) => true case _ => false}.distinct.map(_.getName)
