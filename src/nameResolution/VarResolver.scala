@@ -27,6 +27,7 @@ object VarResolver{
       val fieldName = fields.map(_.fieldName)
       if(fieldName.distinct.size != fieldName.size) throw new CompilerError("There is two fields with the same name")
     }
+    
 
     def linkFields(imp: List[ImportDeclaration], classDef: ClassDefinition, pck : Option[Name]): List[FieldDeclaration] = {
       def isStatic(field: FieldDeclaration) = field.modifiers.contains(Modifier.staticModifier)
@@ -50,29 +51,32 @@ object VarResolver{
       }
 
       checkFields(classDef.fields)
-      
+      val currPath = classDef.fields.partition(isStatic(_))
+      val (statPresentPath, nonPresentField) = (currPath._1.map(fi => PathToField(RefTypeLinked(pck, classDef.className), fi.fieldName)), currPath._2.map(fi => PathToField(RefTypeLinked(pck, classDef.className), fi.fieldName)))
       def linkFieldAssignment(previousField: List[FieldDeclaration], previousPath: List[PathToField], previousStatPath: List[PathToField], field : FieldDeclaration) = try{
         val currentPath = PathToField(RefTypeLinked(pck, classDef.className), field.fieldName)
-        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers, field.initializer.map(linkAssignment(_)(if(isStatic(field)) previousStatPath else previousPath, currentPath))) :: previousField,
+        (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers,
+          field.initializer.map(linkAssignment(_)(if(isStatic(field)) previousStatPath else previousPath, 
+            if(isStatic(field)) statPresentPath else statPresentPath ::: nonPresentField))) :: previousField, 
           currentPath :: previousPath,
         if(isStatic(field)) currentPath :: previousStatPath else previousStatPath)
       }catch{
         case FieldAccessIsProbablyPckException(path) => throw new CompilerError(s"Variable resolution: could not find: ${path.reduce(_ + "." + _)}")
       }
       
-      def linkAssignment(exp: Expression)(implicit possibleDecl: List[PathToField], currentDecl: PathToField) : Expression = try {
+      def linkAssignment(exp: Expression)(possibleDecl: List[PathToField], currentDecl: List[PathToField]) : Expression = try {
         exp match {
-          case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp))
-          case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f), op, linkAssignment(s))
-          case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t))
-          case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr), linkAssignment(ind))
-          case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size))
-          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs)(currentDecl :: possibleDecl, currentDecl), linkAssignment(rhs))
-          case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc), field)
-          case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)))
-          case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc), meth, args.map(linkAssignment(_)))
-          case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkAssignment(_)))
-          case InstanceOfCall(exp, check) => InstanceOfCall(linkAssignment(exp), check)          
+          case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp)(possibleDecl, currentDecl))
+          case BinaryOperation(f, op, s) => BinaryOperation(linkAssignment(f)(possibleDecl, currentDecl), op, linkAssignment(s)(possibleDecl, currentDecl))
+          case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t)(possibleDecl, currentDecl))
+          case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr)(possibleDecl, currentDecl), linkAssignment(ind)(possibleDecl, currentDecl))
+          case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size)(possibleDecl, currentDecl))
+          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs)(currentDecl ::: possibleDecl, currentDecl), linkAssignment(rhs)(possibleDecl, currentDecl))
+          case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc)(possibleDecl, currentDecl), field)
+          case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
+          case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc)(possibleDecl, currentDecl), meth, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
+          case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
+          case InstanceOfCall(exp, check) => InstanceOfCall(linkAssignment(exp)(possibleDecl, currentDecl), check)          
           case VariableAccess(name) => linkVar(name, possibleDecl)
           case lit: Literal => lit
           case x : This => x
