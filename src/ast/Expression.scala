@@ -36,7 +36,7 @@ private object Util {
               }
               case Some(field) => field
             }
-          case _ => sys.error("type linking did something bad")
+          case _ => sys.error("type linking did something bad") // TODO
         }
     }
   }
@@ -187,8 +187,8 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
         val f = Util.findField(r, field)
         val fIsProtected = f.modifiers.contains(Modifier.protectedModifier)
         val fIsStatic    = f.modifiers.contains(Modifier.staticModifier)
-        if (!TypeChecker.checkTypeMatch(myType, r))
-          if (fIsProtected && !TypeChecker.checkTypeMatch(r, myType))
+        //if (!TypeChecker.checkTypeMatch(myType, r))
+          if (fIsProtected && !TypeChecker.checkTypeMatch(myType, r))
             throw new TypeCheckingError("trying to access protected field in a different class")
         if (accessed.isInstanceOf[RefType] && !fIsStatic)
           throw new TypeCheckingError("trying to access non-static field in an type")
@@ -244,8 +244,8 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
         val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
         val mIsProtected = m.modifiers.contains(Modifier.protectedModifier)
 
-        if (!TypeChecker.checkTypeMatch(myType, r))
-          if (mIsProtected && !TypeChecker.checkTypeMatch(r, myType))
+        //if (!TypeChecker.checkTypeMatch(myType, r))
+          if (mIsProtected && !TypeChecker.checkTypeMatch(myType, r))
             throw new TypeCheckingError("trying to access protected field in a different class")
         
         if (accessed.isInstanceOf[RefType] && !mIsStatic)
