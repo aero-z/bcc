@@ -52,6 +52,7 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
     case (ShortType, _:ShortTrait) => ShortType
     case (IntType, _:IntegerTrait) => IntType
     case (BooleanType, BooleanType) => BooleanType
+    case (CharType, IntType) => CharType
     //all other primitive casts are imposible!
     case (_:PrimitiveType, _:PrimitiveType) => throw new TypeCheckingError("impossile cast: ("+typeCast+") "+target.getType)
     case _ => typeCast//TODO: reference types -> give errors
