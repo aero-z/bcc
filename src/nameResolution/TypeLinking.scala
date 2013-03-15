@@ -186,9 +186,9 @@ object TypeLinking {
 				case x => debug("Simple type, no link:"); x
 			}
 			//get strict prefix of all 
-			val y = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).distinct.map{case Name(x) => x}.filter(_ != Nil)
+			val prefixes = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).map{case Name(xs) => xs.dropRight(1)}.filter(_ != Nil).distinct
 			//y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
-			val discard = y.foreach(checkPrefix(_))
+			val discard = prefixes.foreach(checkPrefix(_))
 			linkCompilationUnit(cu);
 		}
 		debug("+++++In "+cu.packageName+" :"+cu.typeName)
