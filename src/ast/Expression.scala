@@ -50,15 +50,16 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
 
 case class CastExpression(typeCast: Type, target: Expression) extends Expression {
   def getType(implicit cus: List[CompilationUnit]): Type = (typeCast, target.getType) match {
-    case (ByteType, _:ByteTrait) => ByteType
+    /*case (ByteType, _:ByteTrait) => ByteType
     case (CharType, _:CharTrait) => CharType
     case (ShortType, _:ShortTrait) => ShortType
     case (IntType, _:IntegerTrait) => IntType
     case (BooleanType, BooleanType) => BooleanType
-    case (CharType, IntType) => CharType
+    case (CharType, IntType) => CharType*/
+    case (_: IntegerTrait, _: IntegerTrait) => typeCast
     //all other primitive casts are imposible!
     case (_:PrimitiveType, _:PrimitiveType) => throw new TypeCheckingError("impossile cast: ("+typeCast+") "+target.getType)
-    case _ => typeCast//TODO: reference types -> give errors
+    case _ => typeCast // TODO: reference types -> give errors
   }
   //check if cast is possible!
 }
