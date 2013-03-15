@@ -41,8 +41,8 @@ case object DivOperator extends Operator("/") with ArithmeticOperator
 case object ModOperator extends Operator("%") with ArithmeticOperator
 case object SmallerOperator extends Operator("<") with CompareOperator
 case object GreaterOperator extends Operator(">") with CompareOperator
-case object EqualOperator extends Operator("==") with CompareOperator
-case object NotEqualOperator extends Operator("!=") with CompareOperator
+case object EqualOperator extends Operator("==") with CompareOperator with BooleanOperator
+case object NotEqualOperator extends Operator("!=") with CompareOperator with BooleanOperator
 case object AndOperator extends Operator("&&") with BooleanOperator //CompareOperator?
 case object OrOperator extends Operator("||") with BooleanOperator //CompareOperator?
 case object LessEqualOperator extends Operator("<=") with CompareOperator
