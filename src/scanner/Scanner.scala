@@ -31,7 +31,7 @@ object Scanner {
      * * is the greedy version (maximum match)
      * *? is the reluctant (non-greedy) version (minimum match)
      */
-    code.replaceAll("""((".*?[^\\]")|("")|('.*?[^\\]'))|(//.*(?m)$)|(/\*(?s).*?\*/)""", "\0$1\0").split("\0").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
+    code.replaceAll("""(("")|(".*?[^\\]")|('.*?[^\\]'))|(//.*(?m)$)|(/\*(?s).*?\*/)""", "\0$1\0").split("\0").toList.filter(!_.matches("""(//.*(?m)$)|(/\*(?s).*?\*/)""")) //((?<=".*?")|(?=".*?"))|//.*(?m)$|(?:/\*(?s).*?\*/)
   }
 
   def isString(line: String): Boolean = {

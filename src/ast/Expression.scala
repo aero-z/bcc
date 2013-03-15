@@ -168,7 +168,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
   def getType(implicit cus: List[CompilationUnit]): Type = (exp.getType, typeChecked) match {
     case (p:PrimitiveType, _) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
     case (_, p:PrimitiveType) => throw new TypeCheckingError("instanceOf incompatible with primitive type: "+p)
-    case (typeChecked, _) => typeChecked //instanceof himself
+    case (`typeChecked`, _) => BooleanType //instanceof himself
     case (NullType, _) => BooleanType //always false btw
     case (_, NullType) => throw new TypeCheckingError("instanceOf impossible with nulltype and ")
     case (VoidType, _) => throw new TypeCheckingError("instanceOf: void is not the instance of anything ")
