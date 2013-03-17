@@ -23,6 +23,8 @@ object TypeLinking {
 		cus.filter(_.typeDef.isDefined).map(x => (x.packageName, x.typeName))
 	}
 	def linkCompilationUnit(cu:CompilationUnit, possibleImports:List[(Option[Name], String)]):CompilationUnit = {
+	 // if (cu.packageName == Some(Name(cu.typeName::Nil)))
+	//WHUT?	  throw new EnvironmentException("prefix: type and package have the same name!");
 		debug("LINKCOMPILATIONSUNIT:")
 		/*def checkPrefix(name:Name, map:NameMap) {
 			for (i <- (1 to name.path.length by 1)) { //everything except the full name
@@ -76,27 +78,20 @@ object TypeLinking {
 			//classImports.foreach(x => x._2._1 match {case Some(pkgname) => checkPrefix(pkgname, packageImports) case None => })
 			debug("IMPORT MY PACKAGE:")
 			myPackage.foreach(x => debug(x._1))
-
-			if (linkJavaLang)
-			  importPackage(Some(Name("java"::"lang"::Nil)), myPackage) //always import java.lang.*!
-			else
-			  myPackage
+			myPackage //java.lang => import on demand
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
 			def checkPrefix(names:List[String]):Int = names match { //return type should be discarted!
 			  case Nil => 0 //recursive functions need return type
-			  case x :: Nil =>
-			    //if (imported.get(Name(names)).isDefined && (imported.get(Name(names)).get._1 != None)) throw new EnvironmentException("invalid prefix: "+x+" clashed with: "+imported.get(Name(names)).get)
-			    //default package stuff!! if (onDemandImports.filter(x => x._1 == None && x._2 == x).length != 0 && ) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+onDemandImports.filter(x => x._1 == None && x._2 == x).head)
-			    //if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with: "+directAccess.get(Name(names)).get)
+			  case x :: Nil => //clash EXCEPT default package!
 			    0 //end of recursion
 			  case x :: xs => //at least 2 elements
 			    val possibleClass = names.last;
 			    val possiblePackage = names.dropRight(1)
 			    if (imported.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+imported.get(Name(names)).get)
 			    if (onDemandImports.filter(x => x._1 == Some(Name(possiblePackage)) && x._2 == possibleClass).length != 0) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+possiblePackage+" -> "+possibleClass)
-			    //if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with:"+directAccess.get(Name(names)))
+			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with:"+directAccess.get(Name(names)))
 			    checkPrefix(possiblePackage);
 			}
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
@@ -108,9 +103,13 @@ object TypeLinking {
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 				case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
 				case cd:ClassDefinition =>debug("LINK CLASS:"); ClassDefinition(cd.className,
-                                  if (linkJavaLang) if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object") None else Some(cd.parent.map(link(_)).getOrElse(Java.Object))
-                                  else cd.parent.map(link(_)),
-                                    cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_)))
+                if (linkJavaLang)
+                  if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object")
+                    None
+                  else
+                    Some(cd.parent.map(link(_)).getOrElse(Java.Object))
+                else cd.parent.map(link(_)),
+                  cd.interfaces.map(link(_)), cd.modifiers, cd.fields.map(linkField(_)), cd.constructors.map(linkConstructor(_)), cd.methods.map(linkMethod(_)))
 			}
 			def linkMethod(md:MethodDeclaration):MethodDeclaration = {
 				debug("LINK METHOD:")
@@ -188,9 +187,7 @@ object TypeLinking {
 			}
 			//get strict prefix of all
 			
-			val prefixes = (imported.keys.toList :::onDemandImports.map(x => x._1.getOrElse(Name(Nil)).appendClassName(x._2))).map(_.path.dropRight(1))
-			//val prefixes = directAccess.values.toList.map(_._1).filter(_.isDefined).map(_.get).map{case Name(xs) => xs.dropRight(1)}.filter(_ != Nil).distinct
-			//y.foreach(x => if (directAccess.get(Name(x)).isDefined) throw new EnvironmentException("prefix shit"))
+			val prefixes = (imported.keys.toList.map{case Name(x) => x.dropRight(1)} ::: onDemandImports.filter(_._1 != None).map(x => x._1.get.path)).filter(_ != Nil).distinct
 			val discard = prefixes.foreach(checkPrefix(_))
 			linkCompilationUnit(cu);
 		}
@@ -208,7 +205,7 @@ object TypeLinking {
 
 		val imported = importAll(classes)
 		//check for "empty" packages as well:
-		val onDemandImports = packages.distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => throw new EnvironmentException("empty import"+p) case x => x})
+		val onDemandImports = (Name("java"::"lang"::Nil) :: packages).distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => throw new EnvironmentException("empty import"+p) case x => x})
 		val directAccess = possibleList.toMap //all direct accesses: fullName -> tuple
 
 		if (possibleList.length != directAccess.size)
