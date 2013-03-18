@@ -7,15 +7,20 @@ class MainTest extends FunSuite {
   test("fancy test") {
     val code = Source.fromString(
 """
-public class Test {
-    public Test() {}
-    public static int test() {
-		Test a = new Test();
-		boolean c = a instanceof Test;
+package Je_3_Resolve_SamePackageAndClassName;
+
+public class Je_3_Resolve_SamePackageAndClassName {
+
+    public Je_3_Resolve_SamePackageAndClassName() {}
+
+    public void test() {
+	new Je_3_Resolve_SamePackageAndClassName.Je_3_Resolve_SamePackageAndClassName().test();
     }
+
 }
+
 """)
-    val ret = Joosc.check((code, "Test.java") :: StdlibFiles.stdlibFiles)
+    val ret = Joosc.check((code, "Je_3_Resolve_SamePackageAndClassName.java")::Nil)// :: StdlibFiles.stdlibFiles)
     assert(ret === Joosc.errCodeSuccess)
   }
   /*
