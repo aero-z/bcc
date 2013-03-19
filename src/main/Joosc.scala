@@ -13,8 +13,8 @@ import typecheck.TypeChecker
 import reachability._
 
 
-abstract class CompilerError(mess: String, typeErr: String) extends Exception(mess){
-  val errorMessage = s"[$typeErr]: $mess"
+abstract class CompilerError(msg: String, typeErr: String) extends Exception(msg){
+  val errorMessage = s"[$typeErr]: $msg"
 }
 
 object StdlibFiles {
@@ -36,7 +36,6 @@ object StdlibFiles {
   ).map(f => (Source.fromFile(f), f))
   val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
 
-  //def stdlibFiles = stdString.map{case (x, y) => (Source.fromString(x), y)}
   val stdAst = stdlibFiles.map{case(x, y) => AstBuilder.build(Parser.parse(Scanner.scan(x.mkString), dfa), y)}
 }
 

@@ -24,57 +24,66 @@ private object Util {
   def compParams(params: List[Parameter], arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked) = {
     params.map(_.paramType) == arguments.map(_.getType)
   }
-  def findField(refType: RefType, name: String)(implicit cus: List[CompilationUnit]): FieldDeclaration = {
-    refType match {
-      case t: RefTypeLinked =>
-        t.getTypeDef match {
-          case ClassDefinition(_, parent, _, _, fields, _, _) =>
-            fields.find(_.fieldName == name) match {
-              case None => parent match {
-                case Some(parentType) => findField(parentType, name)
-                case None => throw new TypeCheckingError("no matching method found")
-              }
-              case Some(field) => field
-            }
-          case _ => sys.error("type linking did something bad") // TODO
-        }
-    }
-  }
-  def findMethodThrows(refType: RefType, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): MethodDeclaration = {
-    findMethod(refType, name, arguments) match {
-      case None => throw new TypeCheckingError("no matching method found")
+  
+  def findMember[DeclType <: MemberDeclaration]
+         (refType: RefType, getMemberFromType: TypeDefinition => Option[DeclType])
+         (implicit cus: List[CompilationUnit])
+         : DeclType = {
+    findMemberOpt(refType, getMemberFromType) match {
+      case None => throw new TypeCheckingError("no matching member found")
       case Some(m) => m
     }
   }
-
-  def findMethod(refType: RefType, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Option[MethodDeclaration] = {
+  
+  def findMemberOpt[DeclType <: MemberDeclaration]
+         (refType: RefType, getMemberFromType: TypeDefinition => Option[DeclType])
+         (implicit cus: List[CompilationUnit])
+         : Option[DeclType] = {
     refType match {
       case t: RefTypeLinked =>
-        val (parents, methods) = t.getTypeDef match {
-          case ClassDefinition(_, parent, interfaces, _, _, _, methods) => (interfaces ::: parent.toList, methods)
-          case InterfaceDefinition(_, parents, _, methods) => (parents, methods)
+        val (parents, member) = t.getTypeDef match {
+          case c @ ClassDefinition(_, parent, interfaces, _, _, _, _) => (interfaces ::: parent.toList, getMemberFromType(c))
+          case i @ InterfaceDefinition(_, parents, _, _) => (parents, getMemberFromType(i))
         }
         
-        val matchingMethods = methods.filter(_ match {
-          case MethodDeclaration(mname, _, _, params, _) =>
-            (name == mname) && compParams(params, arguments)
-        })
-        def findMethodParents(parents: List[RefType]): Option[MethodDeclaration] = {
+        def findInParents(parents: List[RefType]): Option[DeclType] = {
           parents match {
             case Nil => None
             case p :: ps =>
-              findMethod(p, name, arguments) match {
+              findMemberOpt(p, getMemberFromType) match {
                 case Some(m) => Some(m)
-                case None => findMethodParents(ps)
+                case None => findInParents(ps)
               }
           }
         }
-        matchingMethods match {
-          case Nil => findMethodParents(parents)
-          case m => Some(matchingMethods.head)
+        member match {
+          case None => findInParents(parents)
+          case Some(m) => Some(m)
         }
-      case _ => sys.error("type linking did something bad")
+      case _ => sys.error("RefType is not linked!")
     }
+  }
+  
+  def findField(refType: RefType, name: String)(implicit cus: List[CompilationUnit]): FieldDeclaration = {   
+    def getField(td: TypeDefinition): Option[FieldDeclaration] = {
+      val fields = td match {
+          case ClassDefinition(_, _, _, _, fields, _, _) => fields
+          case _:InterfaceDefinition => Nil        
+      }
+      fields.find(_.fieldName == name)
+    }
+    findMember(refType, getField)
+  }
+
+  def findMethod(refType: RefType, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): MethodDeclaration = {
+    def getMethod(td: TypeDefinition): Option[MethodDeclaration] = {
+      val methods = td match {
+          case ClassDefinition(_, _, _, _, _, _, methods) => methods
+          case InterfaceDefinition(_, _, _, methods) => methods        
+      }
+      methods.find(md => (md.methodName == name) && compParams(md.parameters, arguments))
+    }
+    findMember(refType, getMethod)
   }
 }
 
@@ -113,8 +122,6 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
       case (_: IntegerTrait, _: CompareOperator, _: IntegerTrait) => BooleanType
 
       case (BooleanType, _: BooleanOperator, BooleanType) => BooleanType
-
-      //case (_, EqualOperator | NotEqualOperator, _) if (first.getType == second.getType && first.getType != VoidType) => BooleanType
 
       case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(x, y)) => BooleanType
       case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(y, x)) => BooleanType
@@ -224,7 +231,7 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
  */
 case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    val m = Util.findMethodThrows(thisType, method, arguments)
+    val m = Util.findMethod(thisType, method, arguments)
     val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
     if (isStatic)
       throw new TypeCheckingError("trying to access non-static method in a static block (implicit this)")
@@ -240,7 +247,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     accessed.getType match {
       case r: RefType =>
-        val m = Util.findMethodThrows(r, method, arguments)
+        val m = Util.findMethod(r, method, arguments)
         val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
         val mIsProtected = m.modifiers.contains(Modifier.protectedModifier)
 
