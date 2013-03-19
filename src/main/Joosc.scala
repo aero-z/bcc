@@ -10,6 +10,7 @@ import nameResolution._
 import parser._
 import scanner._
 import typecheck.TypeChecker
+import reachability._
 
 
 abstract class CompilerError(mess: String, typeErr: String) extends Exception(mess){
@@ -65,6 +66,7 @@ object Joosc {
       val varLinked = VarResolver.variableLink(typeLinked)
       varLinked.foreach(_.display)
       TypeChecker.check(varLinked)
+      //varLinked.flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), _) => c.methods case _ => Nil }.foreach(FinitePath.check(_))
       
       errCodeSuccess
     } catch {
