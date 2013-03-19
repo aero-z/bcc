@@ -8,7 +8,7 @@ import main.Logger.debug
 case class NameLinkingException(mess: String) extends CompilerError(mess, "Name Linking")
 
 object VarResolver{
-  //( Map from name to new name, what to add to the new name, current class, previous cus)
+  
   case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathToVariable, pck: Option[Name], classDef: ClassDefinition){
     def open : Environment = this match {
       case Environment(sm, PathToVariable(pck, cn, ind, list), cpck,  cd) =>Environment(sm, PathToVariable(pck, cn, ind, 0 :: list), cpck, cd)
@@ -147,32 +147,33 @@ object VarResolver{
     def linkStatement(stmt: Statement, env: Environment) : Statement = try {stmt match {
       case Block(stmts) => Block(passThroughStatements(stmts, env.open))
       case EmptyStatement => EmptyStatement
-      case ExpressionStatement(exp) => ExpressionStatement(linkExpression(exp, env))
+      case ExpressionStatement(exp) => ExpressionStatement(linkExpression(exp)(env, ""))
       case ForStatement(init, cond, inc, stmt) => val forEnv = init.foldLeft(env.open)(_.update(_));
-        ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_, forEnv.inc )), inc.map(linkExpression(_, forEnv.inc.inc)), linkStatement(stmt, forEnv.inc.inc.inc))
-      case IfStatement(cond, ifStmt, elseStmt) => IfStatement(linkExpression(cond, env), linkStatement(ifStmt, env.open), elseStmt.map(linkStatement(_, env.open.inc)))
-      case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_, env)))
-      case LocalVariableDeclaration(typeName, id, initializer) => LocalVariableDeclaration(typeName, id, initializer.map(linkExpression(_, env.update(stmt))))
-      case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond, env), linkStatement(loop, env.open))
+        ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_)(forEnv.inc, "")), inc.map(linkExpression(_)(forEnv.inc.inc, "")), linkStatement(stmt, forEnv.inc.inc.inc))
+      case IfStatement(cond, ifStmt, elseStmt) => IfStatement(linkExpression(cond)(env, ""), linkStatement(ifStmt, env.open), elseStmt.map(linkStatement(_, env.open.inc)))
+      case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_)(env, "")))
+      case LocalVariableDeclaration(typeName, id, Some(init)) => LocalVariableDeclaration(typeName, id, Some(linkExpression(init)(env.update(stmt), id)))
+      case LocalVariableDeclaration(typeName, id, None) => throw NameLinkingException(s"The local variable $id is not initialized")
+      case WhileStatement(cond, loop) => WhileStatement(linkExpression(cond)(env, ""), linkStatement(loop, env.open))
     }}catch { case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Can not find ${path.reduce(_ + "." + _)}")
     }
 
-    def linkExpression(exp: Expression, env: Environment): Expression = try {
+    def linkExpression(exp: Expression)(implicit env: Environment, notAllowed:String): Expression = try {
       exp match {
-        case ParenthesizedExpression(exp) => ParenthesizedExpression(linkExpression(exp, env))
-        case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp, env))
-        case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f, env), op, linkExpression(s, env))
-        case CastExpression(cast, t) => CastExpression(cast, linkExpression(t, env))
-        case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr, env), linkExpression(ind, env))
-        case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size, env))
-        case Assignment(lhs, rhs) => Assignment(linkExpression(lhs, env), linkExpression(rhs, env))
-        case FieldAccess(acc, field) => FieldAccess(linkExpression(acc, env), field)
-        case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_, env)))
-        case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc, env), meth, args.map(linkExpression(_, env)))
-        case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkExpression(_, env)))
-        case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp, env), check)
+        case ParenthesizedExpression(exp) => ParenthesizedExpression(linkExpression(exp))
+        case UnaryOperation(op, exp) => UnaryOperation(op, linkExpression(exp))
+        case BinaryOperation(f, op, s) => BinaryOperation(linkExpression(f), op, linkExpression(s))
+        case CastExpression(cast, t) => CastExpression(cast, linkExpression(t))
+        case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr), linkExpression(ind))
+        case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size))
+        case Assignment(lhs, rhs) => Assignment(linkExpression(lhs)(env, ""), linkExpression(rhs))
+        case FieldAccess(acc, field) => FieldAccess(linkExpression(acc), field)
+        case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_)))
+        case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc), meth, args.map(linkExpression(_)))
+        case ThisMethodInvocation(thisType, meth, args) => ThisMethodInvocation(thisType, meth, args.map(linkExpression(_)))
+        case InstanceOfCall(exp, check) => InstanceOfCall(linkExpression(exp), check)
         case x: This => x
-        case VariableAccess(name) => linkVariable(name, env)
+        case VariableAccess(name) => linkVariable(name, env, notAllowed)
         case lit: Literal => lit
       }
     } catch {
@@ -184,7 +185,7 @@ object VarResolver{
       }
     }
 
-    def linkVariable(varName : String, env : Environment): LinkedExpression ={
+    def linkVariable(varName : String, env : Environment, notAllowed: String): LinkedExpression ={
       def checkClassFields(varName: String, refType: RefTypeLinked): Option[LinkedExpression] ={
         val classDef = refType.getTypeDef(cus).asInstanceOf[ClassDefinition]
         val field = classDef.fields.find(_.fieldName == varName)
@@ -196,7 +197,8 @@ object VarResolver{
           }
         }
       }
-      
+      if(varName == notAllowed) throw NameLinkingException(s"$varName not initialized yet")
+      else
       env.symbolMap.get(varName) match {
         case Some(x)  => LinkedVariableOrField(varName, x._1, x._2)
         case None => checkClassFields(varName, RefTypeLinked(env.pck, env.classDef.className)) match {
