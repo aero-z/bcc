@@ -215,9 +215,14 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
  */
 case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    constructor.asInstanceOf[RefTypeLinked].getTypeDef match {
+    val consLinked = constructor.asInstanceOf[RefTypeLinked]
+    consLinked.getTypeDef match {
       case ClassDefinition(_, _, _, mods, _, constructors, _) =>
-        if (!constructors.exists(c => Util.compParams(c.parameters, arguments)))
+        if (!constructors.exists(c => {
+          if (c.modifiers.contains(Modifier.protectedModifier) && myType.pkgName != consLinked.pkgName)
+            throw new TypeCheckingError("cannot call protected constructor")
+          Util.compParams(c.parameters, arguments)
+        }))
           throw new TypeCheckingError("found no contructor that matches parameters")
         if(mods.contains(Modifier.abstractModifier))
           throw new TypeCheckingError("cannot instantiate abstract class")
