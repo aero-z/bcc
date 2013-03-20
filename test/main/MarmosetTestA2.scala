@@ -24,7 +24,7 @@ class MarmosetTestA2 extends FunSuite {
     */
     val errCode =
       if (file.getName.startsWith("Je"))
-        Joosc.errCodeParseErr
+        Joosc.errCodeCompileErr
       else
         Joosc.errCodeSuccess
     test(file.getName) {

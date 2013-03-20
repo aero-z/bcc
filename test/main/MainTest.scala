@@ -23,14 +23,14 @@ public class Je_3_Resolve_SamePackageAndClassName {
     val ret = Joosc.check((code, "Je_3_Resolve_SamePackageAndClassName.java")::Nil)// :: StdlibFiles.stdlibFiles)
     assert(ret === Joosc.errCodeSuccess)
   }
-  /*
+  
   test("invalid code") {
     val code = Source.fromString(
 """
   [ } this is shit
 """)
     val ret = Joosc.check((code, "Foo.java") :: StdlibFiles.stdlibFiles)
-    assert(ret === Joosc.errCodeParseErr)
+    assert(ret === Joosc.errCodeCompileErr)
   }
 
   test("simple code") {
@@ -39,7 +39,6 @@ public class Je_3_Resolve_SamePackageAndClassName {
  public class Foo {
   public Foo() {
    char c = 'c';
-   println("hello");
   }
  }""")
     val ret = Joosc.check((code, "Foo.java") :: Nil)
@@ -55,7 +54,7 @@ public class Je_3_Resolve_SamePackageAndClassName {
   }
  }""")
     val ret = Joosc.check((code, "Foo.java") :: Nil)
-    assert(ret === Joosc.errCodeParseErr)
+    assert(ret === Joosc.errCodeCompileErr)
   }
   
   test("invalid char literal") {
@@ -67,7 +66,7 @@ public class Je_3_Resolve_SamePackageAndClassName {
   }
  }""")
     val ret = Joosc.check((code, "Foo.java") :: Nil)
-    assert(ret === Joosc.errCodeParseErr)
+    assert(ret === Joosc.errCodeCompileErr)
   }
   
   test("escape seq in string") {
@@ -75,7 +74,7 @@ public class Je_3_Resolve_SamePackageAndClassName {
 """
  public class Foo {
   public void foo() {
-   println("he\"l\nlo");
+   String s = "he\"l\nlo";
   }
  }""")
     val ret = Joosc.check((code, "Foo.java") :: Nil)
@@ -90,9 +89,6 @@ public class Je_3_Resolve_SamePackageAndClassName {
   }
  }""")
     val ret = Joosc.check((code, "Foo.java") :: Nil)
-    assert(ret === Joosc.errCodeParseErr)
+    assert(ret === Joosc.errCodeCompileErr)
   }
-  
-
-  */
 }

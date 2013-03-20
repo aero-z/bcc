@@ -60,7 +60,7 @@ private object Util {
     
     val fIsProtected = member.modifiers.contains(Modifier.protectedModifier)
     val fIsStatic = member.modifiers.contains(Modifier.staticModifier)
-    if (fIsProtected) {
+    if (fIsProtected && refType.asInstanceOf[RefTypeLinked].pkgName != myType.pkgName) {
       if (!TypeChecker.checkTypeMatch(definedIn, myType))
         throw new TypeCheckingError(s"trying to access protected member $member, refType = $refType, myType = $myType")
 

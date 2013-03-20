@@ -44,7 +44,7 @@ object Joosc {
   val addStdLib = true
   
   val errCodeSuccess = 0
-  val errCodeParseErr = 42
+  val errCodeCompileErr = 42
   val errCodeIoErr = 1
 
   def check(sources: List[(Source, String)]): Int = {
@@ -71,7 +71,7 @@ object Joosc {
     } catch {
       case e: CompilerError =>
         Console.err.println(e.errorMessage)//+"\n"+e.printStackTrace())
-        errCodeParseErr
+        errCodeCompileErr
     }
   }
   
