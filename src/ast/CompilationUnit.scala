@@ -17,6 +17,7 @@ private object Weed {
 
 }
 trait VariableDeclaration
+trait MemberDeclaration
 
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends AstNode {
@@ -128,7 +129,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[Parameter], implementation: Option[Block]) extends AstNode with VariableDeclaration {
+  parameters: List[Parameter], implementation: Option[Block]) extends AstNode with VariableDeclaration with MemberDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -156,7 +157,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
 }
 
 case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
-  initializer: Option[Expression]) extends AstNode with VariableDeclaration {
+  initializer: Option[Expression]) extends AstNode with VariableDeclaration with MemberDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Field declaration")
