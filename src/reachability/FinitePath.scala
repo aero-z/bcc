@@ -15,7 +15,7 @@ object FinitePath {
 //	parameters: List[Parameter],
 //	implementation: Option[Block])
   
-    def resolveNumber(expr:Expression):Int = {println("---resolveNumber: "+expr); expr match {
+    def resolveNumber(expr:Expression):Int = {debug("---resolveNumber: "+expr); expr match {
       case ParenthesizedExpression(expr) =>
         resolveNumber(expr)
       case BinaryOperation(first: Expression, operator:ArithmeticOperator, second: Expression) =>
@@ -36,7 +36,7 @@ object FinitePath {
       case puree =>
         throw new CatchableReturnException("cannot resolve: "+puree)
     }}
-    def compare(expr:Expression):Boolean = {println("---compare: "+expr); expr match {
+    def compare(expr:Expression):Boolean = {debug("---compare: "+expr); expr match {
       //intersection CompareOperator inter BooleanOperator: == !=
       case ParenthesizedExpression(expr) =>
         compare(expr)
@@ -125,7 +125,7 @@ object FinitePath {
       case puree =>
         throw new CatchableReturnException("cannot resolve: "+puree)
     }}
-    def resolveBoolean(expr:Expression):Boolean = {println("---resolveBoolean: "+expr); expr match {
+    def resolveBoolean(expr:Expression):Boolean = {debug("---resolveBoolean: "+expr); expr match {
       case UnaryOperation(InverseOperator, expr:Expression) =>
         !resolveBoolean(expr)
       case ParenthesizedExpression(expr) =>
@@ -150,7 +150,7 @@ object FinitePath {
             resolveBoolean(first) || resolveBoolean(second)
         }
       case BooleanLiteral(bool) =>
-        println("bool: "+bool)
+        debug("bool: "+bool)
         bool
       case puree =>
         throw new CatchableReturnException("cannot resolve: "+puree)
@@ -164,21 +164,21 @@ object FinitePath {
 	  }
 	  def returns(list:List[Statement]):Boolean = list match { //we use Booleans for a lazy evaluation
 	    case Nil =>
-	      println("Empty list")
+	      debug("Empty list")
 	      false
 	    case x :: Nil =>
 	      x match {
 	        case Block(statements) =>
-	          println("Block")
+	          debug("Block")
 			  returns(statements.filter(_ != EmptyStatement)) //filter once before already
 		    case EmptyStatement =>
-		      println("Empty")
+		      debug("Empty")
 		      false
 		    case ExpressionStatement(_) =>
-		      println("Expression")
+		      debug("Expression")
 		      false
 		    case ForStatement(_, cond, _, body) =>
-		      println("for")
+		      debug("for")
 		      try {
 		        val c =
 		        	if (cond.isDefined)
@@ -191,51 +191,51 @@ object FinitePath {
 				  throw new ReturnException("for body unreachable") //unreachable body
 		      } catch {
 		        case e:CatchableReturnException =>
-		          println("condition resolve error for for: "+e)
+		          debug("condition resolve error for for: "+e)
 		          returns(body::Nil) && false //no lines after
 		      }
 		    case IfStatement(cond, ifpart, elseOpt) =>
-		      println("if stat")
+		      debug("if stat")
 			    elseOpt match {
 			      case None =>
 			        try {
 				        val c = resolveBoolean(cond)
 				        if (c) { //always true
-				          println("ifpart")
-				          returns(ifpart::Nil) && false //if cannot be the last statement
+				          debug("ifpart")
+				          returns(ifpart::Nil) //&& false //TODO, correct? if cannot be the last statement
 				        } else
 				          throw new ReturnException("if body unreachable")
 				    } catch {
 				        case e:CatchableReturnException =>
-				          println("condition resolve error for if: "+e)
+				          debug("condition resolve error for if: "+e)
 				          returns(ifpart::Nil) && false //no statement left
 				    }
 			      case Some(elsepart) =>
 			        try {
 				        val c = resolveBoolean(cond)
 				        if (c) { //always true
-				          println("ifpart")
+				          debug("ifpart")
 				          val discard = returns(elsepart::Nil)
 				          returns(ifpart::Nil)
 				        } else {
-				          println("elsepart")
+				          debug("elsepart")
 				          val discard = returns(ifpart::Nil)
 				          returns(elsepart::Nil)
 				        }
 				    } catch {
 				        case e:CatchableReturnException =>
-				        println("condition resolve error for ifelse: "+e)
+				        debug("condition resolve error for ifelse: "+e)
 				        returns(ifpart::Nil) && returns(elsepart::Nil) //they both have to return!
 				    }
 			    }
 		    case ReturnStatement(_) =>
-		      println("return")
+		      debug("return")
 		      true //we already did typechecking!
 		    case LocalVariableDeclaration(typeName, identifier, _) =>
-		      println("variable declaration:"+typeName+" "+identifier)
+		      debug("variable declaration:"+typeName+" "+identifier)
 		      false
 		    case WhileStatement(cond, stat) =>
-		      println("while")
+		      debug("while")
 		      try {
 		        val c = resolveBoolean(cond)
 		        if (c)
@@ -244,33 +244,33 @@ object FinitePath {
 		          throw new ReturnException("while body unreachable")
 		      } catch {
 		        case e:CatchableReturnException =>
-		          println("condition resolve error for while: "+e)
+		          debug("condition resolve error for while: "+e)
 		          returns(stat::Nil) && false //no lines after
 		      }
 	      }
 	    case x :: xs =>
 	      x match {
 	        case Block(statements) =>
-	          println("Block xs")
+	          debug("Block xs")
 			  if (returns(statements.filter(_ != EmptyStatement)))
 			    onlyEmptyStatements(xs)
 			  else
 			    returns(xs)
 		    case EmptyStatement =>
-		      println("Empty xs")
+		      debug("Empty xs")
 		      returns(xs)
 		    case ExpressionStatement(_) =>
-		      println("Expression xs")
+		      debug("Expression xs")
 		      returns(xs)
 		    case ForStatement(_, cond, _, body) =>
-		      println("For xs")
+		      debug("For xs")
 		      try {
 		        val c =
 		          if (cond.isDefined)
 		            resolveBoolean(cond.get)
 		          else
 		            true
-		        println("boolean c: "+c)
+		        debug("boolean c: "+c)
 		        if (c)
 		          returns(body::Nil) && onlyEmptyStatements(xs)
 		        else
@@ -280,7 +280,7 @@ object FinitePath {
 		          (returns(body::Nil) && false) || returns(xs)
 		      }
 		    case IfStatement(cond, ifpart, elseOpt) =>
-		        println("If xs")
+		        debug("If xs")
 			    elseOpt match {
 			      case None =>
 			        try {
@@ -297,10 +297,10 @@ object FinitePath {
 				      try {
 				        val c = resolveBoolean(cond)
 				        if (c) {
-				          println("ifpart:")
+				          debug("ifpart:")
 				          (returns(elsepart::Nil) || true) && returns(ifpart::Nil) && onlyEmptyStatements(xs)
 				        } else {
-				          println("elsepart:")
+				          debug("elsepart:")
 				          (returns(ifpart::Nil) || true) && returns(elsepart::Nil) && onlyEmptyStatements(xs)
 				        }
 				      } catch {
@@ -313,17 +313,17 @@ object FinitePath {
 			        
 			    }
 		    case ReturnStatement(_) =>
-		      println("Return xs")
+		      debug("Return xs")
 		      val ret = onlyEmptyStatements(xs)
 		      if (!ret) { //reachability check
 		        throw new ReturnException("non empty statements after return!")
 		      }
 		      false //not used
 		    case LocalVariableDeclaration(typeName, identifier, _) =>
-		      println("variable declaration:"+typeName+" "+identifier)
+		      debug("variable declaration:"+typeName+" "+identifier)
 		      returns(xs)
 		    case WhileStatement(cond, stat) =>
-		      println("while xs")
+		      debug("while xs")
 		      try {
 		        val c = resolveBoolean(cond)
 		        if (c)
@@ -336,7 +336,7 @@ object FinitePath {
 		      }
 	      }
 	  }
-	  println(m.methodName+":")
+	  debug(m.methodName+":")
 	  if (m.returnType != VoidType) { //void types methods don't need a return statement
 	    if (!m.implementation.isDefined) {
 	      throw new ReturnException("Non void function doesn't have a body")

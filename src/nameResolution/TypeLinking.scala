@@ -205,7 +205,15 @@ object TypeLinking {
 
 		val imported = importAll(classes)
 		//check for "empty" packages as well:
-		val onDemandImports = (Name("java"::"lang"::Nil) :: packages).distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => throw new EnvironmentException("empty import"+p) case x => x})
+		def isPrefix(s:List[String]):Boolean = {
+		  if (s==Nil)
+		    false
+		  val packageNames = possibleImports.map(_._1).filter(_!=None).map(_.get).map{case Name(list) => list}.filter(_!=Nil).distinct
+		  packageNames.foreach(x => if (x.startsWith(s)) true)
+		  false
+		}
+		val onDemandImports = (Name("java"::"lang"::Nil) :: packages).distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => if (!isPrefix(p.path)) throw new EnvironmentException("empty import"+p) else Nil case x => x})
+	
 		val directAccess = possibleList.toMap //all direct accesses: fullName -> tuple
 
 		if (possibleList.length != directAccess.size)
