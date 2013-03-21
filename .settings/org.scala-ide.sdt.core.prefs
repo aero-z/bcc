@@ -53,7 +53,7 @@ organizeimports.expandcollapse=expand
 organizeimports.groups=java$scala$org$com
 organizeimports.scalapackage=false
 organizeimports.wildcards=scalaz$scalaz.Scalaz
-scala.compiler.additionalParams=-feature
+scala.compiler.additionalParams=-Dscalac.patmat.analysisBudget\=off -feature
 scala.compiler.useProjectSettings=true
 stopBuildOnError=true
 syntaxColouring.bracket.backgroundColourEnabled=false

@@ -1,6 +1,6 @@
 name := "bcc"
 
-scalaVersion := "2.10.0"// set the name of the project
+scalaVersion := "2.10.1"// set the name of the project
 
 version := "1.0"
 
@@ -51,9 +51,9 @@ mainClass in (Compile, run) := Some("main.Joosc")
 // // add <base>/input to the files that '~' triggers on
 // watchSources <+= baseDirectory map { _ / "input" }
 
-scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
+scalacOptions ++= Seq("-Dscalac.patmat.analysisBudget=off", "-unchecked", "-deprecation", "-feature")
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
+//libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 // // add a maven-style repository
 // resolvers += "name" at "url"
 
