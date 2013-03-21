@@ -9,6 +9,7 @@ import nameResolution.PathToField
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError
 import typecheck.TypeCheckingError
 import nameResolution.PathToDeclaration
+import main.Joosc
 
 //Every possible expression
 trait Expression extends AstNode {
@@ -43,6 +44,7 @@ private object Util {
         case t: RefTypeLinked =>
           val (parents, member) = t.getTypeDef match {
             case c @ ClassDefinition(_, parent, interfaces, _, _, _, _) => (interfaces ::: parent.toList, getMemberFromType(c))
+            case i @ InterfaceDefinition(_, Nil,     _, _) if (Joosc.linkJavaLang) => (Java.Object :: Nil, getMemberFromType(i))
             case i @ InterfaceDefinition(_, parents, _, _) => (parents, getMemberFromType(i))
           }          
           member match {

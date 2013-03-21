@@ -41,7 +41,8 @@ object StdlibFiles {
 
 
 object Joosc {
-  val addStdLib = true
+  val addStdLib = true    // whether the std lib file will be added automatically to the build 
+  val linkJavaLang = true // whether java.lang should be part of the language and Object should be base of every class
   
   val errCodeSuccess = 0
   val errCodeCompileErr = 42

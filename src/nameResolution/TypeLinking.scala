@@ -7,7 +7,7 @@ import main.Joosc
 class EnvironmentException(message:String) extends main.CompilerError(message, "Environment building")
 
 object TypeLinking {
-	val linkJavaLang = true
+	
 	type NameMap = Map[Name, (Option[Name], String)]
 	def treatAll(cus:List[CompilationUnit]):List[CompilationUnit] = {
 		debug("CREATE POSSIBLE IMPORTS:")
@@ -103,7 +103,7 @@ object TypeLinking {
 			def linkTypeDefinition(td:TypeDefinition):TypeDefinition = td match {
 				case id:InterfaceDefinition =>debug("LINK INTERFACE:"); InterfaceDefinition(id.interfaceName, id.parents.map(link(_)), id.modifiers, id.methods.map(linkMethod(_)))
 				case cd:ClassDefinition =>debug("LINK CLASS:"); ClassDefinition(cd.className,
-                if (linkJavaLang)
+                if (Joosc.linkJavaLang)
                   if(cu.packageName == Some(Name(List("java", "lang"))) &&  cu.typeName == "Object")
                     None
                   else

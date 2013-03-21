@@ -2,6 +2,7 @@ package typecheck
 
 import ast._
 import main.CompilerError
+import main.Joosc.linkJavaLang
 
 class TypeCheckingError(message: String) extends CompilerError(message, "Type checking")
 
@@ -29,15 +30,15 @@ object TypeChecker {
     (expected, found) match {
       //case (NullType, _) => sys.error("nothing can be assigned to null")
       case (x, y) if (x == y) => true
-      case (Java.Object, _: RefTypeLinked) => true
+      case (Java.Object, _: RefTypeLinked) if (linkJavaLang) => true
       case (x: RefTypeLinked, y: RefTypeLinked) => findMother(x, cus, y)
       case (ArrayType(x: RefTypeLinked), ArrayType(y: RefTypeLinked)) => findMother(x, cus, y)
       case (ArrayType(x), ArrayType(y)) => (x == y)
       case (_: RefTypeLinked, NullType) => true
       case (_: ArrayType, NullType) => true
-      case (Java.Object, _: ArrayType) => true
-      case (Java.Cloneable, _: ArrayType) => true
-      case (Java.Serializable, _: ArrayType) => true
+      case (Java.Object, _: ArrayType) if (linkJavaLang) => true
+      case (Java.Cloneable, _: ArrayType) if (linkJavaLang) => true
+      case (Java.Serializable, _: ArrayType) if (linkJavaLang) => true
       case (IntType, _: IntegerTrait) => true
       case (ShortType, _: ShortTrait) => true
       case (ByteType, _: ByteTrait) => true
