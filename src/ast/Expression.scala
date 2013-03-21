@@ -9,6 +9,7 @@ import nameResolution.PathToField
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError
 import typecheck.TypeCheckingError
 import nameResolution.PathToDeclaration
+import main.Joosc
 
 //Every possible expression
 trait Expression extends AstNode {
@@ -21,50 +22,63 @@ trait Expression extends AstNode {
 trait LinkedExpression extends Expression
 
 private object Util {
+  
   def compParams(params: List[Parameter], arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked) = {
     params.map(_.paramType) == arguments.map(_.getType)
   }
-  
-  def findMember[DeclType <: MemberDeclaration]
-         (refType: RefType, getMemberFromType: TypeDefinition => Option[DeclType])
-         (implicit cus: List[CompilationUnit])
-         : DeclType = {
-    findMemberOpt(refType, getMemberFromType) match {
+
+  def findMember[DeclType <: MemberDeclaration](refType: RefType, isStaticAccess: Boolean, getMemberFromType: TypeDefinition => Option[DeclType])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): DeclType = {
+    def findInParents(parents: List[RefType]): Option[(DeclType, RefType)] = {
+      parents match {
+        case Nil => None
+        case p :: ps =>
+          findMemberRec(p) match {
+            case Some(m) => Some(m)
+            case None => findInParents(ps)
+          }
+      }
+    }
+    
+    def findMemberRec(refType: RefType): Option[(DeclType, RefType)] = {
+      refType match {
+        case t: RefTypeLinked =>
+          val (parents, member) = t.getTypeDef match {
+            case c @ ClassDefinition(_, parent, interfaces, _, _, _, _) => (interfaces ::: parent.toList, getMemberFromType(c))
+            case i @ InterfaceDefinition(_, Nil,     _, _) if (Joosc.linkJavaLang) => (Java.Object :: Nil, getMemberFromType(i))
+            case i @ InterfaceDefinition(_, parents, _, _) => (parents, getMemberFromType(i))
+          }          
+          member match {
+            case None => findInParents(parents)
+            case Some(m) => Some((m, t))
+          }
+        case _ => sys.error("RefType is not linked!")
+      }
+    }
+
+    val (member, definedIn) = findMemberRec(refType) match {
       case None => throw new TypeCheckingError("no matching member found")
       case Some(m) => m
     }
-  }
-  
-  def findMemberOpt[DeclType <: MemberDeclaration]
-         (refType: RefType, getMemberFromType: TypeDefinition => Option[DeclType])
-         (implicit cus: List[CompilationUnit])
-         : Option[DeclType] = {
-    refType match {
-      case t: RefTypeLinked =>
-        val (parents, member) = t.getTypeDef match {
-          case c @ ClassDefinition(_, parent, interfaces, _, _, _, _) => (interfaces ::: parent.toList, getMemberFromType(c))
-          case i @ InterfaceDefinition(_, parents, _, _) => (parents, getMemberFromType(i))
-        }
-        
-        def findInParents(parents: List[RefType]): Option[DeclType] = {
-          parents match {
-            case Nil => None
-            case p :: ps =>
-              findMemberOpt(p, getMemberFromType) match {
-                case Some(m) => Some(m)
-                case None => findInParents(ps)
-              }
-          }
-        }
-        member match {
-          case None => findInParents(parents)
-          case Some(m) => Some(m)
-        }
-      case _ => sys.error("RefType is not linked!")
+    
+    val fIsProtected = member.modifiers.contains(Modifier.protectedModifier)
+    val fIsStatic = member.modifiers.contains(Modifier.staticModifier)
+    if (fIsProtected && refType.asInstanceOf[RefTypeLinked].pkgName != myType.pkgName) {
+      if (!TypeChecker.checkTypeMatch(definedIn, myType))
+        throw new TypeCheckingError(s"trying to access protected member $member, refType = $refType, myType = $myType")
+
+      if (!isStaticAccess && !TypeChecker.checkTypeMatch(myType, refType))
+        throw new TypeCheckingError(s"trying to access protected member $member, refType = $refType, myType = $myType")
+
     }
+    if (isStaticAccess && !fIsStatic)
+      throw new TypeCheckingError("trying to access non-static member in an type")
+    else if (!isStaticAccess && fIsStatic)
+      throw new TypeCheckingError("trying to access static member in an instance")
+    
+    member
   }
   
-  def findField(refType: RefType, name: String)(implicit cus: List[CompilationUnit]): FieldDeclaration = {   
+  def findField(refType: RefType, isStaticAccess: Boolean, name: String)(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): FieldDeclaration = {   
     def getField(td: TypeDefinition): Option[FieldDeclaration] = {
       val fields = td match {
           case ClassDefinition(_, _, _, _, fields, _, _) => fields
@@ -72,10 +86,10 @@ private object Util {
       }
       fields.find(_.fieldName == name)
     }
-    findMember(refType, getField)
+    findMember(refType, isStaticAccess, getField)
   }
 
-  def findMethod(refType: RefType, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): MethodDeclaration = {
+  def findMethod(refType: RefType, isStaticAccess: Boolean, name: String, arguments: List[Expression])(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): MethodDeclaration = {
     def getMethod(td: TypeDefinition): Option[MethodDeclaration] = {
       val methods = td match {
           case ClassDefinition(_, _, _, _, _, _, methods) => methods
@@ -83,7 +97,7 @@ private object Util {
       }
       methods.find(md => (md.methodName == name) && compParams(md.parameters, arguments))
     }
-    findMember(refType, getMethod)
+    findMember(refType, isStaticAccess, getMethod)
   }
 }
 
@@ -191,18 +205,8 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     accessed.getType match {
       case r: RefType =>
-        val f = Util.findField(r, field)
-        val fIsProtected = f.modifiers.contains(Modifier.protectedModifier)
-        val fIsStatic    = f.modifiers.contains(Modifier.staticModifier)
-        //if (!TypeChecker.checkTypeMatch(myType, r))
-          if (fIsProtected && !TypeChecker.checkTypeMatch(myType, r))
-            throw new TypeCheckingError("trying to access protected field in a different class")
-        if (accessed.isInstanceOf[RefType] && !fIsStatic)
-          throw new TypeCheckingError("trying to access non-static field in an type")
-        else if (!accessed.isInstanceOf[RefType] && fIsStatic)
-          throw new TypeCheckingError("trying to access static field in an instance")
-        else
-          f.fieldType
+        val f = Util.findField(r, accessed.isInstanceOf[RefType], field)        
+        f.fieldType
       case a: ArrayType if (field == "length") => IntType
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
     }
@@ -213,9 +217,14 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
  */
 case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    constructor.asInstanceOf[RefTypeLinked].getTypeDef match {
+    val consLinked = constructor.asInstanceOf[RefTypeLinked]
+    consLinked.getTypeDef match {
       case ClassDefinition(_, _, _, mods, _, constructors, _) =>
-        if (!constructors.exists(c => Util.compParams(c.parameters, arguments)))
+        if (!constructors.exists(c => {
+          if (c.modifiers.contains(Modifier.protectedModifier) && myType.pkgName != consLinked.pkgName)
+            throw new TypeCheckingError("cannot call protected constructor")
+          Util.compParams(c.parameters, arguments)
+        }))
           throw new TypeCheckingError("found no contructor that matches parameters")
         if(mods.contains(Modifier.abstractModifier))
           throw new TypeCheckingError("cannot instantiate abstract class")
@@ -230,14 +239,8 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
  * method(arguments)
  */
 case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    val m = Util.findMethod(thisType, method, arguments)
-    val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
-    if (isStatic)
-      throw new TypeCheckingError("trying to access non-static method in a static block (implicit this)")
-    else
-      m.returnType
-  }
+  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
+    ExprMethodInvocation(This(thisType), method, arguments).getType
 }
 
 /**
@@ -247,20 +250,8 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     accessed.getType match {
       case r: RefType =>
-        val m = Util.findMethod(r, method, arguments)
-        val mIsStatic = m.modifiers.contains(Modifier.staticModifier)
-        val mIsProtected = m.modifiers.contains(Modifier.protectedModifier)
-
-        //if (!TypeChecker.checkTypeMatch(myType, r))
-          if (mIsProtected && !TypeChecker.checkTypeMatch(myType, r))
-            throw new TypeCheckingError("trying to access protected field in a different class")
-        
-        if (accessed.isInstanceOf[RefType] && !mIsStatic)
-          throw new TypeCheckingError("trying to access non-static method in an type")
-        else if (!accessed.isInstanceOf[RefType] && mIsStatic)
-          throw new TypeCheckingError("trying to access static method in an instance")
-        else
-          m.returnType
+        val m = Util.findMethod(r, accessed.isInstanceOf[RefType], method, arguments)
+        m.returnType
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($accessed of type $x)")
     }
 }
@@ -303,11 +294,8 @@ case class VariableAccess(str: String) extends Expression {
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     variablePath match {
-      case PathToField(refType, _) =>
-        val f = Util.findField(refType, name)
-        val fIsStatic = f.modifiers.contains(Modifier.staticModifier)
-        if (isStatic)
-          throw new TypeCheckingError("trying to access non-static field in a static block (implicit this)")
+      case _: PathToField =>
+        FieldAccess(This(myType), name).getType
       case _ =>
     }
     varType

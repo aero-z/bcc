@@ -17,7 +17,7 @@ private object Weed {
 
 }
 trait VariableDeclaration
-trait MemberDeclaration
+abstract class MemberDeclaration(val modifiers: List[Modifier])
 
 //Will be used quite often, is for instance "java.util.String"
 case class Name(path: List[String]) extends AstNode {
@@ -128,8 +128,8 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 
 
 //What can be put in a class
-case class MethodDeclaration(methodName: String, returnType: Type, modifiers: List[Modifier],
-  parameters: List[Parameter], implementation: Option[Block]) extends AstNode with VariableDeclaration with MemberDeclaration {
+case class MethodDeclaration(methodName: String, returnType: Type, override val modifiers: List[Modifier],
+  parameters: List[Parameter], implementation: Option[Block]) extends MemberDeclaration(modifiers) with VariableDeclaration with AstNode {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -156,8 +156,8 @@ case class MethodDeclaration(methodName: String, returnType: Type, modifiers: Li
         "an abstract method cannot be static or final")
 }
 
-case class FieldDeclaration(fieldName: String, fieldType: Type, modifiers: List[Modifier],
-  initializer: Option[Expression]) extends AstNode with VariableDeclaration with MemberDeclaration {
+case class FieldDeclaration(fieldName: String, fieldType: Type, override val modifiers: List[Modifier],
+  initializer: Option[Expression]) extends MemberDeclaration(modifiers) with VariableDeclaration with AstNode {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Field declaration")
