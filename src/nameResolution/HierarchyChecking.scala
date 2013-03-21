@@ -142,14 +142,14 @@ object HierarchyChecking {
       def compatibleMod(over: List[Modifier.Modifier], par: List[Modifier.Modifier]) = {
         !par.contains(Modifier.finalModifier) &&
         (over.contains(Modifier.staticModifier) == par.contains(Modifier.staticModifier)) &&
-        (over.contains(Modifier.publicModifier) || par.contains(Modifier.protectedModifier))
+        (!over.contains(Modifier.protectedModifier) || par.contains(Modifier.protectedModifier))
       }
       def merge(abAcc: List[MethodDeclaration], conAcc: List[MethodDeclaration], meth: MethodDeclaration) = {
         val over = (abAcc ::: conAcc).find(getSig(_) == getSig(meth))
 
         over match {
           case Some(ov) =>
-            if( !compatibleMod(ov.modifiers, meth.modifiers) || ov.returnType != meth.returnType) throw HierarchyException(s"wrong override with method ${meth.methodName}")
+            if(!compatibleMod(ov.modifiers, meth.modifiers) && (cl.methods.contains(ov) || !ov.modifiers.contains(Modifier.abstractModifier)) || ov.returnType != meth.returnType) throw HierarchyException(s"wrong override with method ${meth.methodName}")            
             else (abAcc, conAcc)
           case None => if(meth.implementation.isDefined || meth.modifiers.contains(Modifier.nativeModifier)) (abAcc, meth :: conAcc) else  (meth :: abAcc, conAcc)
         }
