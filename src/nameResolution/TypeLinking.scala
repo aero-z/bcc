@@ -206,11 +206,12 @@ object TypeLinking {
 		val imported = importAll(classes)
 		//check for "empty" packages as well:
 		def isPrefix(s:List[String]):Boolean = {
+		  println("Look for this prefix: "+s)
 		  if (s==Nil)
 		    false
 		  val packageNames = possibleImports.map(_._1).filter(_!=None).map(_.get).map{case Name(list) => list}.filter(_!=Nil).distinct
-		  packageNames.foreach(x => if (x.startsWith(s)) true)
-		  false
+		  packageNames.foreach(println(_))
+		  packageNames.exists(x => x.startsWith(s))
 		}
 		val onDemandImports = (Name("java"::"lang"::Nil) :: packages).distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => if (!isPrefix(p.path)) throw new EnvironmentException("empty import"+p) else Nil case x => x})
 	
