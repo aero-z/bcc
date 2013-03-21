@@ -4,6 +4,8 @@ scalaVersion := "2.10.1"// set the name of the project
 
 version := "1.0"
 
+initialize ~= { _ => System.setProperty("scalac.patmat.analysisBudget","off" ) }
+
 // set the main Scala source directory to be <base>/src
 scalaSource in Compile <<= baseDirectory(_ / "src")
 
@@ -12,12 +14,8 @@ scalaSource in Compile <<= baseDirectory(_ / "src")
 // set the Scala test source directory to be <base>/test
 scalaSource in Test <<= baseDirectory(_ / "test")
 
-
-
 // add a test dependency on ScalaCheck
 libraryDependencies += "org.scalatest" %% "scalatest" % "1.9.1" % "test"
-
-
 
 // reduce the maximum number of errors shown by the Scala compiler
 maxErrors := 20
@@ -30,10 +28,7 @@ pollInterval := 1000
 
 defaultExcludes in Compile := "*.java"
 
-
-
 defaultExcludes in Test := "*.java"
-
 
 //defaultExcludes in Compile ~= (_ || "TypeLinking.scala")
 
@@ -51,7 +46,7 @@ mainClass in (Compile, run) := Some("main.Joosc")
 // // add <base>/input to the files that '~' triggers on
 // watchSources <+= baseDirectory map { _ / "input" }
 
-scalacOptions ++= Seq("-Dscalac.patmat.analysisBudget=off", "-unchecked", "-deprecation", "-feature")
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 //libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
 // // add a maven-style repository
