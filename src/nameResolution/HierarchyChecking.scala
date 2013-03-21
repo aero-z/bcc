@@ -134,8 +134,54 @@ object HierarchyChecking {
 
 
     def checkClass(cl: ClassDefinition){
-      //checkClassMethodContain(cl)
-      //checkAbstractMethodOverride(cl)
+      //First get all the methods in the class definition, in concrete and abstract
+      val consSig = cl.constructors.map(cons => cons.parameters.map(_.paramType))
+      if(consSig.size != consSig.distinct.size) throw HierarchyException(s"${cl.className} contains twice the same constructors")
+      type Sig = (String, List[Type])
+      def getSig(meth: MethodDeclaration) = (meth.methodName, meth.parameters.map(_.paramType))
+      def compatibleMod(over: List[Modifier.Modifier], par: List[Modifier.Modifier]) = {
+        !par.contains(Modifier.finalModifier) &&
+        (over.contains(Modifier.staticModifier) == par.contains(Modifier.staticModifier)) &&
+        (over.contains(Modifier.publicModifier) || par.contains(Modifier.protectedModifier))
+      }
+      def merge(abAcc: List[MethodDeclaration], conAcc: List[MethodDeclaration], meth: MethodDeclaration) = {
+        val over = (abAcc ::: conAcc).find(getSig(_) == getSig(meth))
+
+        over match {
+          case Some(ov) =>
+            if( !compatibleMod(ov.modifiers, meth.modifiers) || ov.returnType != meth.returnType) throw HierarchyException(s"wrong override with method ${meth.methodName}")
+            else (abAcc, conAcc)
+          case None => if(meth.implementation.isDefined || meth.modifiers.contains(Modifier.nativeModifier)) (abAcc, meth :: conAcc) else  (meth :: abAcc, conAcc)
+        }
+        
+        
+      }
+
+      def getMethInClass(cl: ClassDefinition, abAcc: List[MethodDeclaration], conAcc: List[MethodDeclaration]) : (List[MethodDeclaration], List[MethodDeclaration]) = {
+        val (newAb, newCon) = cl.methods.foldLeft((abAcc, conAcc)) {
+          case ((abAcc, conAcc), meth) => merge(abAcc, conAcc, meth)
+        }
+        cl.parent match {
+          case Some(refType: RefTypeLinked) => getMethInClass(refType.getTypeDef(cus).asInstanceOf[ClassDefinition], newAb, newCon)
+          case _ => (newAb, newCon)
+        }
+      }
+
+      def getInterfaces(typeDef: TypeDefinition): List[InterfaceDefinition] = typeDef match {
+        case ClassDefinition(_, par, int, _, _, _, _) => int.map(_.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[InterfaceDefinition]).flatMap(x => x :: getInterfaces(x)) ::: par.map(x => getInterfaces(x.asInstanceOf[RefTypeLinked].getTypeDef(cus))).getOrElse(Nil)
+        case InterfaceDefinition(_, int, _, _) => int.map(_.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[InterfaceDefinition]).flatMap(x => x :: getInterfaces(x))
+      }
+      val (absMeths, conMeths) = getMethInClass(cl, Nil, Nil)
+      val (allAbs, allCon) = getInterfaces(cl).flatMap(_.methods).foldLeft((absMeths, conMeths)){
+        case ((abAcc, conAcc), meth) => merge(abAcc, conAcc, meth)
+      }
+        
+      if(!cl.modifiers.contains(Modifier.abstractModifier)){
+        
+        if(!allAbs.isEmpty) throw HierarchyException(s"${cl.className} should be abstract")
+
+
+      }
     }
 
     // def checkClassMethod(cl : ClassDefinition){
