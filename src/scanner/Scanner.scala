@@ -61,7 +61,7 @@ object Scanner {
     def unescape(str: String): String = {      
       @tailrec
       def unescapeRec(str: List[Char], acc : String): String = {
-        (str: @unchecked) match {
+        str match {
           case Nil =>  acc
           case '\\' :: 'b'  :: xs => unescapeRec(xs, acc + '\b')
           case '\\' :: 'n'  :: xs => unescapeRec(xs, acc + '\n')
