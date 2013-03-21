@@ -65,7 +65,10 @@ object Joosc {
       val varLinked = VarResolver.variableLink(typeLinked)
       varLinked.foreach(_.display)
       TypeChecker.check(varLinked)
-      //varLinked.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil))).flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), _) => c.methods case _ => Nil }.foreach(FinitePath.check(_))
+      //
+      varLinked
+      //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
+      .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => println(">>>>>>>>>> "+name); c.methods case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(FinitePath.check(_))
       
       errCodeSuccess
     } catch {

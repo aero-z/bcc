@@ -116,7 +116,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
       case (_: ByteTrait, _: CompareOperator, _: ByteTrait) => BooleanType
       case (_: ShortTrait, _: ArithmeticOperator, _: ShortTrait) => ShortType //includes widening!
       case (_: ShortTrait, _: CompareOperator, _: ShortTrait) => BooleanType
-      case (_: CharTrait, _: ArithmeticOperator, _: CharTrait) => CharType
+      //case (_: CharTrait, _: ArithmeticOperator, _: CharTrait) => CharType
       case (_: CharTrait, _: CompareOperator, _: CharTrait) => BooleanType
       case (_: IntegerTrait, _: ArithmeticOperator, _: IntegerTrait) => IntType //includes widening!
       case (_: IntegerTrait, _: CompareOperator, _: IntegerTrait) => BooleanType
