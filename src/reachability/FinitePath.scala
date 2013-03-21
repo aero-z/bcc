@@ -14,44 +14,130 @@ object FinitePath {
 //	modifiers: List[Modifier],
 //	parameters: List[Parameter],
 //	implementation: Option[Block])
-  /*
-    def resolveNumber(expr:Expression):Int = expr match {
-      case BinaryOperation(first: Expression, operator:ArithmeticOperator, second: Expression) => operator match {
-        case PlusOperator =>
-          resolveNumber(first) + resolveNumber(second)
-        case MinusOperator =>
-          resolveNumber(first) - resolveNumber(second)
-        case StarOperator =>
-          resolveNumber(first) * resolveNumber(second)
-        case DivOperator =>
-          resolveNumber(first) / resolveNumber(second)
-        case ModOperator =>
-          resolveNumber(first) % resolveNumber(second)
-        case puree =>
-          throw new CatchableReturnException("cannot resolve: "+puree)
-      }
-      case NumberLiteral(x) =>
-        x
+  
+    def resolveNumber(expr:Expression):Int = {println("---resolveNumber: "+expr); expr match {
+      case ParenthesizedExpression(expr) =>
+        resolveNumber(expr)
+      case BinaryOperation(first: Expression, operator:ArithmeticOperator, second: Expression) =>
+        operator match {
+          case PlusOperator =>
+            resolveNumber(first) + resolveNumber(second)
+          case MinusOperator =>
+            resolveNumber(first) - resolveNumber(second)
+          case StarOperator =>
+            resolveNumber(first) * resolveNumber(second)
+          case DivOperator =>
+            resolveNumber(first) / resolveNumber(second)
+          case ModOperator =>
+            resolveNumber(first) % resolveNumber(second)
+        }
+      case x:NumberLiteral =>
+        x.int
       case puree =>
         throw new CatchableReturnException("cannot resolve: "+puree)
-    }
-    def compare(expr:Expression):Boolean = expr match {
-      
-        
+    }}
+    def compare(expr:Expression):Boolean = {println("---compare: "+expr); expr match {
+      //intersection CompareOperator inter BooleanOperator: == !=
+      case ParenthesizedExpression(expr) =>
+        compare(expr)
+      case BinaryOperation(first: BooleanLiteral, operator:CompareOperator, second: BooleanLiteral) =>
+        operator match {
+          case EqualOperator => first.bool == second.bool
+          case NotEqualOperator => first.bool != second.bool
+        }
+      case BinaryOperation(first: Expression, operator:CompareOperator, second: BooleanLiteral) =>
+        operator match {
+          case EqualOperator => compare(first) == second.bool
+          case NotEqualOperator => compare(first) != second.bool
+        }
+      case BinaryOperation(first: BooleanLiteral, operator:CompareOperator, second: Expression) =>
+        operator match {
+          case EqualOperator => first.bool == compare(second)
+          case NotEqualOperator => first.bool != compare(second)
+        }
+      case BinaryOperation(first: NumberLiteral, operator:CompareOperator, second: NumberLiteral) =>
+        operator match {
+          case SmallerOperator =>
+            first.int < second.int
+          case GreaterOperator =>
+            first.int > second.int
+          case EqualOperator =>
+            first.int == second.int
+          case NotEqualOperator =>
+            first.int != second.int
+          case LessEqualOperator =>
+            first.int <= second.int
+          case GreaterEqualOperator =>
+            first.int >= second.int
+        }
+      case BinaryOperation(first: Expression, operator:CompareOperator, second: NumberLiteral) =>
+        operator match {
+          case SmallerOperator =>
+            resolveNumber(first) < second.int
+          case GreaterOperator =>
+            resolveNumber(first) > second.int
+          case EqualOperator =>
+            resolveNumber(first) == second.int
+          case NotEqualOperator =>
+            resolveNumber(first) != second.int
+          case LessEqualOperator =>
+            resolveNumber(first) <= second.int
+          case GreaterEqualOperator =>
+            resolveNumber(first) >= second.int
+        }
+      case BinaryOperation(first: NumberLiteral, operator:CompareOperator, second: Expression) =>
+        operator match {
+          case SmallerOperator =>
+            first.int < resolveNumber(second)
+          case GreaterOperator =>
+            first.int > resolveNumber(second)
+          case EqualOperator =>
+            first.int == resolveNumber(second)
+          case NotEqualOperator =>
+            first.int != resolveNumber(second)
+          case LessEqualOperator =>
+            first.int <= resolveNumber(second)
+          case GreaterEqualOperator =>
+            first.int >= resolveNumber(second)
+        }
+      //BooleanOperator intersection Compareoperator: == and !=
+      case BinaryOperation(first @ BinaryOperation(_, _:BooleanOperator, _), operator:CompareOperator, second @ BinaryOperation(_, _:BooleanOperator, _)) =>
+        operator match {
+          case EqualOperator => compare(first) == compare(second)
+          case NotEqualOperator => compare(first) != compare(second)
+        }
+      //we already catched the easier versions befor!
+      case BinaryOperation(first @ BinaryOperation(_, _:ArithmeticOperator, _), operator:CompareOperator, second @ BinaryOperation(_, _:ArithmeticOperator, _)) =>
+        operator match {
+          case SmallerOperator =>
+            resolveNumber(first) < resolveNumber(second)
+          case GreaterOperator =>
+            resolveNumber(first) > resolveNumber(second)
+          case EqualOperator =>
+            resolveNumber(first) == resolveNumber(second)
+          case NotEqualOperator =>
+            resolveNumber(first) != resolveNumber(second)
+          case LessEqualOperator =>
+            resolveNumber(first) <= resolveNumber(second)
+          case GreaterEqualOperator =>
+            resolveNumber(first) >= resolveNumber(second)
+        }
       case puree =>
         throw new CatchableReturnException("cannot resolve: "+puree)
-    }*/
-    def resolveBoolean(expr:Expression):Boolean = expr match {
+    }}
+    def resolveBoolean(expr:Expression):Boolean = {println("---resolveBoolean: "+expr); expr match {
       case UnaryOperation(InverseOperator, expr:Expression) =>
         !resolveBoolean(expr)
-      case BinaryOperation(first: Expression, operation:BooleanOperator, second: Expression) =>
-        operation match {
-          //case CompareOperator =>
-            //compare(expr)
-          case EqualOperator =>
-          	resolveBoolean(first) == resolveBoolean(second)
-          case NotEqualOperator =>
-          	resolveBoolean(first) != resolveBoolean(second)
+      case ParenthesizedExpression(expr) =>
+        resolveBoolean(expr)
+      case BinaryOperation(first: Expression, operator:BooleanOperator, second: Expression) =>
+        operator match {
+          case _:CompareOperator =>
+            try {
+              compare(expr)
+            } catch {
+              case e:Exception => throw new CatchableReturnException("probably not a constant expression...")
+            }
           case BitXorOperator =>
             resolveBoolean(first) ^ resolveBoolean(second)
           case BitAndOperator =>
@@ -68,10 +154,7 @@ object FinitePath {
         bool
       case puree =>
         throw new CatchableReturnException("cannot resolve: "+puree)
-      //case FieldAccess(accessed: Expression, field: String) => 
-        
-      //case Assignment(leftHandSide: Expression, rightHandSide: Expression) =>
-    }
+    }}
 	def check(m:MethodDeclaration) {
 	  def onlyEmptyStatements(list:List[Statement]):Boolean = { //should only be 
 	    val empty = list.filter(_ != EmptyStatement).isEmpty

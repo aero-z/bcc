@@ -5,6 +5,7 @@ import java.io.File
 import scanner.Scanner
 import java.io.IOException
 import ast._
+import ast.Type
 import main.Logger.debug
 import nameResolution._
 import parser._
@@ -70,7 +71,9 @@ object Joosc {
       varLinked
       //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
       .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => println(">>>>>>>>>> "+name); c.methods case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(FinitePath.check(_))
-      
+varLinked
+      //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
+      .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => println(">>>>>>>>>> "+name); c.constructors case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(x => FinitePath.check(MethodDeclaration(x.name, VoidType, x.modifiers, x.parameters, Some(x.implementation))))
       errCodeSuccess
     } catch {
       case e: CompilerError =>
