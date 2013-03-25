@@ -64,7 +64,7 @@ object TypeChecker {
         incr.foreach(_.getType)
         checkStatement(loop, retType)
       case IfStatement(cond, ifblock, elseblock) =>
-        if (cond.getType != BooleanType) throw new TypeCheckingError(errCondType(cond.getType))
+        if (!checkTypeMatch(BooleanType, cond.getType)) throw new TypeCheckingError(errCondType(cond.getType))
         checkStatement(ifblock, retType)
         elseblock.foreach(checkStatement(_, retType))
       case ReturnStatement(retExpr) =>
