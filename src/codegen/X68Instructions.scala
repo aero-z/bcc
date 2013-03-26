@@ -13,19 +13,19 @@ class X68Program(code: List[(Option[X68Label],X68Instruction)]) // TODO: add dat
 
 // Addressing modes
 // e.g. mov ax, bx:
-class X68Reg extends X68Dest
+trait X68Reg extends X68Dest
 // e.g. mov ax, 1:
-class X68Immediate extends X68Src
+trait X68Immediate extends X68Src
 // e.g. mov ax, [102h]:
-class X68DirectMemoryAccess(imm: X68Immediate) extends X68Dest
+case class X68DirectMemoryAccess(imm: X68Immediate) extends X68Dest
 // e.g. mov ax,[di]:
-class X68RegMemoryAccess(reg: X68Reg) extends X68Dest
+case class X68RegMemoryAccess(reg: X68Reg) extends X68Dest
 // e.g. mov al,[byte_tbl+2]:
-class X68RegOffsetMemoryAccess(reg: X68Reg, imm: X68Immediate) extends X68Dest
+case class X68RegOffsetMemoryAccess(reg: X68Reg, imm: X68Immediate) extends X68Dest
 // e.g. mov ax,[bx + di]:
-class X68BaseIndexMemoryAccess(reg1: X68Reg, reg2: X68Reg) extends X68Dest
+case class X68BaseIndexMemoryAccess(reg1: X68Reg, reg2: X68Reg) extends X68Dest
 // e.g. mov ax,[bx + di + 10]:
-class X68BaseIndexDisplacementMemoryAccess(reg1: X68Reg, reg2: X68Reg, imm: X68Immediate) extends X68Dest
+case class X68BaseIndexDisplacementMemoryAccess(reg1: X68Reg, reg2: X68Reg, imm: X68Immediate) extends X68Dest
 
 // Instructions
 case class X68Mov   (dest: X68Dest, src: X68Src) extends X68Instruction
@@ -43,3 +43,8 @@ case class X68Jg    (lbl: X68Label)              extends X68Instruction
 case class X68Jl    (lbl: X68Label)              extends X68Instruction
 case class X68Jge   (lbl: X68Label)              extends X68Instruction
 case class X68Jle   (lbl: X68Label)              extends X68Instruction
+case class X68Call  (lbl: X68Label)              extends X68Instruction
+case object X68Ret                               extends X68Instruction
+case class X68Push  (reg: X68Reg)                extends X68Instruction
+case class X68Pop   (reg: X68Reg)                extends X68Instruction
+case class X68Int   (reg: X68Reg)                extends X68Instruction
