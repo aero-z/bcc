@@ -198,7 +198,7 @@ object VarResolver{
         }
       }
       if(varName == notAllowed) throw NameLinkingException(s"$varName not initialized yet")
-      else
+      else      
       env.symbolMap.get(varName) match {
         case Some(x)  => LinkedVariableOrField(varName, x._1, x._2)
         case None => checkClassFields(varName, RefTypeLinked(env.pck, env.classDef.className)) match {
