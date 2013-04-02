@@ -7,8 +7,8 @@ import main.Joosc
 class EnvironmentException(message:String) extends main.CompilerError(message, "Environment building")
 
 object TypeLinking {
-	
 	type NameMap = Map[Name, (Option[Name], String)]
+	
 	def treatAll(cus:List[CompilationUnit]):List[CompilationUnit] = {
 		debug("CREATE POSSIBLE IMPORTS:")
 		val possibleImports = getPossibleImports(cus)
@@ -82,10 +82,20 @@ object TypeLinking {
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
-			def checkPrefix(names:List[String]):Int = names match { //return type should be discarted!
+			def checkPrefix(names:List[String]):Int = {println("find: "+names); names match { //return type should be discarted
 			  case Nil => 0 //recursive functions need return type
 			  case x :: Nil => //clash EXCEPT default package!
-			    0 //end of recursion
+			    0
+			    /*if (cu.packageName != None)
+			      0 //don't look in the default package when the class itself is not in the default package!
+			    val possiblePackage = names.dropRight(1)
+			    if (imported.get(Name(names)).isDefined)
+			      throw new EnvironmentException("invalid prefix: "+x+" clashes with "+imported.get(Name(names)).get)
+			    if (onDemandImports.filter(x => x._1 == Some(Name(possiblePackage)) && x._2 == x).length != 0)
+			      throw new EnvironmentException("invalid prefix: "+x+" clashes with "+possiblePackage+" -> "+x)
+			    if (directAccess.get(Name(names)).isDefined)
+			      throw new EnvironmentException("invalid prefix: "+x+" clashes with:"+directAccess.get(Name(names)))
+			    0*/
 			  case x :: xs => //at least 2 elements
 			    val possibleClass = names.last;
 			    val possiblePackage = names.dropRight(1)
@@ -93,7 +103,7 @@ object TypeLinking {
 			    if (onDemandImports.filter(x => x._1 == Some(Name(possiblePackage)) && x._2 == possibleClass).length != 0) throw new EnvironmentException("invalid prefix: "+x+" clashes with "+possiblePackage+" -> "+possibleClass)
 			    if (directAccess.get(Name(names)).isDefined) throw new EnvironmentException("invalid prefix: "+x+" clashes with:"+directAccess.get(Name(names)))
 			    checkPrefix(possiblePackage);
-			}
+			}}
 			def linkCompilationUnit(cu:CompilationUnit):CompilationUnit = {
 				debug("LINK COMPILATIONUNIT:")
 				val onDemandList = onDemandImports.flatMap(x => (Name(x._2::Nil), (x._1, x._2)) :: (x._1.getOrElse(Name(Nil)).appendClassName(x._2), (x._1, x._2)) :: Nil)
@@ -142,7 +152,7 @@ object TypeLinking {
 				case _ => s //any other case!
 			}
 			def linkExpression(e:Expression):Expression = e match {
-                          case ParenthesizedExpression(exp) => ParenthesizedExpression(linkExpression(exp))
+				case ParenthesizedExpression(exp) => ParenthesizedExpression(linkExpression(exp))
 				case UnaryOperation(operation, term) => UnaryOperation(operation, linkExpression(term))
 				case BinaryOperation(first, operation, second) => BinaryOperation(linkExpression(first), operation, linkExpression(second))
 				case CastExpression(typeCast, target) => CastExpression(link(typeCast), linkExpression(target))
@@ -162,7 +172,13 @@ object TypeLinking {
 					debug("LINK REFERENCETYPE")
 					debug("to be found: "+name)
 					imported.get(name) match {
-						case Some(tuple) => debug("case: imported: "+tuple); RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]
+						case Some(tuple) => 
+						  debug("case: imported: "+tuple);
+						  if (tuple._1.isDefined) {
+						    //TODO: this is shit!
+							  val discard = checkPrefix(tuple._1.get.path)
+						  }
+						  RefTypeLinked(tuple._1, tuple._2).asInstanceOf[A]
 						case None => //no class import
 							splitFullName(name) match {
 							case (None, cname) => //on demand import 
@@ -206,11 +222,9 @@ object TypeLinking {
 		val imported = importAll(classes)
 		//check for "empty" packages as well:
 		def isPrefix(s:List[String]):Boolean = {
-		  println("Look for this prefix: "+s)
 		  if (s==Nil)
 		    false
 		  val packageNames = possibleImports.map(_._1).filter(_!=None).map(_.get).map{case Name(list) => list}.filter(_!=Nil).distinct
-		  packageNames.foreach(println(_))
 		  packageNames.exists(x => x.startsWith(s))
 		}
 		val onDemandImports = (Name("java"::"lang"::Nil) :: packages).distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => if (!isPrefix(p.path)) throw new EnvironmentException("empty import"+p) else Nil case x => x})

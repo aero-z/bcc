@@ -1,50 +1,59 @@
 package codegen
 
 // a valid source in an instruction
-trait X68Src
+trait X86Src
 // a valid destination in a instruction
-trait X68Dest extends X68Src
+trait X86Dest extends X86Src
 // label
-class X68Label
+class X86Label
 // an instruction
-trait X68Instruction
+trait X86Instruction
+// data
+trait X86Data
 // program
-class X68Program(code: List[(Option[X68Label],X68Instruction)]) // TODO: add data definitions; multiple files?
+class X86Program(code: List[(Option[X86Label],X86Instruction)]) // TODO: add data definitions; multiple files?
 
 // Addressing modes
 // e.g. mov ax, bx:
-trait X68Reg extends X68Dest
+trait X86Reg extends X86Dest
 // e.g. mov ax, 1:
-trait X68Immediate extends X68Src
+trait X86Immediate extends X86Src
 // e.g. mov ax, [102h]:
-case class X68DirectMemoryAccess(imm: X68Immediate) extends X68Dest
+case class X86DirectMemoryAccess(imm: X86Immediate) extends X86Dest
 // e.g. mov ax,[di]:
-case class X68RegMemoryAccess(reg: X68Reg) extends X68Dest
+case class X86RegMemoryAccess(reg: X86Reg) extends X86Dest
 // e.g. mov al,[byte_tbl+2]:
-case class X68RegOffsetMemoryAccess(reg: X68Reg, imm: X68Immediate) extends X68Dest
+case class X86RegOffsetMemoryAccess(reg: X86Reg, imm: X86Immediate) extends X86Dest
 // e.g. mov ax,[bx + di]:
-case class X68BaseIndexMemoryAccess(reg1: X68Reg, reg2: X68Reg) extends X68Dest
+case class X86BaseIndexMemoryAccess(reg1: X86Reg, reg2: X86Reg) extends X86Dest
 // e.g. mov ax,[bx + di + 10]:
-case class X68BaseIndexDisplacementMemoryAccess(reg1: X68Reg, reg2: X68Reg, imm: X68Immediate) extends X68Dest
+case class X86BaseIndexDisplacementMemoryAccess(reg1: X86Reg, reg2: X86Reg, imm: X86Immediate) extends X86Dest
+
+//data
+case class X86DataByte(b:Byte) extends X86Data //8 bits
+case class X86DataWord(c:Char) extends X86Data //16 bits
+case class X86DataDoubleWordUninitialized(label:String) extends X86Data //32 bits true -> null terminated
+case class X86DataDoubleWord(s:String) extends X86Data //32 bits true -> null terminated
+case class X86DataNullTerminatedWord(s:String, i:Integer) extends X86Data //32 bits null terminated
 
 // Instructions
-case class X68Mov   (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Add   (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Sub   (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Mul   (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Imul  (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Div   (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Idiv  (dest: X68Dest, src: X68Src) extends X68Instruction
-case class X68Jmp   (lbl: X68Label)              extends X68Instruction
-case class X68Cmp   (lbl: X68Label)              extends X68Instruction
-case class X68Je    (lbl: X68Label)              extends X68Instruction
-case class X68Jne   (lbl: X68Label)              extends X68Instruction
-case class X68Jg    (lbl: X68Label)              extends X68Instruction
-case class X68Jl    (lbl: X68Label)              extends X68Instruction
-case class X68Jge   (lbl: X68Label)              extends X68Instruction
-case class X68Jle   (lbl: X68Label)              extends X68Instruction
-case class X68Call  (lbl: X68Label)              extends X68Instruction
-case object X68Ret                               extends X68Instruction
-case class X68Push  (reg: X68Reg)                extends X68Instruction
-case class X68Pop   (reg: X68Reg)                extends X68Instruction
-case class X68Int   (reg: X68Reg)                extends X68Instruction
+case class X86Mov   (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Add   (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Sub   (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Mul   (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Imul  (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Div   (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction
+case class X86Jmp   (lbl: X86Label)              extends X86Instruction
+case class X86Cmp   (lbl: X86Label)              extends X86Instruction
+case class X86Je    (lbl: X86Label)              extends X86Instruction
+case class X86Jne   (lbl: X86Label)              extends X86Instruction
+case class X86Jg    (lbl: X86Label)              extends X86Instruction
+case class X86Jl    (lbl: X86Label)              extends X86Instruction
+case class X86Jge   (lbl: X86Label)              extends X86Instruction
+case class X86Jle   (lbl: X86Label)              extends X86Instruction
+case class X86Call  (lbl: X86Label)              extends X86Instruction
+case object X86Ret                               extends X86Instruction
+case class X86Push  (reg: X86Reg)                extends X86Instruction
+case class X86Pop   (reg: X86Reg)                extends X86Instruction
+case class X86Int   (reg: X86Reg)                extends X86Instruction
