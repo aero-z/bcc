@@ -1,12 +1,54 @@
 package ast
 
-sealed abstract class Statement extends AstNode
+import codegen.X86Instruction
 
-case class Block (statements : List[Statement]) extends Statement
-case object EmptyStatement extends Statement
-case class ExpressionStatement(expression: Expression) extends Statement
-case class ForStatement(init: Option[Statement], condition: Option[Expression], incrementation: Option[Expression], loop: Statement) extends Statement
-case class IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) extends Statement
-case class ReturnStatement(returnExpression: Option[Expression]) extends Statement
-case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration
-case class WhileStatement(condition: Expression, loop: Statement) extends Statement
+sealed abstract class Statement extends AstNode{
+  def generateCode:List[X86Instruction]
+}
+
+case class Block (statements : List[Statement]) extends Statement{
+  def generateCode:List[X86Instruction] = Nil
+}
+
+
+
+case object EmptyStatement extends Statement{
+  def generateCode:List[X86Instruction] = Nil
+}
+
+
+
+case class ExpressionStatement(expression: Expression) extends Statement{
+  def generateCode:List[X86Instruction]  = Nil
+}
+
+
+
+case class ForStatement(init: Option[Statement], condition: Option[Expression], incrementation: Option[Expression], loop: Statement) extends Statement{
+  def generateCode:List[X86Instruction] = Nil
+}
+
+
+
+case class IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) extends Statement{
+  def generateCode:List[X86Instruction]  = Nil
+}
+
+
+
+case class ReturnStatement(returnExpression: Option[Expression]) extends Statement{
+  def generateCode:List[X86Instruction]  = Nil
+}
+
+
+
+case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration{
+  def generateCode:List[X86Instruction] = Nil
+}
+
+
+
+
+case class WhileStatement(condition: Expression, loop: Statement) extends Statement{
+  def generateCode:List[X86Instruction] = Nil
+}
