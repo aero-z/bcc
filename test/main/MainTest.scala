@@ -13,7 +13,7 @@ public class classe {
 }
 
 """)
-    val ret = Joosc.check((code, "classe.java")::Nil)// :: StdlibFiles.stdlibFiles)
+    val ret = Joosc.compile((code, "classe.java")::Nil)// :: StdlibFiles.stdlibFiles)
     assert(ret === Joosc.errCodeSuccess)
   }
   /*

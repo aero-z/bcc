@@ -28,7 +28,7 @@ class MarmosetTestA2 extends FunSuite {
       else
         Joosc.errCodeSuccess
     test(file.getName) {
-      assert(Joosc.check(testSources.toList) === errCode)
+      assert(Joosc.compile(testSources.toList) === errCode)
     }
   })
 

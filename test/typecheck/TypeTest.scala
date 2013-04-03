@@ -24,6 +24,6 @@ class TypeTest extends FunSuite {
         """, "Hello.java")
     ).map(s => (Source.fromString(s._1), s._2))
   
-    assert(Joosc.check(code) == main.Joosc.errCodeSuccess)
+    assert(Joosc.compile(code) == main.Joosc.errCodeSuccess)
   }
 }

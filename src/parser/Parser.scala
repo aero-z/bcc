@@ -4,12 +4,10 @@ import scanner.Token
 import scanner.EndToken
 import main.CompilerError
 import scala.annotation.tailrec
+import main.Logger.debug
 
 case class ParserException(mess: String) extends CompilerError(mess, "Parser")
 object Parser {
-
-  val debugEnabled = false
-  def debug(a: Any) = if (debugEnabled) println(a)
 
   def parse(input: List[Token], dfa: Dfa): ParserSymbol = {
     @tailrec
@@ -20,7 +18,7 @@ object Parser {
             case EndToken =>
               assert(stack.length == 2); stack.head._1
             case x =>
-              debug("shift: " + x) 
+              debug("shift: " + x) // NOTE: makes the compiler very slow if debug is activated
               parseRec((input.head, state) :: stack, input.tail)
           }
         case ReduceAction(rule) =>

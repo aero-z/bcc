@@ -49,7 +49,7 @@ object Joosc {
   val errCodeCompileErr = 42
   val errCodeIoErr = 1
 
-  def check(sources: List[(Source, String)]): Int = {
+  def compile(sources: List[(Source, String)]): Int = {
     val dfa = Dfa.fromFile(Source.fromFile("cfg/grammar.lr1"))
     try {
       val compilationUnits = sources.map(source => {
@@ -67,18 +67,9 @@ object Joosc {
       val varLinked = VarResolver.variableLink(typeLinked)
       varLinked.foreach(_.display)
       TypeChecker.check(varLinked)
-      //
-      varLinked
-      .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => debug(">>>>>>>>>> "+name); c.methods case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(FinitePath.check(_))
+      FinitePath.check(varLinked) // Static analysis
+      CodeGenerator.makeAssembly(varLinked)
       
-      varLinked //for the constructors, kind of an ugly hack
-      .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => debug(">>>>>>>>>> "+name); c.constructors case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(x => FinitePath.check(MethodDeclaration(x.name, VoidType, x.modifiers, x.parameters, Some(x.implementation))))
-      
-      /*CodeGenerator
-      .createCode(varLinked
-      .filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
-      )
-      .foreach(println(_));*/
       errCodeSuccess
     } catch {
       case e: CompilerError =>
@@ -101,7 +92,7 @@ object Joosc {
           System.exit(errCodeIoErr)
           return // return is just for the compiler not to complain
       }).toList
-    val ret = check(files)
+    val ret = compile(files)
     
     System.exit(ret)
   }
