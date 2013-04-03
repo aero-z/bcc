@@ -82,7 +82,7 @@ object TypeLinking {
 		}
 		def linkAst(cu:CompilationUnit, imported:NameMap, onDemandImports:List[(Option[Name], String)], directAccess:NameMap):CompilationUnit = {
 			debug("LINK AST:")
-			def checkPrefix(names:List[String]):Int = {println("find: "+names); names match { //return type should be discarted
+			def checkPrefix(names:List[String]):Int = {/*println("find: "+names);*/ names match { //return type should be discarted
 			  case Nil => 0 //recursive functions need return type
 			  case x :: Nil => //clash EXCEPT default package!
 			    0

@@ -12,7 +12,7 @@ import parser._
 import scanner._
 import typecheck.TypeChecker
 import reachability._
-
+import codegen._
 
 abstract class CompilerError(msg: String, typeErr: String) extends Exception(msg){
   val errorMessage = s"[$typeErr]: $msg"
@@ -69,13 +69,16 @@ object Joosc {
       TypeChecker.check(varLinked)
       //
       varLinked
-      //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
       .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => debug(">>>>>>>>>> "+name); c.methods case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(FinitePath.check(_))
       
       varLinked //for the constructors, kind of an ugly hack
-      //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
       .flatMap{case CompilationUnit(_, _, Some(c:ClassDefinition), name) => debug(">>>>>>>>>> "+name); c.constructors case _ => Nil }.filter(x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(x => FinitePath.check(MethodDeclaration(x.name, VoidType, x.modifiers, x.parameters, Some(x.implementation))))
       
+      /*CodeGenerator
+      .createCode(varLinked
+      .filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
+      )
+      .foreach(println(_));*/
       errCodeSuccess
     } catch {
       case e: CompilerError =>
