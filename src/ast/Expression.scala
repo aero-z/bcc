@@ -10,6 +10,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError
 import typecheck.TypeCheckingError
 import nameResolution.PathToDeclaration
 import main.Joosc
+import codegen._
 
 //Every possible expression
 trait Expression extends AstNode {
@@ -17,6 +18,7 @@ trait Expression extends AstNode {
    * get type of expression AND check for type errors
    */
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
+  def generateCode(): List[X86Instruction] = ??? //TODO: implementation
 }
 
 trait LinkedExpression extends Expression

@@ -7,23 +7,16 @@ class MainTest extends FunSuite {
   test("fancy test") {
     val code = Source.fromString(
 """
-package Je_3_Resolve_SamePackageAndClassName;
-
-public class Je_3_Resolve_SamePackageAndClassName {
-
-    public Je_3_Resolve_SamePackageAndClassName() {}
-
-    public void test() {
-	new Je_3_Resolve_SamePackageAndClassName.Je_3_Resolve_SamePackageAndClassName().test();
-    }
-
+public class classe {
+    public static int intega = 5;
+    public classe() {}
 }
 
 """)
-    val ret = Joosc.check((code, "Je_3_Resolve_SamePackageAndClassName.java")::Nil)// :: StdlibFiles.stdlibFiles)
+    val ret = Joosc.check((code, "classe.java")::Nil)// :: StdlibFiles.stdlibFiles)
     assert(ret === Joosc.errCodeSuccess)
   }
-  
+  /*
   test("invalid code") {
     val code = Source.fromString(
 """
@@ -90,5 +83,5 @@ public class Je_3_Resolve_SamePackageAndClassName {
  }""")
     val ret = Joosc.check((code, "Foo.java") :: Nil)
     assert(ret === Joosc.errCodeCompileErr)
-  }
+  }*/
 }

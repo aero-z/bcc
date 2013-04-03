@@ -1,21 +1,27 @@
 package codegen
 
 // a valid source in an instruction
-trait X86Src
+trait X86Src {
+}
 // a valid destination in a instruction
 trait X86Dest extends X86Src
 // label
-class X86Label
+case class X86Label(name:String) extends X86Dest { //TODO: is this correct?
+  override def toString = name
+}
 // an instruction
-trait X86Instruction
+trait X86Instruction {
+}
 // data
-trait X86Data
+trait X86Data {
+}
 // program
 class X86Program(code: List[(Option[X86Label],X86Instruction)]) // TODO: add data definitions; multiple files?
 
 // Addressing modes
 // e.g. mov ax, bx:
 trait X86Reg extends X86Dest
+object X86eax extends X86Reg
 // e.g. mov ax, 1:
 trait X86Immediate extends X86Src
 // e.g. mov ax, [102h]:
@@ -30,10 +36,17 @@ case class X86BaseIndexMemoryAccess(reg1: X86Reg, reg2: X86Reg) extends X86Dest
 case class X86BaseIndexDisplacementMemoryAccess(reg1: X86Reg, reg2: X86Reg, imm: X86Immediate) extends X86Dest
 
 //data
+// e.g. db value
 case class X86DataByte(b:Byte) extends X86Data //8 bits
+// e.g. dw value
 case class X86DataWord(c:Char) extends X86Data //16 bits
-case class X86DataDoubleWordUninitialized(label:String) extends X86Data //32 bits true -> null terminated
+// e.g. label dd
+case class X86DataDoubleWordUninitialized(label:String) extends X86Data {//32 bits true -> null terminated
+  override def toString = "\t"+label+" dd"
+}
+// e.g. dd value
 case class X86DataDoubleWord(s:String) extends X86Data //32 bits true -> null terminated
+// db "abcd", 0
 case class X86DataNullTerminatedWord(s:String, i:Integer) extends X86Data //32 bits null terminated
 
 // Instructions

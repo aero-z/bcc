@@ -34,14 +34,23 @@ object CodeGenerator {
   //val methodMatrix 
   def createCode(cus: List[CompilationUnit]) = cus.collect{case cu @ CompilationUnit(_, _, Some(d:ClassDefinition), _) => generate(cu, d)}
   //def makeAssembly(prog: IrProgram): X68Program = ???
-  
+
   def generate(cu:CompilationUnit, cd: ClassDefinition): String = { //we just need the CU for the full name
     def rootName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName).toString+"." // Note: the last dot is already appended
-    val bss:List[X86Data] = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier)).map(x => X86DataDoubleWordUninitialized(rootName+x.fieldName))
-    val code = "segment .data\n"+bss.fold("")((x,y) => x+"\n"+y) //TODO: is it ok if data segment is empty?
+    val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier))
+    val bss:List[X86Data] = staticFields.map(x => X86DataDoubleWordUninitialized(rootName+x.fieldName))
+    def initialize(name:String, expr:Expression) = {
+      expr.generateCode() ::: (X86Mov(X86Label(rootName+name), X86eax) :: Nil)
+    }
+    val init = staticFields.filter(_.initializer.isDefined).flatMap{case fd @ FieldDeclaration(name, _, _, Some(expr)) => initialize(name, expr) }
+    
+
+    val code =
+      bss.foldLeft("segment .bss")((x,y) => x+"\n"+y) //TODO: is it ok if data segment is empty? (but the .bss tag is still there)
+    val ced = bss.foldLeft("initialize:")((x,y) => x+"\n"+y)
     //TODO: we need to export the labels for use outside the class
     //TODO we need to add code to the main for the initializer of static field assignemnt evaluations
 //case class FieldDeclaration(fieldName: String, fieldType: Type, override val modifiers: List[Modifier], initializer: Option[Expression]) extends MemberDeclaration(modifiers)
-    "Hello"
+    code
   }
 }
