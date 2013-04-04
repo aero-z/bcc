@@ -1,6 +1,9 @@
 package codegen
 
 import ast._
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.File
 
 object Types {
   //instance and static fields
@@ -35,6 +38,21 @@ object CodeGenerator {
    * generate files in the output/ directory
    */
   def makeAssembly(cus: List[CompilationUnit]): Unit = {
+
+    // DUMMY CODE
+    val writer = new BufferedWriter(new FileWriter(new File("output/simple.s")))
+    writer.write("""
+          
+global _start
+_start:
+
+mov eax, 1
+mov ebx, 123
+int 0x80
+
+          
+ """)
+    writer.close
 
     //intermediate representation: for class should contain map from local variables to offset
     //val methodMatrix 

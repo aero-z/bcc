@@ -69,7 +69,7 @@ object Joosc {
       TypeChecker.check(varLinked)
       FinitePath.check(varLinked) // Static analysis
       CodeGenerator.makeAssembly(varLinked)
-      
+            
       errCodeSuccess
     } catch {
       case e: CompilerError =>
