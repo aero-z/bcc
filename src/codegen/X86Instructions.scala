@@ -73,6 +73,12 @@ case class X86Imul  (dest: X86Dest, src: X86Src) extends X86Instruction
 case class X86Div   (dest: X86Dest, src: X86Src) extends X86Instruction
 case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction
+case class X86Bcc   (dest: X86Dest, src: X86Src) extends X86Instruction {
+  override def toString = s"bcc $dest, $src"
+}
+case class X86Neg   (dest: X86Dest)              extends X86Instruction {
+  override def toString = s"neg $dest"
+}
 case class X86Cmp   (a: X86Reg    , b: X86Reg)   extends X86Instruction {
   override def toString = {
     "cmp "+a+", "+b //TODO: where will the result be stored? eax?
