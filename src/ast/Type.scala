@@ -1,5 +1,7 @@
 package ast
 
+import codegen._
+
 abstract class Type extends AstNode {
     def typeName:String
 }
@@ -62,6 +64,7 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
   def getTypeDef(implicit cus:List[CompilationUnit]): TypeDefinition = {
    cus.find(c => c.packageName == pkgName && c.typeName == className).get.typeDef.get
  }
+  def generateCode(): List[X86Instruction] = ??? //TODO: implementation
 }
 
 case object NullType extends Type {

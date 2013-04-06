@@ -147,12 +147,12 @@ object AstBuilder {
   }
 
   def extractConstructor(symbol: ParserSymbol) : ConstructorDeclaration = symbol match {
-    case NonTerminalSymbol("ConstructorDeclaration", List(mod, IdentifierToken(id), _, params, _, block)) => ConstructorDeclaration(id, extractModifiers(mod), extractParameters(params), extractBlock(block))
+    case NonTerminalSymbol("ConstructorDeclaration", List(mod, IdentifierToken(id), _, params, _, block)) => ConstructorDeclaration(id, extractModifiers(mod), extractParameters(params), extractBlock(block), null)
   }
 
   def extractMethod(symbol: ParserSymbol) : MethodDeclaration = symbol match {
-    case NonTerminalSymbol("MethodDeclaration", List(mod, methType, IdentifierToken(id), _, params, _, ScopingToken(";"))) => MethodDeclaration(id, extractType(methType), extractModifiers(mod), extractParameters(params), None)
-    case NonTerminalSymbol("MethodDeclaration", List(mod, methType, IdentifierToken(id), _, params, _, block)) => MethodDeclaration(id, extractType(methType), extractModifiers(mod), extractParameters(params), Some(extractBlock(block)))
+    case NonTerminalSymbol("MethodDeclaration", List(mod, methType, IdentifierToken(id), _, params, _, ScopingToken(";"))) => MethodDeclaration(id, extractType(methType), extractModifiers(mod), extractParameters(params), None, null)
+    case NonTerminalSymbol("MethodDeclaration", List(mod, methType, IdentifierToken(id), _, params, _, block)) => MethodDeclaration(id, extractType(methType), extractModifiers(mod), extractParameters(params), Some(extractBlock(block)), null)
   }
   def extractType(symbol :ParserSymbol): Type  = symbol match {
     case NonTerminalSymbol("Type", List(next)) => extractType(next)

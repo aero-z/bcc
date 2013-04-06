@@ -7,6 +7,6 @@ import scala.io.Source
 class StdlibTest extends FunSuite {
 
   test("stdlib test") {  
-    assert(Joosc.check(StdlibFiles.stdlibFiles) == main.Joosc.errCodeSuccess)
+    assert(Joosc.compile(StdlibFiles.stdlibFiles) == main.Joosc.errCodeSuccess)
   }
 }

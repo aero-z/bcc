@@ -123,7 +123,7 @@ object TypeLinking {
 			}
 			def linkMethod(md:MethodDeclaration):MethodDeclaration = {
 				debug("LINK METHOD:")
-				MethodDeclaration(md.methodName, link(md.returnType), md.modifiers, md.parameters.map(linkParameter(_)), md.implementation.map(linkBlock(_))) 
+				MethodDeclaration(md.methodName, link(md.returnType), md.modifiers, md.parameters.map(linkParameter(_)), md.implementation.map(linkBlock(_)), md.localPath) 
 			}
 			def linkField(fd:FieldDeclaration):FieldDeclaration = {
 				debug("LINK FIELD:")
@@ -131,7 +131,7 @@ object TypeLinking {
 			}
 			def linkConstructor(cd:ConstructorDeclaration):ConstructorDeclaration = {
 				debug("LINK CONSTRUCTOR:")
-				ConstructorDeclaration(cd.name, cd.modifiers, cd.parameters.map(linkParameter(_)), linkBlock(cd.implementation)) 
+				ConstructorDeclaration(cd.name, cd.modifiers, cd.parameters.map(linkParameter(_)), linkBlock(cd.implementation), cd.localPath) 
 			}
 			def linkParameter(parameter:Parameter):Parameter = {
 				debug("LINK PARAMETER:")

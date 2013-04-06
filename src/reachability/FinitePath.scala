@@ -368,6 +368,6 @@ object FinitePath {
       case _ => Nil
     }.filter(
       x => !x.modifiers.contains(Modifier.abstractModifier) && !x.modifiers.contains(Modifier.nativeModifier)).foreach(
-        x => checkMethod(MethodDeclaration(x.name, VoidType, x.modifiers, x.parameters, Some(x.implementation))))
+        x => checkMethod(MethodDeclaration(x.name, VoidType, x.modifiers, x.parameters, Some(x.implementation),x.localPath)))
   }
 }

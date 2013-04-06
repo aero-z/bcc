@@ -9,12 +9,12 @@ case class NameLinkingException(mess: String) extends CompilerError(mess, "Name 
 
 object VarResolver{
   
-  case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathToVariable, pck: Option[Name], classDef: ClassDefinition){
+  case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathLocal, pck: Option[Name], classDef: ClassDefinition){
     def open : Environment = this match {
-      case Environment(sm, PathToVariable(pck, cn, ind, list), cpck,  cd) =>Environment(sm, PathToVariable(pck, cn, ind, 0 :: list), cpck, cd)
+      case Environment(sm, PathLocal(list), cpck,  cd) =>Environment(sm, PathLocal(list :+ 0), cpck, cd)
     }
     def inc : Environment = this match {
-      case Environment(sm, PathToVariable(pck, cn, ind, list), cpck, cd) =>Environment(sm, PathToVariable(pck, cn, ind, (list.head + 1) :: list.tail), cpck, cd)
+      case Environment(sm, PathLocal(list), cpck, cd) =>Environment(sm, PathLocal(list.init :+ list.last + 1), cpck, cd)
     }
     def update(stmt: Statement) : Environment = stmt match {
       case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw NameLinkingException(s"${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
@@ -33,14 +33,14 @@ object VarResolver{
 
     def linkFields(imp: List[ImportDeclaration], classDef: ClassDefinition, pck : Option[Name]): List[FieldDeclaration] = {
       def isStatic(field: FieldDeclaration) = field.modifiers.contains(Modifier.staticModifier)
-      def remove(children: List[PathToField], parents: List[PathToField]) = parents.filter(p => children.forall(_.fieldName != p.fieldName) && classDef.fields.forall(p.fieldName != _.fieldName))
+      def remove(children: List[PathField], parents: List[PathField]) = parents.filter(p => children.forall(_.fieldName != p.fieldName) && classDef.fields.forall(p.fieldName != _.fieldName))
 
-      val (parStatic, parNonStat): (List[PathToField] ,List[PathToField]) = {
-        def rec(refType: RefTypeLinked, staticAcc: List[PathToField], acc: List[PathToField]): (List[PathToField], List[PathToField]) = {
+      val (parStatic, parNonStat): (List[PathField] ,List[PathField]) = {
+        def rec(refType: RefTypeLinked, staticAcc: List[PathField], acc: List[PathField]): (List[PathField], List[PathField]) = {
           val classDef = refType.getTypeDef(cus).asInstanceOf[ClassDefinition]
 
           val par = classDef.fields.partition(isStatic(_))
-          val (newStat, newNon) = (par._1.map(fi => PathToField(refType, fi.fieldName)), par._2.map(fi => PathToField(refType, fi.fieldName)))          
+          val (newStat, newNon) = (par._1.map(fi => PathField(refType, fi.fieldName)), par._2.map(fi => PathField(refType, fi.fieldName)))          
           classDef.parent match {
             case Some(ref : RefTypeLinked) => rec(ref, newStat ::: staticAcc, newStat ::: newNon ::: acc)
             case  _ => (remove(acc, newStat) ::: staticAcc, remove(acc, newNon ::: newStat) ::: acc)
@@ -54,9 +54,9 @@ object VarResolver{
 
       checkFields(classDef.fields)
       val currPath = classDef.fields.partition(isStatic(_))
-      val (statPresentPath, nonPresentField) = (currPath._1.map(fi => PathToField(RefTypeLinked(pck, classDef.className), fi.fieldName)), currPath._2.map(fi => PathToField(RefTypeLinked(pck, classDef.className), fi.fieldName)))
-      def linkFieldAssignment(previousField: List[FieldDeclaration], previousPath: List[PathToField], previousStatPath: List[PathToField], field : FieldDeclaration) = try{
-        val currentPath = PathToField(RefTypeLinked(pck, classDef.className), field.fieldName)
+      val (statPresentPath, nonPresentField) = (currPath._1.map(fi => PathField(RefTypeLinked(pck, classDef.className), fi.fieldName)), currPath._2.map(fi => PathField(RefTypeLinked(pck, classDef.className), fi.fieldName)))
+      def linkFieldAssignment(previousField: List[FieldDeclaration], previousPath: List[PathField], previousStatPath: List[PathField], field : FieldDeclaration) = try{
+        val currentPath = PathField(RefTypeLinked(pck, classDef.className), field.fieldName)
         (FieldDeclaration(field.fieldName, field.fieldType, field.modifiers,
           field.initializer.map(linkAssignment(_)(if(isStatic(field)) previousStatPath else previousPath, 
             if(isStatic(field)) statPresentPath else statPresentPath ::: nonPresentField))) :: previousField, 
@@ -66,7 +66,7 @@ object VarResolver{
         case FieldAccessIsProbablyPckException(path) => throw NameLinkingException(s"Could not find: ${path.reduce(_ + "." + _)}")
       }
       
-      def linkAssignment(exp: Expression)(possibleDecl: List[PathToField], currentDecl: List[PathToField]) : Expression = try {
+      def linkAssignment(exp: Expression)(possibleDecl: List[PathField], currentDecl: List[PathField]) : Expression = try {
         exp match {
           case ParenthesizedExpression(exp) => ParenthesizedExpression(linkAssignment(exp)(possibleDecl, currentDecl))
           case UnaryOperation(op, exp) => UnaryOperation(op, linkAssignment(exp)(possibleDecl, currentDecl))
@@ -93,7 +93,7 @@ object VarResolver{
         }
       }
       
-      def linkVar(name: String, previousField: List[PathToField]) : LinkedExpression = {
+      def linkVar(name: String, previousField: List[PathField]) : LinkedExpression = {
         previousField.find(_.fieldName == name) match{
           case Some(path) => LinkedVariableOrField(name, path.refType.getTypeDef(cus).asInstanceOf[ClassDefinition].fields.find(_.fieldName == name).get.fieldType, path)
           case None => if((statPresentPath ::: nonPresentField).exists(_.fieldName == name)) throw NameLinkingException("Forward reference") else  imp.collectFirst{
@@ -110,25 +110,25 @@ object VarResolver{
     }
 
 
+
+
     
 
-    def linkConstructor(index: Int, pck: Option[Name], classDef: ClassDefinition): ConstructorDeclaration = {
-      val cons = classDef.constructors(index)
+    def linkConstructor(cons: ConstructorDeclaration, pck: Option[Name], classDef: ClassDefinition): ConstructorDeclaration = {      
       checkParameters(cons.parameters)
-      val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
-      val curPos = PathToVariable(pck, classDef.className, index, List(0))
+      val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathPar(id)))}:_*)
+      val curPos = PathLocal(List(0))
       val env = Environment(parameterMap, curPos, pck, classDef)
-      ConstructorDeclaration(cons.name, cons.modifiers, cons.parameters, implementationLink(env, cons.implementation))
+      ConstructorDeclaration(cons.name, cons.modifiers, cons.parameters, implementationLink(env, cons.implementation), cons.localPath)
     }
 
 
-    def linkMethod(index: Int, pck: Option[Name], classDef: ClassDefinition) : MethodDeclaration = {
-      val meth = classDef.methods(index)
+    def linkMethod(meth: MethodDeclaration, pck: Option[Name], classDef: ClassDefinition) : MethodDeclaration = {      
       checkParameters(meth.parameters)
-      val parameterMap = Map(meth.parameters.map{case Parameter(parType, id) => (id, (parType, PathToParameter(pck, classDef.className, index, id)))}:_*)
-      val curPos = PathToVariable(pck, classDef.className, index, List(0))
+      val parameterMap = Map(meth.parameters.map{case Parameter(parType, id) => (id, (parType, PathPar(id)))}:_*)
+      val curPos = PathLocal(List(0))
       val env = Environment(parameterMap, curPos, pck, classDef)
-      MethodDeclaration(meth.methodName, meth.returnType, meth.modifiers, meth.parameters, meth.implementation.map(implementationLink(env, _)))
+      MethodDeclaration(meth.methodName, meth.returnType, meth.modifiers, meth.parameters, meth.implementation.map(implementationLink(env, _)), meth.localPath)
     }
     
     def implementationLink(environment: Environment, block: Block): Block = Block(passThroughStatements(block.statements, environment))
@@ -190,7 +190,7 @@ object VarResolver{
         val classDef = refType.getTypeDef(cus).asInstanceOf[ClassDefinition]
         val field = classDef.fields.find(_.fieldName == varName)
         field match{
-          case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathToField(refType, varDecl.fieldName)))
+          case Some(varDecl) => Some(LinkedVariableOrField(varName, varDecl.fieldType, PathField(refType, varDecl.fieldName)))
           case None => classDef.parent match {
             case Some(refType: RefTypeLinked) => checkClassFields(varName, refType)
             case _ => None
@@ -215,8 +215,8 @@ object VarResolver{
     cus.map{
       case cu @ CompilationUnit(pck, imp, Some(classDef @ ClassDefinition(name, parent, interfaces, modifiers, fields, constructors, methods)), fileName) => CompilationUnit(pck, imp,
         Some(ClassDefinition(name, parent, interfaces, modifiers, linkFields(imp, classDef, pck),
-          constructors.zipWithIndex.map{case (_, index) => linkConstructor(index, pck, classDef)},
-          methods.zipWithIndex.map{case (_, index) => linkMethod(index, pck, classDef)}))
+          constructors.map(linkConstructor(_, pck, classDef)),
+          methods.map(linkMethod(_, pck, classDef))))
           , fileName)
       case x => x
     }
@@ -228,10 +228,10 @@ case class FieldAccessIsProbablyPckException(pck: List[String]) extends Exceptio
 
 abstract class PathToDeclaration
 
-case class PathToField(refType: RefTypeLinked, fieldName: String) extends PathToDeclaration
+case class PathField(refType: RefTypeLinked, fieldName: String) extends PathToDeclaration
 
-case class PathToParameter(pck: Option[Name], classDef: String, consIndex: Int, parameterName: String) extends PathToDeclaration
-//Warning Reversed list of statement!!!
-case class PathToVariable(pck: Option[Name], classDef: String, consIndex: Int, statementIndex: List[Int]) extends PathToDeclaration
+case class PathPar(parameterName: String) extends PathToDeclaration
+
+case class PathLocal(statementIndex: List[Int]) extends PathToDeclaration
 
 
