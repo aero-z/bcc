@@ -42,35 +42,73 @@ object CodeGenerator {
    * generate files in the output/ directory
    */
   def makeAssembly(cus: List[CompilationUnit]): Unit = {
-
     // DUMMY CODE
-/*    val writer = new BufferedWriter(new FileWriter(new File("output/simple.s")))
-    writer.write("""
-          
-global _start
-_start:
-
-mov eax, 1
-mov ebx, 123
-int 0x80
-
-          
- """)
-    writer.close*/
-    
-    //intermediate representation: for class should contain map from local variables to offset
-    //val methodMatrix 
-    
-    def createCode(cus: List[CompilationUnit]) =
-      cus.collect {
-        case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
-          generate(optName.getOrElse(Name(Nil)).appendClassName(name).toString + ".", d)
+	/*
+	val writer = new BufferedWriter(new FileWriter(new File("output/simple.s")))
+	writer.write("""
+	
+	global _start
+	_start:
+	
+	mov eax, 1
+	mov ebx, 123
+	int 0x80
+	
+	          
+	 """)
+	    writer.close*/
+    def generate(cu: CompilationUnit, cd: ClassDefinition): String = { //we just need the CU for the full name
+      val rootName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName).toString + "." // Note: the last dot is already appended
+      
+      def packageToStr(p: Option[Name]) = p match {
+        case Some(x) => x
+        case None => ""
       }
+      //val packagePrefix = packageToStr(cu.packageName)
+      
+      def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
+        m1.methodName == m2.methodName && m1.parameters == m2.parameters
+      }
+      def hasMethod(cd: ClassDefinition, m: MethodDeclaration): Boolean = {
+        cd.methods.exists(m2 => methodsMatch(m, m2))
+      }
+      
+      def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+        def f(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+          ms match {
+            case Nil => ts
+            case m :: mss =>
+              f(mss, ts.find(t => methodsMatch(m, t._3)) match {
+                case None => (pkg, cd, m) :: ts
+                case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
+              })   
+          }
+        }
+        
+        val replaced = f(cd.methods, parentMethods)
+        //val replaced = cd.methods.map(m => (parentMethods.find(t => methodsMatch(m, t._2)).map(t => t._1).getOrElse(cd), m))
+        cd.parent match {
+          case None => replaced
+          case Some(p) => 
+            val linked = p.asInstanceOf[RefTypeLinked]
+            getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced)
+        }
+      }
+            
+      val data = """
+		section .data
+		
+		; VTABLE
+		class:
+		  dd 0 ; TODO: pointer to SIT
+		  """ +
+      getMethods(cu.packageName, cd, Nil).map(t => s"${packageToStr(t._1)}.${t._2.className}.${t._3.methodName}").mkString("\n  ") + "\n\n"
 
-    def generate(rootName: String, cd: ClassDefinition) { //Note: the rootname already has a "." appended
+    
       val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier)) //class fields
       val bss: List[X86Data] = staticFields.map(x => X86DataDoubleWordUninitialized(X86Label(rootName + x.fieldName)))
-      /*def initialize(name: String, expr: Expression) = {
+      /* TODO: static field initialization at some point
+      def initialize(name: String, expr: Expression) = {
         expr.generateCode() ::: (X86Mov(X86Label(rootName + name), X86eax) :: Nil) //evaluate the initializer expression and 
       }*/
       //val init = staticFields.filter(_.initializer.isDefined).flatMap { case fd @ FieldDeclaration(name, _, _, Some(expr)) => initialize(name, expr) }
@@ -86,12 +124,20 @@ int 0x80
       //TODO: the instance fields:
       val instanceFields = cd.fields.filter(x => !x.modifiers.contains(Modifier.staticModifier))
       println(code+code2)
+      //code
+      //TODO: return correct code
+      "; === " + cd.className + "===" + data //return value
     }
-
+    
+    cus
     //leave the java lib files out for the moment! -> makes testing easier
-    createCode(cus
     .filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
-    )
-
+    .collect { case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
+      val writer = new BufferedWriter(new FileWriter(new File("output/"+cu.typeName+".s")))
+        //println("class: " + cu.typeName)
+      val code = generate(cu, d)
+      writer.write(code)
+      writer.close
+    }
   }
 }
