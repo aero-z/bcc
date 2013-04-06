@@ -18,7 +18,9 @@ trait Expression extends AstNode {
    * get type of expression AND check for type errors
    */
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
+
   def generateCode: List[X86Instruction]
+
 }
 
 trait LinkedExpression extends Expression
@@ -116,10 +118,12 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
       case (op, t) => throw new TypeCheckingError(s"invalid unary operation ($op, $t)")
     }
   }
+
   def generateCode: List[X86Instruction] =  operation match {
     case InverseOperator => term.generateCode ::: List(X86Cmp( X86eax, X86Number(1)), X86Bcc(X86eax, X86eax))
     case MinusOperator => term.generateCode :+ X86Neg(X86eax)
   }
+
   
 }
 
@@ -154,7 +158,9 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
 
       case (x, op, y) => throw new TypeCheckingError(s"no operation $op found for arguments $x and $y")
     }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -180,7 +186,9 @@ case class ArrayAccess(array: Expression, index: Expression) extends Expression 
       case (ArrayType(e), _: IntegerTrait) => e
       case (at, it) => throw new TypeCheckingError(s"type error in array access $at[$it]")
     }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -192,7 +200,9 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
       case _: IntegerTrait => typeName
       case _ => throw new TypeCheckingError(s"type error in array size ($size)")
     }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 
@@ -208,7 +218,9 @@ case class Assignment(leftHandSide: Expression, rightHandSide: Expression) exten
     if (!TypeChecker.checkTypeMatch(leftHandSide.getType, rightHandSide.getType)) throw new TypeCheckingError(s"assignment: types don't match (expected ${leftHandSide.getType}, found ${rightHandSide.getType})\nLHS expression: $leftHandSide\nRHS expression: $rightHandSide")
     else leftHandSide.getType
   }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -223,7 +235,9 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
       case a: ArrayType if (field == "length") => IntType
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
     }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -247,7 +261,9 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
     }
     constructor
   }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -256,7 +272,9 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
 case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     ExprMethodInvocation(This(thisType), method, arguments).getType
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -270,7 +288,9 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
         m.returnType
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($accessed of type $x)")
     }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -289,7 +309,9 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
 
       case _ => throw new TypeCheckingError("cannot instanceof with: " + exp.getType + " instanceof " + typeChecked)
     }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 /**
@@ -300,7 +322,10 @@ case class This(thisType: RefType) extends Expression {
     if (isStatic) throw new TypeCheckingError("cannot use this in a static block")
     thisType
   }
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
+
 }
 
 /**
@@ -308,7 +333,9 @@ case class This(thisType: RefType) extends Expression {
  */
 case class VariableAccess(str: String) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = sys.error(s"getType is not supposed to be called on type VariableAccess ($str)")
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression {
@@ -321,7 +348,9 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
     varType
   }
   val children = Nil
+
   def generateCode: List[X86Instruction] = ??? //TODO: implementation
+
 }
 
 case class ParenthesizedExpression(exp: Expression) extends Expression {

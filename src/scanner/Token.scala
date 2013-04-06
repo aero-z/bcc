@@ -68,6 +68,7 @@ case class BooleanToken(bool: Boolean) extends Token {
 case class CharacterToken(string : String) extends Token {
     def typeStr = "characterLiteral"
     override def toString() = string
+    def getInt = string.last.toInt //TODO: are we sure the character is only represented on one character in the string?
 }
 
 case class OperatorToken(str: String) extends Token {

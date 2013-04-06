@@ -9,7 +9,22 @@ class MainTest extends FunSuite {
 """
 public class classe {
     public static int intega = 5;
-    public classe() {}
+    public classe() {
+        
+    }
+    public void m() {
+        if (true) {
+        ;
+    		if (5 == 6) {
+    			return;
+    		}
+        ;
+    		while (5>4) {
+    			return;
+    		}
+        ;
+        }
+    }
 }
 
 """)
