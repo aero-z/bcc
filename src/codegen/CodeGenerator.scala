@@ -2,6 +2,7 @@ package codegen
 
 import ast._
 import java.io.BufferedWriter
+import java.io.FileOutputStream
 import java.io.FileWriter
 import java.io.File
 
@@ -34,6 +35,9 @@ case class SelectorIndex(c: Class, m: Method, offset: Integer)
 
 object CodeGenerator {
 
+    def iffalse(expr:Expression, label:X86Label):List[X86Instruction] = {
+      expr.generateCode ::: (X86Mov(X86ebx, BooleanFalse) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
+    }
   /**
    * generate files in the output/ directory
    */
@@ -53,7 +57,6 @@ int 0x80
           
  """)
     writer.close
-
     //intermediate representation: for class should contain map from local variables to offset
     //val methodMatrix 
     def createCode(cus: List[CompilationUnit]) =
@@ -62,7 +65,7 @@ int 0x80
     def generate(cu: CompilationUnit, cd: ClassDefinition): String = { //we just need the CU for the full name
       def rootName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName).toString + "." // Note: the last dot is already appended
       val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier))
-      val bss: List[X86Data] = staticFields.map(x => X86DataDoubleWordUninitialized(rootName + x.fieldName))
+      val bss: List[X86Data] = staticFields.map(x => X86DataDoubleWordUninitialized(X86Label(rootName + x.fieldName)))
       def initialize(name: String, expr: Expression) = {
         expr.generateCode() ::: (X86Mov(X86Label(rootName + name), X86eax) :: Nil)
       }
