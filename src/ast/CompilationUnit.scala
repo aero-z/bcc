@@ -6,6 +6,7 @@ import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
 import java.io.File
+import codegen._
 
 private object Weed {
   
@@ -144,6 +145,10 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     Logger.debug("*" * 20)
     Logger.debug("")
     //TODO something about the implementation
+  }
+  def generateCode(rootName: String): List[X86Instruction] = {
+    //TODO: push parameters to the stack!
+    X86Label(rootName+methodName) :: implementation.getOrElse(EmptyStatement).generateCode
   }
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++

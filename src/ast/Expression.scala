@@ -18,7 +18,8 @@ trait Expression extends AstNode {
    * get type of expression AND check for type errors
    */
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
-  def generateCode(): List[X86Instruction] = ??? //TODO: implementation
+  //TODO: implement generateCode for each Expression
+  def generateCode(): List[X86Instruction] = X86Label(toString()) :: Nil
 }
 
 trait LinkedExpression extends Expression

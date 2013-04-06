@@ -68,6 +68,8 @@ object Joosc {
       varLinked.foreach(_.display)
       TypeChecker.check(varLinked)
       FinitePath.check(varLinked) // Static analysis
+      
+      //finalize by creating all the assembly files
       CodeGenerator.makeAssembly(varLinked)
             
       errCodeSuccess
