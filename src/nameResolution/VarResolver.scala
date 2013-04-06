@@ -16,10 +16,20 @@ object VarResolver{
     def inc : Environment = this match {
       case Environment(sm, PathLocal(list), cpck, cd) =>Environment(sm, PathLocal(list.init :+ list.last + 1), cpck, cd)
     }
-    def update(stmt: Statement) : Environment = stmt match {
+    def update(stmt: Statement) : Environment = stmt match {      
       case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw NameLinkingException(s"${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
       case _ => inc
     }
+  }
+
+  def getLocalPath(stmt: Statement, acc: List[PathLocal], curPath: List[Int]): List[PathLocal] = stmt match{
+    case Block(stmts) =>  stmts.foldLeft((acc, curPath:+0)){ case ((acc, pos), stmt) => (getLocalPath(stmt, acc, pos), pos.init :+ pos.last+1)}._1
+    case ForStatement(Some(_ :  LocalVariableDeclaration), _, _, loop) => getLocalPath(loop, PathLocal(curPath :+ 0) :: acc, curPath :+ 1)
+    case ForStatement(_, _, _, loop) => getLocalPath(loop, acc, curPath :+ 1)
+    case IfStatement(_, ifStmt, Some(elseStmt)) => getLocalPath(elseStmt, getLocalPath(ifStmt, acc, curPath :+ 0), curPath :+ 1)
+    case _: LocalVariableDeclaration => PathLocal(curPath) :: acc
+    case WhileStatement(_, loop) => getLocalPath(loop, acc, curPath :+ 0)
+    case _ => acc
   }
 
   def variableLink(cus: List[CompilationUnit]): List[CompilationUnit] = {
@@ -118,8 +128,9 @@ object VarResolver{
       checkParameters(cons.parameters)
       val parameterMap = Map( cons.parameters.map{case Parameter(parType, id) => (id, ( parType, PathPar(id)))}:_*)
       val curPos = PathLocal(List(0))
+      
       val env = Environment(parameterMap, curPos, pck, classDef)
-      ConstructorDeclaration(cons.name, cons.modifiers, cons.parameters, implementationLink(env, cons.implementation), cons.localPath)
+      ConstructorDeclaration(cons.name, cons.modifiers, cons.parameters, implementationLink(env, cons.implementation), getLocalPath(cons.implementation, Nil, Nil))//TODO get the list of path
     }
 
 
@@ -128,10 +139,13 @@ object VarResolver{
       val parameterMap = Map(meth.parameters.map{case Parameter(parType, id) => (id, (parType, PathPar(id)))}:_*)
       val curPos = PathLocal(List(0))
       val env = Environment(parameterMap, curPos, pck, classDef)
-      MethodDeclaration(meth.methodName, meth.returnType, meth.modifiers, meth.parameters, meth.implementation.map(implementationLink(env, _)), meth.localPath)
+      MethodDeclaration(meth.methodName, meth.returnType, meth.modifiers, meth.parameters, meth.implementation.map(implementationLink(env, _)), meth.implementation.toList.flatMap(getLocalPath(_, Nil, Nil)))
     }
     
     def implementationLink(environment: Environment, block: Block): Block = Block(passThroughStatements(block.statements, environment))
+
+
+
 
     def checkParameters(param: List[Parameter]){
       val parameterName = param.map(_.id)
