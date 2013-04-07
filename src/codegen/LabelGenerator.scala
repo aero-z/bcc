@@ -5,6 +5,6 @@ object LabelGenerator {
   //private var state:State = State()
   def generate:X86Label = {
     counter = counter+1
-    X86Label(""+counter);
+    X86Label("_"+counter);
   }
 }

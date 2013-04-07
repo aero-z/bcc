@@ -29,6 +29,6 @@ case class CharacterLiteral(char: CharacterToken) extends Literal {
 
 case class StringLiteral(str: StringToken) extends Literal {
   def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = RefTypeLinked(Some(Name(List("java", "lang"))), "String")
-  def generateCode(implicit current: List[Int], params: List[String], pathList: List[List[Int]], cus: List[CompilationUnit]) = ??? // __malloc and stuff X86Mov(X86eax, X86Number(char.getInt)) :: Nil
+  def generateCode(implicit current: List[Int], params: List[String], pathList: List[List[Int]], cus: List[CompilationUnit]) = X86Gen.notImpl // __malloc and stuff X86Mov(X86eax, X86Number(char.getInt)) :: Nil
 }
 

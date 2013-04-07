@@ -289,11 +289,11 @@ case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSid
   def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
     val arrComp = array.generateCode ::: (nullCheck(X86eax) :+ X86Push(X86eax))
     val indexComp = index.generateCode 
-    val checkIndex = List(X86Cmp(X86eax, X86Number(0)), X86Jl(X86Exception), X86Pop(X86edx), X86Cmp(X86eax, X86RegOffsetMemoryAccess(X86edx, X86Number(4))), X86Jge(X86Exception))
-    val generateAddr = List(X86Shl(X86eax, X86Number(2)), X86Add(X86eax, X86edx))
+    val checkIndex = List(X86Cmp(X86eax, X86Number(0)), X86Jl(X86Exception), X86Pop(X86edx), X86Cmp(X86eax, X86RegOffsetMemoryAccess(X86edx, 4)), X86Jge(X86Exception))
+    val generateAddr = List(X86Shl(X86eax, 2), X86Add(X86eax, X86edx))
     arrComp ::: indexComp ::: checkIndex ::: generateAddr
   }
-  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = X86RegOffsetMemoryAccess(reg, X86Number(4))
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = X86RegOffsetMemoryAccess(reg, 4)
 }
 
 /**
@@ -405,7 +405,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
       case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
       case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
     }
-    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
+    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
     val call = notImpl //TODO find the definition
     val cleanUp  =  List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
     allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
@@ -476,8 +476,8 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = variablePath match {
     case PathField(refType, name) => FieldAccess(This(refType),name).dest(reg)
-    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(params.indexOf(name) + 1)))
-    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(- params.indexOf(index) - 2)))
+    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, 4*(params.indexOf(name) + 1))
+    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, 4*(- params.indexOf(index) - 2))
   }
 }
 

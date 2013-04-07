@@ -81,6 +81,8 @@ object CodeGenerator {
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
+        "extern __exception\n" +
+        "extern __debexit\n" +
         methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
                .map(t => s"extern ${makeMethodLabel(t._1, t._2, t._3)}")
                .mkString("\n") +
@@ -112,9 +114,9 @@ object CodeGenerator {
         "global " + makeLabel(cu.packageName, cd, ".static_init") + "\n" +
         makeLabel(cu.packageName, cd, ".static_init") + ":\n" +
         staticFields.map(f =>
-          "  ; " + f.fieldName + "\n  " +
+          "  ; " + f.fieldName + "\n" +
           (f.initializer match {
-            case Some(expr) => expr.generateCode2.mkString("\n  ") +
+            case Some(expr) => expr.generateCode2.mkString("\n") +
                                s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
             case None => ""
           })).mkString("\n") +
@@ -127,14 +129,17 @@ object CodeGenerator {
         "ret\n\n" +
         cd.methods.map(m => {
           val lbl = makeMethodLabel(cu.packageName, cd, m)
+          val mainFunc = (isFirst && m.methodName == "test" && m.parameters == Nil)
           "global " + lbl + "\n" +
           lbl + ":\n" +
           (
-            if (isFirst && m.methodName == "test" && m.parameters == Nil)
-              "global _start\n_start:\n"
-            else
-              ""
-          ) + "  " + m.generateCode.mkString("\n  ")
+            if (mainFunc) "global _start\n_start:\n"
+            else ""
+          ) +
+          m.generateCode.map(i => i match {
+            case X86Ret => X86Jmp(X86Label("__debexit"))
+            case x => x
+          }).mkString("\n")
         }).mkString("\n\n")
       ///////////////// end of text segment //////////
 
