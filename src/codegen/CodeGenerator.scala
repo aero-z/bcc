@@ -45,8 +45,9 @@ object CodeGenerator {
 	int 0x80
 	
 	          
-	 """)
-	    writer.close*/
+	""")
+	writer.close
+	*/
     
     def generate(cu: CompilationUnit, cd: ClassDefinition, isFirst: Boolean)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
@@ -78,7 +79,8 @@ object CodeGenerator {
       val methods = getMethods(cu.packageName, cd, Nil)
             
       ///////////////// header ///////////////////////
-      val header = "extern __malloc\n" +
+      val header =
+        "extern __malloc\n" +
         methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
                .map(t => s"extern ${makeMethodLabel(t._1, t._2, t._3)}")
                .mkString("\n") +
@@ -86,7 +88,6 @@ object CodeGenerator {
       ///////////////// end of header/////////////////
       
       ///////////////// data segment /////////////////
-            
       val data =
         "section .data\n\n" +
         "; VTABLE\n" +
@@ -99,49 +100,42 @@ object CodeGenerator {
 
       ///////////////// bss segment /////////////////
       val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier))
-      val bss = """
-section .bss
-
-; static fields
-""" + staticFields.map(f => s"${makeFieldLabel(cu.packageName, cd, f)}: resb 4").mkString("\n") + "\n\n"
+      val bss =
+        "section .bss\n\n" +
+        "; static fields\n" +
+        staticFields.map(f => s"${makeFieldLabel(cu.packageName, cd, f)}: resb 4").mkString("\n") + "\n\n"
       ///////////////// end of bss segment //////////
   
       ///////////////// text segment /////////////////
-      val text = s"""
-section .text
-
-global ${makeLabel(cu.packageName, cd, ".static_init")}
-${makeLabel(cu.packageName, cd, ".static_init")}:
-""" + staticFields.map(f =>
-  s"  ; ${f.fieldName}\n  " +
-  (f.initializer match {
-    case Some(expr) => expr.generateCode2.mkString("\n  ") +
-                       s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
-    case None => ""
-  })).mkString("\n")  +
-s"""
-  ret
-	
-global ${makeLabel(cu.packageName, cd, ".alloc")}
-${makeLabel(cu.packageName, cd, ".alloc")}:
-  ;mov eax, x
-  call __malloc
-  mov [eax], dword class ; set pointer to class
-  ret
-
-""" + 
-cd.methods.map(m => {
-  val lbl = makeMethodLabel(cu.packageName, cd, m)
-  "global " + lbl + "\n" +
-  lbl + ":\n" +
-  (
-    if (isFirst && m.methodName == "test" && m.parameters == Nil)
-      "global _start\n_start:\n"
-    else
-      ""
-  ) +
-  m.generateCode.mkString("\n  ")
-}).mkString("\n\n")
+      val text =
+        "section .text\n\n" +
+        "global " + makeLabel(cu.packageName, cd, ".static_init") + "\n" +
+        makeLabel(cu.packageName, cd, ".static_init") + ":\n" +
+        staticFields.map(f =>
+          "  ; " + f.fieldName + "\n  " +
+          (f.initializer match {
+            case Some(expr) => expr.generateCode2.mkString("\n  ") +
+                               s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
+            case None => ""
+          })).mkString("\n") +
+        "\nret\n\n" +	
+        "global " + makeLabel(cu.packageName, cd, ".alloc") + "\n" +
+        makeLabel(cu.packageName, cd, ".alloc") + ":\n" +
+        ";mov eax, x\n" +
+        "call __malloc\n" +
+        "mov [eax], dword class ; set pointer to class\n" +
+        "ret\n\n" +
+        cd.methods.map(m => {
+          val lbl = makeMethodLabel(cu.packageName, cd, m)
+          "global " + lbl + "\n" +
+          lbl + ":\n" +
+          (
+            if (isFirst && m.methodName == "test" && m.parameters == Nil)
+              "global _start\n_start:\n"
+            else
+              ""
+          ) + "  " + m.generateCode.mkString("\n  ")
+        }).mkString("\n\n")
       ///////////////// end of text segment //////////
 
       "; === " + cd.className + "===\n" + header + data + bss + text
