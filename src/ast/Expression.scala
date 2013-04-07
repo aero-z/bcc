@@ -330,7 +330,7 @@ case class This(thisType: RefType) extends Expression {
     thisType
   }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode: List[X86Instruction] = List(X86Mov(X86eax, X86ebp))
 
 
 }
