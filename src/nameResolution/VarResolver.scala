@@ -11,10 +11,10 @@ object VarResolver{
   
   case class Environment(symbolMap: Map[String, (Type, PathToDeclaration)], currentPosition: PathLocal, pck: Option[Name], classDef: ClassDefinition){
     def open : Environment = this match {
-      case Environment(sm, PathLocal(list), cpck,  cd) =>Environment(sm, PathLocal(list :+ 0), cpck, cd)
+      case Environment(sm, PathLocal(list), cpck,  cd) =>Environment(sm, PathLocal(0 :: list), cpck, cd)
     }
     def inc : Environment = this match {
-      case Environment(sm, PathLocal(list), cpck, cd) =>Environment(sm, PathLocal(list.init :+ list.last + 1), cpck, cd)
+      case Environment(sm, PathLocal(list), cpck, cd) =>Environment(sm, PathLocal(list.head + 1 :: list.tail), cpck, cd)
     }
     def update(stmt: Statement) : Environment = stmt match {      
       case decl: LocalVariableDeclaration => if(symbolMap contains decl.identifier) throw NameLinkingException(s"${decl.identifier} is already define") else Environment(symbolMap + (decl.identifier -> (decl.typeName, currentPosition)), currentPosition, pck, classDef).inc
@@ -23,12 +23,12 @@ object VarResolver{
   }
 
   def getLocalPath(stmt: Statement, acc: List[PathLocal], curPath: List[Int]): List[PathLocal] = stmt match{
-    case Block(stmts) =>  stmts.foldLeft((acc, curPath:+0)){ case ((acc, pos), stmt) => (getLocalPath(stmt, acc, pos), pos.init :+ pos.last+1)}._1
-    case ForStatement(Some(_ :  LocalVariableDeclaration), _, _, loop) => getLocalPath(loop, PathLocal(curPath :+ 0) :: acc, curPath :+ 1)
-    case ForStatement(_, _, _, loop) => getLocalPath(loop, acc, curPath :+ 1)
-    case IfStatement(_, ifStmt, Some(elseStmt)) => getLocalPath(elseStmt, getLocalPath(ifStmt, acc, curPath :+ 0), curPath :+ 1)
+    case Block(stmts) =>  stmts.foldLeft((acc, 0 :: curPath)){ case ((acc, pos), stmt) => (getLocalPath(stmt, acc, pos), pos.head + 1 :: pos.tail)}._1
+    case ForStatement(Some(_ :  LocalVariableDeclaration), _, _, loop) => getLocalPath(loop, PathLocal(0 :: curPath) :: acc, 1 :: curPath)
+    case ForStatement(_, _, _, loop) => getLocalPath(loop, acc, 1 :: curPath)
+    case IfStatement(_, ifStmt, Some(elseStmt)) => getLocalPath(elseStmt, getLocalPath(ifStmt, acc, 0 :: curPath), 1 :: curPath)
     case _: LocalVariableDeclaration => PathLocal(curPath) :: acc
-    case WhileStatement(_, loop) => getLocalPath(loop, acc, curPath :+ 0)
+    case WhileStatement(_, loop) => getLocalPath(loop, acc, 0 :: curPath)
     case _ => acc
   }
 
@@ -166,7 +166,7 @@ object VarResolver{
       case EmptyStatement => EmptyStatement
       case ExpressionStatement(exp) => ExpressionStatement(linkExpression(exp)(env, ""))
       case ForStatement(init, cond, inc, stmt) => val forEnv = init.foldLeft(env.open)(_.update(_));
-        ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_)(forEnv.inc, "")), inc.map(linkExpression(_)(forEnv.inc.inc, "")), linkStatement(stmt, forEnv.inc.inc.inc))
+        ForStatement(init.map(linkStatement(_, env)), cond.map(linkExpression(_)(forEnv, "")), inc.map(linkExpression(_)(forEnv, "")), linkStatement(stmt, forEnv))
       case IfStatement(cond, ifStmt, elseStmt) => IfStatement(linkExpression(cond)(env, ""), linkStatement(ifStmt, env.open), elseStmt.map(linkStatement(_, env.open.inc)))
       case ReturnStatement(exp) => ReturnStatement(exp.map(linkExpression(_)(env, "")))
       case LocalVariableDeclaration(typeName, id, Some(init)) => LocalVariableDeclaration(typeName, id, Some(linkExpression(init)(env.update(stmt), id)))
