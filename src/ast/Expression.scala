@@ -24,8 +24,10 @@ trait Expression extends AstNode {
 }
 
 trait LeftHandSide extends Expression{
-  def generateAccess: List[X86Instruction]
+  def generateAccess: List[X86Instruction]//Save the register we need in the eax register
+  def dest(reg: X86Reg) : X86Dest//The destination of the value in function of a register
   def generateCode: List[X86Instruction] = generateAccess :+ X86Mov(X86eax, X86RegMemoryAccess(X86eax))
+  
 }
 
 trait LinkedExpression extends Expression
@@ -193,7 +195,7 @@ case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSid
     }
 
   def generateAccess: List[X86Instruction] = ??? //TODO: implementation
-
+  def dest(reg: X86Reg) = ???
 }
 
 /**
@@ -224,7 +226,7 @@ case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) ext
     else leftHandSide.getType
   }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode: List[X86Instruction] = leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(X86eax, leftHandSide.dest(X86ebx)))
 
 }
 
@@ -242,7 +244,7 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     }
 
   def generateAccess: List[X86Instruction] = ??? //TODO: implementation
-
+  def dest(reg: X86Reg) : X86Dest = ???
 }
 
 /**
@@ -278,7 +280,7 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     ExprMethodInvocation(This(thisType), method, arguments).getType
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode: List[X86Instruction] = ExprMethodInvocation(This(thisType), method, arguments).generateCode
 
 }
 
@@ -294,7 +296,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($accessed of type $x)")
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode: List[X86Instruction] = ??? //TODO: implementation When we call a static function static, ebp should be null
 
 }
 
@@ -340,7 +342,7 @@ case class VariableAccess(str: String) extends LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = sys.error(s"getType is not supposed to be called on type VariableAccess ($str)")
 
   def generateAccess: List[X86Instruction] = sys.error("Trying to generate the code for an unlinked variable")
-
+  def dest(reg: X86Reg) = sys.error("Trying to generate the code for an unlinked variable.")
 }
 
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
@@ -355,7 +357,7 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   val children = Nil
 
   def generateAccess: List[X86Instruction] = ??? //TODO: implementation
-
+  def dest(reg: X86Reg) = ???
 }
 
 case class ParenthesizedExpression(exp: Expression) extends Expression {
@@ -364,5 +366,5 @@ case class ParenthesizedExpression(exp: Expression) extends Expression {
     case _ => exp.getType
   }
   val children = List(exp)
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode: List[X86Instruction] = exp.generateCode
 }
