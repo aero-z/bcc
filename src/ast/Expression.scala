@@ -420,7 +420,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
     val call =  accessed match{
       case _: RefTypeLinked => notImpl
       case _ => accessed.getT.asInstanceOf[RefTypeLinked].getTypeDef match {
-        case x: ClassDefinition => val  index = CodeGenerator.getMethods(getT.asInstanceOf[RefTypeLinked].pckName, x).indexWhere(meth => meth.methodName == method && meth.parameters.map(_.paramType) == arguments.map(_.getT))
+        case x: ClassDefinition => val  index = CodeGenerator.getMethods(getT.asInstanceOf[RefTypeLinked].pkgName, x).indexWhere(meth => meth.methodName == method && meth.parameters.map(_.paramType) == arguments.map(_.getT))
           List(X86Mov(X86eax, X86RegMemoryAccess(X86ebp)), X86Call(X86RegOffsetMemoryAccess(X86eax, 4 * (index + 1))))
         case x: InterfaceDefinition => notImpl
       }

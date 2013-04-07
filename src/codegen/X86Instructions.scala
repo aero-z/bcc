@@ -4,10 +4,11 @@ package codegen
 trait X86Src {
 }
 // a valid destination in a instruction
-trait X86Dest extends X86Src
+trait X86Dest extends X86Src with X86Function
 // label
-case class X86Label(name:String) extends X86Instruction { //TODO: can it also be a X86Dest
-  override def toString = name+":"
+case class X86Label(name:String) extends X86Instruction with X86Function { //TODO: can it also be a X86Dest
+  override def toString = name
+  def label = name + ":"
 }
 
 object X86Exception extends X86Label("__exception")
@@ -17,6 +18,8 @@ trait X86Instruction {
 // data
 trait X86Data {
 }
+
+trait X86Function
 
 //comment
 case class X86Comment(s:String) extends X86Instruction {
@@ -121,7 +124,7 @@ case class X86Shl   (dest: X86Dest, src: Int) extends X86Instruction {
   override def toString = s"  shl $dest, $src"
 }
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  jmp "+lbl.name
+  override def toString = "  jmp "+lbl
 }
 case class X86Bxor   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
   override def toString = s"  xor $dest, $src"
@@ -135,26 +138,26 @@ case class X86Bor   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
 case class X86Cmp   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
   override def toString = s"  cmp $dest, $src" //will set some flags -> not eax but other stuff?
 }
-case class X86Je    (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  je "+lbl.name
+case class X86Je    (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  je "+lbl
 }
-case class X86Jne   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  jne "+lbl.name
+case class X86Jne   (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  jne "+lbl
 }
-case class X86Jg    (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  jg "+lbl.name
+case class X86Jg    (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  jg "+lbl
 }
-case class X86Jl    (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  jl "+lbl.name
+case class X86Jl    (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  jl "+lbl
 }
-case class X86Jge   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  jge "+lbl.name
+case class X86Jge   (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  jge "+lbl
 }
-case class X86Jle   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  jle "+lbl.name
+case class X86Jle   (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  jle "+lbl
 }
-case class X86Call  (lbl: X86Label)              extends X86Instruction {
-  override def toString = "  call "+lbl.name
+case class X86Call  (lbl: X86Function)              extends X86Instruction {
+  override def toString = "  call "+lbl
 }
 case object X86Ret                               extends X86Instruction {
   override def toString = "  ret"
