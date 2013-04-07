@@ -9,6 +9,8 @@ trait X86Dest extends X86Src
 case class X86Label(name:String) extends X86Src with X86Instruction { //TODO: can it also be a X86Dest
   override def toString = name+":"
 }
+
+object X86Exception extends X86Label("_exception")
 // an instruction
 trait X86Instruction {
 }
@@ -82,8 +84,8 @@ case class X86DataNullTerminatedWord(s:String, i:Integer) extends X86Data //32 b
 
 // Instructions
 
-case class X86Bcc   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = s"bcc $dest, $src"
+case class X86Sbb   (dest: X86Dest, src: X86Src) extends X86Instruction {
+  override def toString = s"sbb $dest, $src"
 }
 case class X86Neg   (dest: X86Dest)              extends X86Instruction {
   override def toString = s"neg $dest"
@@ -116,25 +118,25 @@ case class X86Cmp   (a: X86Dest    , b: X86Src)   extends X86Instruction {
   override def toString = "cmp "+a+", "+b //TODO: where will the result be stored? eax?
 }
 case class X86Je    (lbl: X86Label)              extends X86Instruction {
-  override def toString = "je "+lbl
+  override def toString = "je "+lbl.name
 }
 case class X86Jne   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jne "+lbl
+  override def toString = "jne "+lbl.name
 }
 case class X86Jg    (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jg "+lbl
+  override def toString = "jg "+lbl.name
 }
 case class X86Jl    (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jl "+lbl
+  override def toString = "jl "+lbl.name
 }
 case class X86Jge   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jge "+lbl
+  override def toString = "jge "+lbl.name
 }
 case class X86Jle   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jle "+lbl
+  override def toString = "jle "+lbl.name
 }
 case class X86Call  (lbl: X86Label)              extends X86Instruction {
-  override def toString = "call "+lbl
+  override def toString = "call "+lbl.name
 }
 case object X86Ret                               extends X86Instruction {
   override def toString = "ret"

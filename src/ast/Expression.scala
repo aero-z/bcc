@@ -132,7 +132,7 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] =  operation match {
-    case InverseOperator => term.generateCode ::: List(X86Cmp( X86eax, X86Number(1)), X86Bcc(X86eax, X86eax))
+    case InverseOperator => term.generateCode ::: List(X86Cmp( X86eax, X86Number(1)), X86Sbb(X86eax, X86eax))
     case MinusOperator => term.generateCode :+ X86Neg(X86eax)
   }
 
@@ -362,11 +362,14 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
     val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size))), X86Mov(X86ebp, X86esp))
-    val accessComp = accessed.generateCode ::: List( X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
+    val accessComp = accessed match {
+      case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
+      case _ => accessed.generateCode ::: List(X86Cmp(X86eax, X86Number(0)), X86Je(X86Exception), X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
+    }
     val argumentsComp = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
     val call = ??? //TODO find the definition
-    ???
-
+    val cleanUp = List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
+    ??? //allocPar ::: accessComp ::: argumentsComp :: call ::: cleanUp
   }
  //TODO: implementation When we call a static function static, ebp should be null
 
