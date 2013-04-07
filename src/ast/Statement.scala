@@ -23,8 +23,13 @@ case object EmptyStatement extends Statement{
 
 case class ExpressionStatement(expression: Expression) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+<<<<<<< Updated upstream
     implicit val impl = current
     expression.generateCode 
+=======
+    //val impl = 0 :: current
+    expression.generateCode
+>>>>>>> Stashed changes
   }
 }
 
@@ -65,9 +70,9 @@ case class ReturnStatement(returnExpression: Option[Expression]) extends Stateme
 case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
     implicit val impl = current
-    //to order of the pushes should be the same than expected.
-    X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Push(X86eax) :: Nil
-    //TODO: Is it needed to remember the name
+    val path = 0 :: current //TODO: is this correct here?
+    val index = pathList.indexOf(path)
+    X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number((index+1)*4)), X86eax) :: Nil
   }
 }
 
