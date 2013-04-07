@@ -303,7 +303,7 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = notImpl //TODO: implementation
 
 }
 
@@ -339,8 +339,8 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     }
   }
 
-  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
-  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest = ???
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = notImpl //TODO: implementation
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest = reg//TODO change that
 }
 
 /**
@@ -365,7 +365,7 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
     constructor
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = notImpl //TODO: implementation
 
 }
 
@@ -400,10 +400,10 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
       case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
       case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
     }
-    val argumentsComp = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
-    val call = ??? //TODO find the definition
-    val cleanUp = List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
-    ??? //allocPar ::: accessComp ::: argumentsComp :: call ::: cleanUp
+    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
+    val call = notImpl //TODO find the definition
+    val cleanUp  =  List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
+    allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
   }
  //TODO: implementation When we call a static function static, ebp should be null
 

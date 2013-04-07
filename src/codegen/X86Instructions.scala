@@ -167,5 +167,5 @@ case class X86Int   (imm: X86Immediate)                extends X86Instruction {
 object X86Gen{
   //Check if the source is null, in this case throw an error
   def nullCheck(dest: X86Dest) = List(X86Cmp(dest , X86Number(0)), X86Je(X86Exception))
-
+  def notImpl = List(X86Jmp(X86Exception))
 }
