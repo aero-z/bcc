@@ -10,7 +10,7 @@ case class X86Label(name:String) extends X86Src with X86Instruction { //TODO: ca
   override def toString = name+":"
 }
 
-object X86Exception extends X86Label("_exception")
+object X86Exception extends X86Label("__exception")
 // an instruction
 trait X86Instruction {
 }
