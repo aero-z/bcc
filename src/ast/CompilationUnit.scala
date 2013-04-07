@@ -143,13 +143,18 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     Logger.debug(s"Number of parameters: ${parameters.size}")
     for(Parameter(x, y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
     Logger.debug(s"Is defined: ${implementation.isDefined}")
-    Logger.debug("*" * 20)
+    Logger.debug("*" * 20)   
     Logger.debug("")
     //TODO something about the implementation
   }
   def generateCode(rootName: String): List[X86Instruction] = {
+    //val indexedVariablePath = localPath.zipWithIndex //indexes start at 0!
     //TODO: push parameters to the stack!
-    X86Label(rootName+methodName) :: implementation.getOrElse(EmptyStatement).generateCode
+    val current:List[Int] = Nil
+    implicit val params:List[String] = parameters.map(_.id)
+    implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
+    X86Label(rootName+methodName) :: implementation.getOrElse(EmptyStatement).generateCode(current)
+    //TODO: pop caller saved registers
   }
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++

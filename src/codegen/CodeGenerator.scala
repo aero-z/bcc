@@ -112,7 +112,6 @@ object CodeGenerator {
         expr.generateCode() ::: (X86Mov(X86Label(rootName + name), X86eax) :: Nil) //evaluate the initializer expression and 
       }*/
       //val init = staticFields.filter(_.initializer.isDefined).flatMap { case fd @ FieldDeclaration(name, _, _, Some(expr)) => initialize(name, expr) }
-      val block = cd.methods.flatMap(_.generateCode(rootName))
       val code =
         bss.foldLeft("segment .bss")((x, y) => x + "\n" + y) //TODO: is it ok if data segment is empty? (but the .bss tag is still there)
         //+ bss.foldLeft("initialize:")((x, y) => x + "\n" + y)
@@ -124,7 +123,6 @@ object CodeGenerator {
       //TODO: the instance fields:
       val instanceFields = cd.fields.filter(x => !x.modifiers.contains(Modifier.staticModifier))
       println(code+code2)
-      //code
       //TODO: return correct code
       "; === " + cd.className + "===" + data //return value
     }
