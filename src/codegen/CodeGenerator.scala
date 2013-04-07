@@ -58,20 +58,19 @@ object CodeGenerator {
 	 """)
 	    writer.close*/
     def generate(cu: CompilationUnit, cd: ClassDefinition): String = { //we just need the CU for the full name
-      val rootName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName).toString + "." 
-      def packageToStr(p: Option[Name]) = p match {
-        case Some(x) => x
-        case None => ""
-      }
-      val prefix = packageToStr(cu.packageName) + "." + cu.typeName
       
-      
-      ///////////////// data segment /////////////////
-      def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
-        m1.methodName == m2.methodName && m1.parameters == m2.parameters
+      def makeStr(p: Option[Name], c: ClassDefinition, m: String) = {
+        p match {
+          case Some(x) => s"$x.${c.className}.$m"
+          case None => s"${c.className}.$m"
+        }
       }
       
       def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+
+		def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
+		  m1.methodName == m2.methodName && m1.parameters == m2.parameters
+		}
 
         def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
           ms match {
@@ -92,6 +91,15 @@ object CodeGenerator {
             getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced)
         }
       }
+      val methods = getMethods(cu.packageName, cd, Nil)
+            
+      ///////////////// header ///////////////////////
+      val header = """
+extern __malloc
+""" + methods.map(t => s"extern ${makeStr(t._1, t._2, t._3.methodName)}").mkString("\n") + "\n\n"
+      ///////////////// end of header/////////////////
+      
+      ///////////////// data segment /////////////////
             
       val data = """
 section .data
@@ -99,41 +107,49 @@ section .data
 ; VTABLE
 class:
   dd 0 ; TODO: pointer to SIT
-  """ + getMethods(cu.packageName, cd, Nil).map(t => s"${packageToStr(t._1)}.${t._2.className}.${t._3.methodName}").mkString("\n  ") + "\n\n"
-///////////////// end of data segment /////////
+  """ + methods.map(t => s"dd ${makeStr(t._1, t._2, t._3.methodName)}").mkString("\n  ") + "\n\n"
+      ///////////////// end of data segment /////////
 
-///////////////// bss segment /////////////////
+      ///////////////// bss segment /////////////////
       val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier))
-
       val bss = """
-		section .bss
-		
-		; static fields
-		""" + staticFields.map(f => s"$prefix.${f.fieldName}: resb 4").mkString("\n  ") + "\n\n"
-///////////////// end of bss segment //////////
-		//TODO: the instance fields:
-		//val instanceFields = cd.fields.filter(x => !x.modifiers.contains(Modifier.staticModifier))
-		//case class FieldDeclaration(fieldName: String, fieldType: Type, override val modifiers: List[Modifier], initializer: Option[Expression]) extends MemberDeclaration(modifiers)
-		//val init = staticFields.filter(_.initializer.isDefined).flatMap { case fd @ FieldDeclaration(name, _, _, Some(expr)) => initialize(name, expr) }
-		/* TODO: static field initialization at some point
-			def initialize(name: String, expr: Expression) = {
-			expr.generateCode() ::: (X86Mov(X86Label(rootName + name), X86eax) :: Nil) //evaluate the initializer expression and 
-		}*/
-		
-		//for println testing:
-		val bsss: List[X86Data] = staticFields.map(x => X86DataDoubleWordUninitialized(X86Label(rootName + x.fieldName)))
-		val code =
-		bss.foldLeft("segment .bss")((x, y) => x + "\n" + y) //TODO: is it ok if data segment is empty? (but the .bss tag is still there)
-		//+ bss.foldLeft("initialize:")((x, y) => x + "\n" + y)
-		val code2 = cd.methods.flatMap(_.generateCode(rootName)).foldLeft("")((x, y) => x + "\n" + y)
-		println(code+code2)
-		  
-		  "; === " + cd.className + "===" + data + bss
+section .bss
+
+; static fields
+""" + staticFields.map(f => s"${makeStr(cu.packageName, cd, f.fieldName)}: resb 4").mkString("\n") + "\n\n"
+      ///////////////// end of bss segment //////////
+  
+      ///////////////// text segment /////////////////
+      val text = s"""
+section .text
+
+global ${makeStr(cu.packageName, cd, ".static_init")}
+${makeStr(cu.packageName, cd, ".static_init")}:
+""" + staticFields.map(f =>
+  s"  ; ${f.fieldName}\n  " +
+  (f.initializer match {
+    case Some(expr) => expr.generateCode2.mkString("\n  ") +
+                       s"\n  mov [${makeStr(cu.packageName, cd, f.fieldName)}], eax"
+    case None => ""
+  })).mkString("\n")  +
+s"""
+  ret
+	
+global ${makeStr(cu.packageName, cd, ".alloc")}
+${makeStr(cu.packageName, cd, ".alloc")}:
+  ;mov eax, x
+  call __malloc
+  mov [eax], dword class ; set pointer to class
+  ret
+"""
+      ///////////////// end of text segment //////////
+
+      "; === " + cd.className + "===\n" + header + data + bss + text
     }
     
     cus
     //leave the java lib files out for the moment! -> makes testing easier
-    .filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
+    //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
     .collect { case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
       val writer = new BufferedWriter(new FileWriter(new File("output/"+cu.typeName+".s")))
         //println("class: " + cu.typeName)
