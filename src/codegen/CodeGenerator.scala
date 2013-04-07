@@ -141,7 +141,15 @@ ${makeStr(cu.packageName, cd, ".alloc")}:
   call __malloc
   mov [eax], dword class ; set pointer to class
   ret
-"""
+""" + 
+cd.methods.map(m => {
+  val lbl = makeStr(cu.packageName, cd, m.methodName)
+s"""
+global $lbl
+$lbl:
+  """ +
+  m.generateCode("").mkString("\n  ")
+}).mkString("\n")
       ///////////////// end of text segment //////////
 
       "; === " + cd.className + "===\n" + header + data + bss + text
