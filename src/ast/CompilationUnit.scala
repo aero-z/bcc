@@ -147,7 +147,7 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     Logger.debug("")
     //TODO something about the implementation
   }
-  def generateCode(rootName: String): List[X86Instruction] = {
+  def generateCode(rootName: String)(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
     //val indexedVariablePath = localPath.zipWithIndex //indexes start at 0!
     //TODO: push parameters to the stack!
     val current:List[Int] = Nil

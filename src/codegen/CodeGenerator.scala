@@ -35,7 +35,7 @@ case class SelectorIndex(c: Class, m: Method, offset: Integer)
 
 object CodeGenerator {
 
-    def iffalse(expr:Expression, label:X86Label)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+    def iffalse(expr:Expression, label:X86Label)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
       expr.generateCode ::: (X86Mov(X86ebx, X86Boolean(false)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
     }
   /**
@@ -57,7 +57,7 @@ object CodeGenerator {
 	          
 	 """)
 	    writer.close*/
-    def generate(cu: CompilationUnit, cd: ClassDefinition): String = { //we just need the CU for the full name
+    def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       def makeStr(p: Option[Name], c: ClassDefinition, m: String) = {
         p match {
@@ -155,6 +155,7 @@ $lbl:
       "; === " + cd.className + "===\n" + header + data + bss + text
     }
     
+    implicit val cs = cus //needed for generate(cu, d)
     cus
     //leave the java lib files out for the moment! -> makes testing easier
     //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
