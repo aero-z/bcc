@@ -115,7 +115,7 @@ case class X86Shl   (dest: X86Dest, src: X86Src) extends X86Instruction {
   override def toString = s"shl $dest, $src"
 }
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jmp $lbl"
+  override def toString = "jmp "+lbl.name
 }
 case class X86Bxor   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
   override def toString = "xor $dest, $src"
