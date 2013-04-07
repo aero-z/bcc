@@ -319,7 +319,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
       case _ => throw new TypeCheckingError("cannot instanceof with: " + exp.getType + " instanceof " + typeChecked)
     }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ???
 
 }
 
@@ -355,12 +355,12 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   val children = Nil
 
   def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = variablePath match {
-    case PathField(refType, name) => ???
+    case PathField(refType, name) => FieldAccess(This(refType), name).generateAccess
     case PathPar(name) => Nil
     case PathLocal(index) => Nil
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = variablePath match {
-    case PathField(refType, name) => ???
+    case PathField(refType, name) => FieldAccess(This(refType),name).dest(reg)
     case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(params.indexOf(name) + 1)))
     case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(- params.indexOf(index) - 1)))
   }
