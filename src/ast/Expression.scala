@@ -10,7 +10,7 @@ import typecheck.TypeCheckingError
 import nameResolution._
 import main.Joosc
 import codegen._
-
+import codegen.X86Gen._
 //Every possible expression
 trait Expression extends AstNode {
   /**
@@ -268,7 +268,7 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
       case _ => throw new TypeCheckingError("impossile cast: (" + typeCast + ") " + target.getType)
     }
   }
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = target.generateCode //TODO chakge that 
 }
 
 /**
@@ -282,8 +282,14 @@ case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSid
     }
   }
 
-  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
-  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = ???
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    val arrComp = array.generateCode ::: (nullCheck(X86eax) :+ X86Push(X86eax))
+    val indexComp = index.generateCode 
+    val checkIndex = List(X86Cmp(X86eax, X86Number(0)), X86Jl(X86Exception), X86Pop(X86edx), X86Cmp(X86eax, X86RegOffsetMemoryAccess(X86edx, X86Number(4))), X86Jge(X86Exception))
+    val generateAddr = List(X86Shl(X86eax, X86Number(2)), X86Add(X86eax, X86edx))
+    arrComp ::: indexComp ::: checkIndex ::: generateAddr
+  }
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = X86RegOffsetMemoryAccess(reg, X86Number(4))
 }
 
 /**
@@ -392,7 +398,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
     val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size))), X86Mov(X86ebp, X86esp))
     val accessComp = accessed match {
       case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
-      case _ => accessed.generateCode ::: List(X86Cmp(X86eax, X86Number(0)), X86Je(X86Exception), X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
+      case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
     }
     val argumentsComp = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
     val call = ??? //TODO find the definition
@@ -421,7 +427,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = exp.generateCode :+ X86Mov(X86eax, X86Boolean(true)) //TODO: implementation
 
 
 }

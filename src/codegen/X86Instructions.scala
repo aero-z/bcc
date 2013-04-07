@@ -111,6 +111,9 @@ case class X86Div   (dest: X86Dest, src: X86Src) extends X86Instruction {
 case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction {
   override def toString = "idiv "+dest+", "+src
 }
+case class X86Shl   (dest: X86Dest, src: X86Src) extends X86Instruction {
+  override def toString = s"shl $dest, $src"
+}
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction {
   override def toString = "jmp "+lbl
 }
@@ -158,4 +161,11 @@ case class X86Pop   (reg: X86Reg)                extends X86Instruction {
 }
 case class X86Int   (imm: X86Immediate)                extends X86Instruction {
   override def toString = "int "+imm //system call -> can only be 2 bytes long
+}
+
+
+object X86Gen{
+  //Check if the source is null, in this case throw an error
+  def nullCheck(dest: X86Dest) = List(X86Cmp(dest , X86Number(0)), X86Je(X86Exception))
+
 }
