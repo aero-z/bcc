@@ -114,8 +114,17 @@ case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction {
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction {
   override def toString = "jmp "+lbl
 }
+case class X86Bxor   (a: X86Dest    , b: X86Src)   extends X86Instruction {
+  override def toString = "xor "+a+", "+b
+}
+case class X86Band   (a: X86Dest    , b: X86Src)   extends X86Instruction {
+  override def toString = "and "+a+", "+b
+}
+case class X86Bor   (a: X86Dest    , b: X86Src)   extends X86Instruction {
+  override def toString = "or "+a+", "+b
+}
 case class X86Cmp   (a: X86Dest    , b: X86Src)   extends X86Instruction {
-  override def toString = "cmp "+a+", "+b //TODO: where will the result be stored? eax?
+  override def toString = "cmp "+a+", "+b //will set some flags -> not eax but other stuff?
 }
 case class X86Je    (lbl: X86Label)              extends X86Instruction {
   override def toString = "je "+lbl.name
