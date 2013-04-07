@@ -20,6 +20,8 @@ trait Expression extends AstNode {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
   def generateCode: List[X86Instruction]
+  // TEMP!
+  def generateCode2 = List(X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5)))
 
 }
 
