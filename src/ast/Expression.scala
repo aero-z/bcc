@@ -415,8 +415,12 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
       case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
       case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
     }
+
     val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
-    val call = notImpl //TODO find the definition
+    val call = getT.asInstanceOf[RefTypeLinked].getTypeDef match {
+      case x: ClassDefinition => notImpl
+      case x: InterfaceDefinition => notImpl        
+    }
     val cleanUp  =  List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
     allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
   }
