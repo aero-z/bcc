@@ -67,7 +67,7 @@ case class LocalVariableDeclaration(typeName: Type, identifier: String, initiali
     implicit val impl = current
     val path = 0 :: current //TODO: is this correct here?
     val index = pathList.indexOf(path)
-    X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number((index+1)*4)), X86eax) :: Nil
+    X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number((index-2)*4)), X86eax) :: Nil
   }
 }
 

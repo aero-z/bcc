@@ -16,8 +16,8 @@ trait Expression extends AstNode {
   /**
    * get type of expression AND check for type errors
    */
-  private[ast] var myT:RefTypeLinked
-  def myType = myT.clone()
+  private[ast] var myT:Type = null
+  def getT = myT
   
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
@@ -173,47 +173,78 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = { //TODO: implementation
-    Nil
-    /*implicit val isStatic = false
-    (first.myType, operation, second.myType) match {
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    Nil/*(first.getT, operation, second.getT) match {
       case (t, PlusOperator, Str) => Nil //TODO: String.concat
       case (Str, PlusOperator, t) => Nil //TODO: String concat
       case (_: CharTrait, op: CompareOperator, _: CharTrait) =>
-        val trueLabel = LabelGenerator.generate
         val endLabel = LabelGenerator.generate
-        second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) ::: 
-        op match {
+        second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
+        (op match {
           //Is the truelabel needed?
-          case SmallerOperator => X86Jl(trueLabel) X86Jmp(endLabel) :: trueLabel ::  :: endLabel :: Nil
-          case GreaterOperator =>
-          case EqualOperator =>
-          case NotEqualOperator =>
-          case LessEqualOperator =>
-          case GreaterEqualOperator =>
-        }
+          case SmallerOperator => X86Jge(endLabel) 
+          case GreaterOperator => X86Jle(endLabel)
+          case EqualOperator => X86Jne(endLabel)
+          case NotEqualOperator => X86Je(endLabel)
+          case LessEqualOperator => X86Jg(endLabel)
+          case GreaterEqualOperator => X86Jl(endLabel)
+        }) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
       case (_: IntegerTrait, op: ArithmeticOperator, _: IntegerTrait) => 
-        second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) ::
-        op match {
+        second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: 
+        //val operator =
+        (op match {
           case PlusOperator => X86Add(X86eax, X86ebx) :: Nil
           case MinusOperator => X86Sub(X86eax, X86ebx) :: Nil
           case StarOperator => X86Imul(X86eax, X86ebx) :: Nil
           case DivOperator => X86Idiv(X86eax, X86ebx) :: Nil
           case ModOperator => X86Idiv(X86eax, X86ebx) :: X86Mov(X86eax, X86edx) :: Nil
-          case _ => Nil
-        }
-      case (left: IntegerTrait, op: CompareOperator, right: IntegerTrait) =>
+        })
+      case (left: IntegerTrait , op: CompareOperator, right: IntegerTrait) => //copy from character comparison
+        val endLabel = LabelGenerator.generate
+        second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
+        (op match {
+          //Is the truelabel needed?
+          case SmallerOperator => X86Jge(endLabel) 
+          case GreaterOperator => X86Jle(endLabel)
+          case EqualOperator => X86Jne(endLabel)
+          case NotEqualOperator => X86Je(endLabel)
+          case LessEqualOperator => X86Jg(endLabel)
+          case GreaterEqualOperator => X86Jl(endLabel)
+        }) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
+      case (BooleanType, op: BooleanOperator, BooleanType) =>
+        val endLabel = LabelGenerator.generate
+        second.generateCode ::: X86Push(X86eax) :: first.generateCode :::
+        (op match {
+          case BitXorOperator =>
+            X86Bxor(X86eax, X86ebx) :: Nil
+          case BitAndOperator =>
+            X86Band(X86eax, X86ebx) :: Nil
+          case BitOrOperator =>
+            X86Bor(X86eax, X86ebx) :: Nil
+          case EqualOperator =>
+            X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ :: X86Jne(endLabel) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
+          case NotEqualOperator =>
+            X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ :: X86Je(endLabel) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
+          case AndOperator =>
+            val falseLabel = LabelGenerator.generate
+            X86Cmp(X86eax, X86Number(0)) :: X86Je(falseLabel) :: X86Cmp(X86ebx, X86Number(0)) :: X86Je(falseLabel) :: X86Mov(X86eax, X86Number(1)) :: X86Jmp(endLabel) :: falseLabel :: X86Mov(X86eax, X86Number(0)) :: endLabel :: Nil
+          case OrOperator =>
+            val trueLabel = LabelGenerator.generate
+            X86Cmp(X86eax, X86Number(1)) :: X86Je(trueLabel) :: X86Cmp(X86eax, X86Number(1)) :: X86Je(trueLabel) :: X86Mov(X86eax, X86Number(0)) :: X86Jmp(endLabel) :: trueLabel :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
+        })
+      case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(x, y)) =>
+        //TODO
+      case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(y, x)) =>
         
-
-      case (BooleanType, _: BooleanOperator, BooleanType) => 
-
-      case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(x, y)) => 
-      case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(y, x)) => 
-      case (_: RefType, EqualOperator | NotEqualOperator, NullType) => 
-      case (NullType, EqualOperator | NotEqualOperator, _: RefType) => 
-      case (_: ArrayType, EqualOperator | NotEqualOperator, NullType) => 
-      case (NullType, EqualOperator | NotEqualOperator, _: ArrayType) => 
-      case (NullType, EqualOperator | NotEqualOperator, NullType) => 
+      case (_: RefType, EqualOperator | NotEqualOperator, NullType) =>
+        
+      case (NullType, EqualOperator | NotEqualOperator, _: RefType) =>
+        
+      case (_: ArrayType, EqualOperator | NotEqualOperator, NullType) =>
+        
+      case (NullType, EqualOperator | NotEqualOperator, _: ArrayType) =>
+        
+      case (NullType, EqualOperator | NotEqualOperator, NullType) =>
 
       case (x, op, y) => throw new TypeCheckingError(s"no operation $op found for arguments $x and $y")
     }*/
