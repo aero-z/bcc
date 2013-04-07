@@ -332,11 +332,7 @@ case class This(thisType: RefType) extends Expression {
     thisType
   }
 
- 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = List(X86Mov(X86eax, X86ebp))
-
-
-
 }
 
 /**
@@ -352,11 +348,9 @@ case class VariableAccess(str: String) extends LeftHandSide {
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     variablePath match {
-      case _: PathField =>
-        FieldAccess(This(myType), name).getType
-      case _ =>
+      case _: PathField => FieldAccess(This(myType), name).getType
+      case _ => varType
     }
-    varType
   }
   val children = Nil
 
@@ -367,8 +361,8 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = variablePath match {
     case PathField(refType, name) => ???
-    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(params.indexOf(name) + 1))
-    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(- params.indexOf(index) - 1))
+    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(params.indexOf(name) + 1)))
+    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(- params.indexOf(index) - 1)))
   }
 }
 
