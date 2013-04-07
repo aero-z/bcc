@@ -14,13 +14,14 @@ public class classe {
     }
     public void m() {
         if (true) {
+        int x =5;
         ;
     		if (5 == 6) {
-    			return;
+    			x = 8;
     		}
         ;
     		while (5>4) {
-    			return;
+    			x = x+1;
     		}
         ;
         }
