@@ -5,36 +5,31 @@ import codegen._
 import nameResolution._
 
 sealed abstract class Statement extends AstNode {
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction]
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction]
 }
 
 case class Block (statements : List[Statement]) extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     statements.zipWithIndex.flatMap(x => x._1.generateCode(x._2 :: current))
   }
 }
 
 case object EmptyStatement extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     //val impl = 0 :: current
     X86Comment("-----") :: Nil
   }
 }
 
 case class ExpressionStatement(expression: Expression) extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
-<<<<<<< Updated upstream
-    implicit val impl = current
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
+    implicit val impl = current //TODO: do we nee to increment this?
     expression.generateCode 
-=======
-    //val impl = 0 :: current
-    expression.generateCode
->>>>>>> Stashed changes
   }
 }
 
 case class ForStatement(init: Option[Statement], condition: Option[Expression], incrementation: Option[Expression], loop: Statement) extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current
     val repeatLabel = LabelGenerator.generate
     val endLabel = LabelGenerator.generate
@@ -43,7 +38,7 @@ case class ForStatement(init: Option[Statement], condition: Option[Expression], 
 }
 
 case class IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current
     elseStatement match {
 	    case None =>
@@ -58,7 +53,7 @@ case class IfStatement(condition: Expression, ifStatement: Statement, elseStatem
 }
 
 case class ReturnStatement(returnExpression: Option[Expression]) extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction]  = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction]  = {
     implicit val impl = current
     returnExpression match {
 	    case None => X86Ret :: Nil //void return?
@@ -68,7 +63,7 @@ case class ReturnStatement(returnExpression: Option[Expression]) extends Stateme
 }
 
 case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current
     val path = 0 :: current //TODO: is this correct here?
     val index = pathList.indexOf(path)
@@ -77,7 +72,7 @@ case class LocalVariableDeclaration(typeName: Type, identifier: String, initiali
 }
 
 case class WhileStatement(condition: Expression, loop: Statement) extends Statement{
-  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+  def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current
     val repeatLabel = LabelGenerator.generate
     val endLabel = LabelGenerator.generate

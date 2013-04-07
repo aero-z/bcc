@@ -64,7 +64,7 @@ case class RefTypeLinked(pkgName: Option[Name], className:String) extends RefTyp
   def getTypeDef(implicit cus:List[CompilationUnit]): TypeDefinition = {
    cus.find(c => c.packageName == pkgName && c.typeName == className).get.typeDef.get
  }
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
 }
 
 case object NullType extends Type {
