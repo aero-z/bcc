@@ -128,19 +128,20 @@ ${makeLabel(cu.packageName, cd, ".alloc")}:
   call __malloc
   mov [eax], dword class ; set pointer to class
   ret
+
 """ + 
 cd.methods.map(m => {
   val lbl = makeMethodLabel(cu.packageName, cd, m)
+  "global " + lbl + "\n" +
+  lbl + ":\n" +
   (
     if (isFirst && m.methodName == "test" && m.parameters == Nil)
       "global _start\n_start:\n"
     else
       ""
   ) +
-  "global " + lbl + "\n" +
-  lbl + ":\n" +
-  m.generateCode.mkString("\n\n  ")
-}).mkString("\n")
+  m.generateCode.mkString("\n  ")
+}).mkString("\n\n")
       ///////////////// end of text segment //////////
 
       "; === " + cd.className + "===\n" + header + data + bss + text

@@ -16,10 +16,16 @@ trait Expression extends AstNode {
   /**
    * get type of expression AND check for type errors
    */
-  private[ast] var myT:Type = null
+  private var myT: Type = null
   def getT = myT
   
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
+  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
+    if (myT == null)
+      myT = checkAndSetType
+    myT
+  }
+  
+  protected def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]] , cus:List[CompilationUnit]): List[X86Instruction]
 
@@ -122,8 +128,7 @@ private object Util {
  * e.g. -5
  */
 case class UnaryOperation(operation: Operator, term: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     (operation, term.getType) match {
       case (InverseOperator, BooleanType) => BooleanType
       case (InverseOperator, _: IntegerTrait) => BooleanType
@@ -146,8 +151,7 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
  */
 case class BinaryOperation(first: Expression, operation: Operator, second: Expression) extends Expression {
   val Str = RefTypeLinked(Some(Name("java" :: "lang" :: Nil)), "String")
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     (first.getType, operation, second.getType) match {
       case (t, PlusOperator, Str) => if (t != VoidType) Str else throw new TypeCheckingError("void cannot be converted to String!")
       case (Str, PlusOperator, t) => if (t != VoidType) Str else throw new TypeCheckingError("void cannot be converted to String!")
@@ -256,8 +260,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
  * (typeChecked) exp
  */
 case class CastExpression(typeCast: Type, target: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     (typeCast, target.getType) match {
       case (x, y) if (TypeChecker.checkTypeMatch(x, y)) => typeCast
       case (x, y) if (TypeChecker.checkTypeMatch(y, x)) => typeCast
@@ -272,8 +275,7 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
  * array[index]
  */
 case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSide {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     (array.getType, index.getType) match {
       case (ArrayType(e), _: IntegerTrait) => e
       case (at, it) => throw new TypeCheckingError(s"type error in array access $at[$it]")
@@ -288,8 +290,7 @@ case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSid
  * new typeName[size]
  */
 case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     size.getType match {
       case _: IntegerTrait => typeName
       case _ => throw new TypeCheckingError(s"type error in array size ($size)")
@@ -305,8 +306,7 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
  * leftHandSide = rightHandSide
  */
 case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     leftHandSide match {
       case FieldAccess(LinkedVariableOrField(_, _: ArrayType, _), "length") => throw new TypeCheckingError("length field of an array is final")
       case _ =>
@@ -323,8 +323,7 @@ case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) ext
  * accessed.field
  */
 case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     accessed.getType match {
       case r: RefType =>
         val f = Util.findField(r, accessed.isInstanceOf[RefType], field)        
@@ -342,8 +341,7 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
  * new Class(arguments)
  */
 case class ClassCreation(constructor: RefType, arguments: List[Expression]) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     val consLinked = constructor.asInstanceOf[RefTypeLinked]
     consLinked.getTypeDef match {
       case ClassDefinition(_, _, _, mods, _, constructors, _) =>
@@ -369,8 +367,7 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
  * method(arguments)
  */
 case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     ExprMethodInvocation(This(thisType), method, arguments).getType
   }
 
@@ -382,8 +379,7 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
  * (accessed).method(arguments)
  */
 case class ExprMethodInvocation(accessed: Expression, method: String, arguments: List[Expression]) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     accessed.getType match {
       case r: RefType =>
         val m = Util.findMethod(r, accessed.isInstanceOf[RefType], method, arguments)
@@ -411,8 +407,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
  * exp instanceof typeChecked
  */
 case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     (exp.getType, typeChecked) match {
 
       case (p: PrimitiveType, _) => throw new TypeCheckingError("instanceof incompatible with primitive type: " + p)
@@ -435,8 +430,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
  * this
  */
 case class This(thisType: RefType) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType //TODO: should it be myType or thisType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     if (isStatic) throw new TypeCheckingError("cannot use this in a static block")
     thisType
   }
@@ -448,15 +442,14 @@ case class This(thisType: RefType) extends Expression {
  * x
  */
 case class VariableAccess(str: String) extends LeftHandSide {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = sys.error(s"getType is not supposed to be called on type VariableAccess ($str)")
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = sys.error(s"getType is not supposed to be called on type VariableAccess ($str)")
 
   def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = sys.error("Trying to generate the code for an unlinked variable")
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = sys.error("Trying to generate the code for an unlinked variable.")
 }
 
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     variablePath match {
       case _: PathField => FieldAccess(This(myType), name).getType
       case _ => varType
@@ -478,8 +471,7 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
 }
 
 case class ParenthesizedExpression(exp: Expression) extends Expression {
-  def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    myT = myType
+  def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     exp match {
 	  case _ : RefTypeLinked => throw new TypeCheckingError("illegal start of a type")
 	  case _ => exp.getType
