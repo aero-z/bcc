@@ -9,14 +9,18 @@ import java.io.File
 object CodeGenerator {
 
   def iffalse(expr: Expression, label: X86Label)(implicit current: List[Int], params: List[String], pathList: List[List[Int]], cus: List[CompilationUnit]): List[X86Instruction] = {
-    expr.generateCode ::: (X86Mov(X86ebx, X86Boolean(false)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
+    expr.generateCode ::: (X86Mov(X86ebx, X86Number(0)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
   }
   
-  private def makeLabel(p: Option[Name], c: ClassDefinition, s: String) = {
+  def makeLabel(p: Option[Name], c: ClassDefinition, s: String): String = {
+    makeLabel(p, c.className, s)
+  }
+  
+  def makeLabel(p: Option[Name], c: String, s: String): String = {
     (p match {
       case Some(x) => x + "."
       case None => ""
-    }) + c.className + "." + s
+    }) + c + "." + s
   }
   
   def makeFieldLabel(p: Option[Name], c: ClassDefinition, f: FieldDeclaration) = {

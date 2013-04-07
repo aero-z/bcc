@@ -6,7 +6,7 @@ trait X86Src {
 // a valid destination in a instruction
 trait X86Dest extends X86Src
 // label
-case class X86Label(name:String) extends X86Src with X86Instruction { //TODO: can it also be a X86Dest
+case class X86Label(name:String) extends X86Instruction { //TODO: can it also be a X86Dest
   override def toString = name+":"
 }
 
@@ -43,12 +43,6 @@ trait X86Immediate extends X86Src
 case class X86Number(i: Int) extends X86Immediate {
   override def toString = "dword "+i
 }
-/*case class X86Boolean(b: Boolean) extends X86Immediate {
-  override def toString = b match { //TODO should be an int over 32 bits...
-    case true => ""+1
-    case false => ""+0
-  }
-}*/
 // e.g. mov ax, [102h]:
 case class X86DirectMemoryAccess(imm: Int) extends X86Dest {
   override def toString = "["+imm+"]"
@@ -56,6 +50,10 @@ case class X86DirectMemoryAccess(imm: Int) extends X86Dest {
 // e.g. mov ax,[di]:
 case class X86RegMemoryAccess(reg: X86Reg) extends X86Dest {
   override def toString = "["+reg+"]"
+}
+// e.g. mov ax,[di]:
+case class X86LblMemoryAccess(lbl: X86Label) extends X86Dest {
+  override def toString = "["+lbl.name+"]"
 }
 // e.g. mov al,[byte_tbl+2]:
 case class X86RegOffsetMemoryAccess(reg: X86Reg, imm: Int) extends X86Dest {

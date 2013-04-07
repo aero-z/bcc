@@ -33,7 +33,7 @@ trait Expression extends AstNode {
 trait LeftHandSide extends Expression{
   def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction]//Save the register we need in the eax register
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest//The destination of the value in function of a register
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = generateAccess :+ X86Mov(X86eax, X86RegMemoryAccess(X86eax))
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = generateAccess :+ X86Mov(X86eax, dest(X86eax))
   
 }
 
@@ -322,7 +322,7 @@ case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) ext
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] =
-    leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(X86eax, leftHandSide.dest(X86ebx)))
+    leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(leftHandSide.dest(X86ebx), X86eax))
 
 }
 
@@ -340,9 +340,22 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     }
   }
 
-  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = notImpl //TODO: implementation
-  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest =
-    reg//TODO change that
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    accessed match {
+      case RefTypeLinked(pkgName: Option[Name], className:String) =>
+        Nil
+      //case a: ArrayType if (field == "length") => IntType
+      case x => notImpl
+    }
+  }
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest =  {
+    accessed match {
+      case RefTypeLinked(pkgName: Option[Name], className:String) =>
+        X86LblMemoryAccess(X86Label(CodeGenerator.makeLabel(pkgName, className, field)))
+      //case a: ArrayType if (field == "length") => IntType
+      case x => ???
+    }
+  }
 }
 
 /**
@@ -464,7 +477,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = exp.generateCode :+ X86Mov(X86eax, X86Boolean(true)) //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = exp.generateCode :+ X86Mov(X86eax, X86Number(1)) //TODO: implementation
 
 
 }
