@@ -27,6 +27,10 @@ object CodeGenerator {
     makeLabel(p, c, m.methodName + "$" +
       m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
   }
+  
+  def getMethods(pkg: Option[Name], cd: ClassDefinition): List[MethodDeclaration] = {
+    ???
+  }
 
   /**
    * generate files in the output/ directory
@@ -116,17 +120,17 @@ object CodeGenerator {
         staticFields.map(f =>
           "  ; " + f.fieldName + "\n" +
           (f.initializer match {
-            case Some(expr) => expr.generateCode2.mkString("\n") +
+            case Some(expr) => expr.generateCode(List(0), Nil, Nil, cus).mkString("\n") +
                                s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
             case None => ""
           })).mkString("\n") +
-        "\nret\n\n" +	
+        "\n  ret\n\n" +	
         "global " + makeLabel(cu.packageName, cd, ".alloc") + "\n" +
         makeLabel(cu.packageName, cd, ".alloc") + ":\n" +
-        ";mov eax, x\n" +
-        "call __malloc\n" +
-        "mov [eax], dword class ; set pointer to class\n" +
-        "ret\n\n" +
+        "  ;mov eax, x\n" +
+        "  call __malloc\n" +
+        "  mov [eax], dword class ; set pointer to class\n" +
+        "  ret\n\n" +
         cd.methods.map(m => {
           val lbl = makeMethodLabel(cu.packageName, cd, m)
           val mainFunc = (isFirst && m.methodName == "test" && m.parameters == Nil)

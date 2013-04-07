@@ -27,11 +27,7 @@ trait Expression extends AstNode {
   
   protected def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]] , cus:List[CompilationUnit]): List[X86Instruction]
-
-  // TEMP!
-  def generateCode2 =     List(X86Comment("DUMMY"), X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5))) // TEMP
-
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction]
 }
 
 trait LeftHandSide extends Expression{
