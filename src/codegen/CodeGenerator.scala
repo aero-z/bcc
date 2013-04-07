@@ -61,43 +61,33 @@ int 0x80
     * */
     
     def generate(cu: CompilationUnit, cd: ClassDefinition): String = { //we just need the CU for the full name
-      def rootName = cu.packageName.getOrElse(Name(Nil)).appendClassName(cu.typeName).toString + "." // Note: the last dot is already appended
-      val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier))
-      val bss: List[X86Data] = staticFields.map(x => X86DataDoubleWordUninitialized(X86Label(rootName + x.fieldName)))
-      /*def initialize(name: String, expr: Expression) = {
-        expr.generateCode() ::: (X86Mov(X86Label(rootName + name), X86eax) :: Nil)
-      }*/
-      //val init = staticFields.filter(_.initializer.isDefined).flatMap { case fd @ FieldDeclaration(name, _, _, Some(expr)) => initialize(name, expr) }
-      
       
       def packageToStr(p: Option[Name]) = p match {
         case Some(x) => x
         case None => ""
       }
-      //val packagePrefix = packageToStr(cu.packageName)
+      val prefix = packageToStr(cu.packageName) + "." + cu.typeName
       
+      
+      ///////////////// data segment /////////////////
       def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
         m1.methodName == m2.methodName && m1.parameters == m2.parameters
-      }
-      def hasMethod(cd: ClassDefinition, m: MethodDeclaration): Boolean = {
-        cd.methods.exists(m2 => methodsMatch(m, m2))
       }
 
       def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
 
-        def f(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+        def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
           ms match {
             case Nil => ts
             case m :: mss =>
-              f(mss, ts.find(t => methodsMatch(m, t._3)) match {
+              mergeMethods(mss, ts.find(t => methodsMatch(m, t._3)) match {
                 case None => (pkg, cd, m) :: ts
                 case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
               })   
           }
         }
         
-        val replaced = f(cd.methods, parentMethods)
-        //val replaced = cd.methods.map(m => (parentMethods.find(t => methodsMatch(m, t._2)).map(t => t._1).getOrElse(cd), m))
+        val replaced = mergeMethods(cd.methods, parentMethods)
         cd.parent match {
           case None => replaced
           case Some(p) => 
@@ -112,18 +102,19 @@ section .data
 ; VTABLE
 class:
   dd 0 ; TODO: pointer to SIT
-  """ +
-        getMethods(cu.packageName, cd, Nil).map(t => s"${packageToStr(t._1)}.${t._2.className}.${t._3.methodName}").mkString("\n  ") + "\n\n"
+  """ + getMethods(cu.packageName, cd, Nil).map(t => s"${packageToStr(t._1)}.${t._2.className}.${t._3.methodName}").mkString("\n  ") + "\n\n"
+      ///////////////// end of data segment /////////
 
-      val code =
-        bss.foldLeft("segment .bss")((x, y) => x + "\n" + y) //TODO: is it ok if data segment is empty? (but the .bss tag is still there)
-      val ced = bss.foldLeft("initialize:")((x, y) => x + "\n" + y)
-      //TODO: we need to export the labels for use outside the class
-      //TODO we need to add code to the main for the initializer of static field assignemnt evaluations
-      //case class FieldDeclaration(fieldName: String, fieldType: Type, override val modifiers: List[Modifier], initializer: Option[Expression]) extends MemberDeclaration(modifiers)
-      code
-      
-      "; === " + cd.className + "===" + data
+      ///////////////// bss segment /////////////////
+      val staticFields = cd.fields.filter(x => x.modifiers.contains(Modifier.staticModifier))
+      val bss = """
+section .bss
+
+; static fields
+  """ + staticFields.map(f => s"$prefix.${f.fieldName}").mkString("\n  ") + "\n\n"
+      ///////////////// end of bss segment //////////
+
+      "; === " + cd.className + "===" + data + bss
     }
     
     cus.collect { case cu @ CompilationUnit(_, _, Some(d: ClassDefinition), _) =>
