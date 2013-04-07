@@ -112,7 +112,7 @@ case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction {
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction {
   override def toString = "jmp "+lbl
 }
-case class X86Cmp   (a: X86Reg    , b: X86Reg)   extends X86Instruction {
+case class X86Cmp   (a: X86Dest    , b: X86Src)   extends X86Instruction {
   override def toString = "cmp "+a+", "+b //TODO: where will the result be stored? eax?
 }
 case class X86Je    (lbl: X86Label)              extends X86Instruction {

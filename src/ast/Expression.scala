@@ -23,6 +23,11 @@ trait Expression extends AstNode {
 
 }
 
+trait LeftHandSide extends Expression{
+  def generateAccess: List[X86Instruction]
+  def generateCode: List[X86Instruction] = generateAccess :+ X86Mov(X86eax, X86RegMemoryAccess(X86eax))
+}
+
 trait LinkedExpression extends Expression
 
 private object Util {
@@ -180,14 +185,14 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
 /**
  * array[index]
  */
-case class ArrayAccess(array: Expression, index: Expression) extends Expression {
+case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     (array.getType, index.getType) match {
       case (ArrayType(e), _: IntegerTrait) => e
       case (at, it) => throw new TypeCheckingError(s"type error in array access $at[$it]")
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateAccess: List[X86Instruction] = ??? //TODO: implementation
 
 }
 
@@ -209,7 +214,7 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
 /**
  * leftHandSide = rightHandSide
  */
-case class Assignment(leftHandSide: Expression, rightHandSide: Expression) extends Expression {
+case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) extends Expression {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     leftHandSide match {
       case FieldAccess(LinkedVariableOrField(_, _: ArrayType, _), "length") => throw new TypeCheckingError("length field of an array is final")
@@ -226,7 +231,7 @@ case class Assignment(leftHandSide: Expression, rightHandSide: Expression) exten
 /**
  * accessed.field
  */
-case class FieldAccess(accessed: Expression, field: String) extends Expression {
+case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     accessed.getType match {
       case r: RefType =>
@@ -236,7 +241,7 @@ case class FieldAccess(accessed: Expression, field: String) extends Expression {
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateAccess: List[X86Instruction] = ??? //TODO: implementation
 
 }
 
@@ -331,14 +336,14 @@ case class This(thisType: RefType) extends Expression {
 /**
  * x
  */
-case class VariableAccess(str: String) extends Expression {
+case class VariableAccess(str: String) extends LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = sys.error(s"getType is not supposed to be called on type VariableAccess ($str)")
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateAccess: List[X86Instruction] = sys.error("Trying to generate the code for an unlinked variable")
 
 }
 
-case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression {
+case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     variablePath match {
       case _: PathField =>
@@ -349,7 +354,7 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   val children = Nil
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateAccess: List[X86Instruction] = ??? //TODO: implementation
 
 }
 

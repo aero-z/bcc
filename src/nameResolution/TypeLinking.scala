@@ -158,7 +158,7 @@ object TypeLinking {
 				case CastExpression(typeCast, target) => CastExpression(link(typeCast), linkExpression(target))
 				case ArrayAccess(typeCast : Expression, target: Expression) => ArrayAccess(linkExpression(typeCast), linkExpression(target))
 				case ArrayCreation(typeName : Type, size: Expression) => ArrayCreation(link(typeName), linkExpression(size))
-				case Assignment(leftHandSide: Expression, rightHandSide: Expression) => Assignment(linkExpression(leftHandSide), linkExpression(rightHandSide))
+				case Assignment(leftHandSide: Expression, rightHandSide: Expression) => Assignment(linkExpression(leftHandSide).asInstanceOf[LeftHandSide], linkExpression(rightHandSide))
 				case ClassCreation(constructor: RefType, parameters: List[Expression]) => ClassCreation(link(constructor), parameters.map(linkExpression(_)))
 				case FieldAccess(accessed : Expression, field: String) => FieldAccess(linkExpression(accessed), field)
 				case ExprMethodInvocation(accessed: Expression, method : String, arguments: List[Expression]) => ExprMethodInvocation(linkExpression(accessed), method, arguments.map(linkExpression(_)))

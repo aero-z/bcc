@@ -84,7 +84,10 @@ object VarResolver{
           case CastExpression(cast, t) => CastExpression(cast, linkAssignment(t)(possibleDecl, currentDecl))
           case ArrayAccess(arr, ind) => ArrayAccess(linkAssignment(arr)(possibleDecl, currentDecl), linkAssignment(ind)(possibleDecl, currentDecl))
           case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkAssignment(size)(possibleDecl, currentDecl))
-          case Assignment(lhs, rhs) => Assignment(linkAssignment(lhs)(currentDecl ::: possibleDecl, currentDecl), linkAssignment(rhs)(possibleDecl, currentDecl))
+          case Assignment(lhs, rhs) => Assignment(
+            linkAssignment(lhs)(currentDecl ::: possibleDecl, currentDecl) match{ case x: LeftHandSide => x
+              case _ => throw NameLinkingException("Trying to assign to a type.")
+            }, linkAssignment(rhs)(possibleDecl, currentDecl))
           case FieldAccess(acc, field) => FieldAccess(linkAssignment(acc)(possibleDecl, currentDecl), field)
           case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
           case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkAssignment(acc)(possibleDecl, currentDecl), meth, args.map(linkAssignment(_)(possibleDecl, currentDecl)))
@@ -180,7 +183,9 @@ object VarResolver{
         case CastExpression(cast, t) => CastExpression(cast, linkExpression(t))
         case ArrayAccess(arr, ind) => ArrayAccess(linkExpression(arr), linkExpression(ind))
         case ArrayCreation(typeName, size) => ArrayCreation(typeName, linkExpression(size))
-        case Assignment(lhs, rhs) => Assignment(linkExpression(lhs)(env, ""), linkExpression(rhs))
+        case Assignment(lhs, rhs) => Assignment(linkExpression(lhs)(env, "") match{ case x: LeftHandSide => x
+              case _ => throw NameLinkingException("Trying to assign to a type.")
+            }, linkExpression(rhs))
         case FieldAccess(acc, field) => FieldAccess(linkExpression(acc), field)
         case ClassCreation(cons, args) => ClassCreation(cons, args.map(linkExpression(_)))
         case ExprMethodInvocation(acc, meth, args) => ExprMethodInvocation(linkExpression(acc), meth, args.map(linkExpression(_)))
