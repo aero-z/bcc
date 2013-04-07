@@ -19,7 +19,7 @@ case object NullLiteral extends Literal {
 
 case class BooleanLiteral(bool: Boolean) extends Literal {
   def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = BooleanType
-  def generateCode(implicit current: List[Int], params: List[String], pathList: List[List[Int]], cus: List[CompilationUnit]) = X86Comment("boolean:") :: X86Mov(X86eax, X86Boolean(bool)) :: Nil
+  def generateCode(implicit current: List[Int], params: List[String], pathList: List[List[Int]], cus: List[CompilationUnit]) = X86Comment("boolean:") :: X86Mov(X86eax, X86Number(bool match {case true => 1 case false => 0})) :: Nil
 }
 
 case class CharacterLiteral(char: CharacterToken) extends Literal {

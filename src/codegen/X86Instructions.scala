@@ -46,12 +46,6 @@ trait X86Immediate extends X86Src
 case class X86Number(i: Int) extends X86Immediate {
   override def toString = "dword "+i
 }
-case class X86Boolean(b: Boolean) extends X86Immediate {
-  override def toString = b match { //TODO should be an int over 32 bits...
-    case true => ""+1
-    case false => ""+0
-  }
-}
 // e.g. mov ax, [102h]:
 case class X86DirectMemoryAccess(imm: Int) extends X86Dest {
   override def toString = "["+imm+"]"

@@ -392,7 +392,9 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
     ExprMethodInvocation(This(thisType), method, arguments).getType
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ExprMethodInvocation(This(thisType), method, arguments).generateCode
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    ExprMethodInvocation(This(thisType), method, arguments).generateCode
+  }
 
 }
 
@@ -410,6 +412,35 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    val numParams = 5 //give as parameter in EAX
+    val before =
+	    X86Mov(X86eax, X86Number(numParams)) ::
+	    X86Imul(X86eax, X86Number(4)) :: Nil
+	    //X86Call(__epiologeu)
+    val prologue = 
+	    X86Label("__prologue") ::
+	    //X86Push(X86esp) :: //save stack -> is this any usefull?
+	    X86Push(X86ebp) :: //frame pointer
+	    X86Push(X86ebx) ::
+	    X86Push(X86esi) ::
+	    X86Push(X86edi) ::
+	    X86Sub(X86esp, X86eax) :: //eax contains size of parameters
+	    X86Mov(X86ebp, X86esp) :: Nil //frame pointer = stack pointer
+    //the call happends after here
+    
+    val after =
+    	X86Mov(X86eax, X86Number(numParams)) ::
+    	X86Imul(X86eax, X86Number(4)) :: Nil
+    val epilogue = 
+	    X86Label("__epilogue") ::
+	    X86Add(X86esp, X86eax) ::
+	    X86Pop(X86edi) ::
+	    X86Pop(X86esi) ::
+	    X86Pop(X86ebx) ::
+	    X86Pop(X86ebp) :: Nil//frame pointer
+	    //X86Pop(X86esp) :: Nil//restore stack -> does this make any sense?
+    
+    
     val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size))), X86Mov(X86ebp, X86esp))
     val accessComp = accessed match {
       case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
@@ -450,7 +481,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = exp.generateCode :+ X86Mov(X86eax, X86Boolean(true)) //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = exp.generateCode :+ X86Mov(X86eax, X86Number(1)) //TODO: implementation
 
 
 }

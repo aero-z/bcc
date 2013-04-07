@@ -9,7 +9,7 @@ import java.io.File
 object CodeGenerator {
 
   def iffalse(expr: Expression, label: X86Label)(implicit current: List[Int], params: List[String], pathList: List[List[Int]], cus: List[CompilationUnit]): List[X86Instruction] = {
-    expr.generateCode ::: (X86Mov(X86ebx, X86Boolean(false)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
+    expr.generateCode ::: (X86Mov(X86ebx, X86Number(0)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
   }
   
   def makeLabel(p: Option[Name], c: ClassDefinition, s: String): String = {
