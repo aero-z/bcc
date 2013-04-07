@@ -6,6 +6,8 @@ import scanner.IntegerToken
 import scala.Enumeration
 import main.Logger
 import java.io.File
+import codegen._
+import nameResolution._
 
 private object Weed {
   
@@ -90,8 +92,8 @@ case class InterfaceDefinition(interfaceName: String, parents: List[RefType],
   }
   override lazy val weedResult = super.weedResult_ ++
       methods.foldLeft(WeedOk(): WeedResult)((wr, m) => wr ++ (m match {
-             case MethodDeclaration(_,_,_,_,Some(x)) => WeedFail("an interface method cannot have a body")
-             case MethodDeclaration(_,_,modifiers,_,_) => WeedResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
+             case MethodDeclaration(_,_,_,_,Some(x), _) => WeedFail("an interface method cannot have a body")
+             case MethodDeclaration(_,_,modifiers,_,_,_) => WeedResult(!modifiers.contains(Modifier.staticModifier) && !modifiers.contains(Modifier.finalModifier) && !modifiers.contains(Modifier.nativeModifier), "an interface method cannot be static, final, or native")
              case _ => WeedOk()
       }))
 }
@@ -119,7 +121,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
   
   override lazy val weedResult = super.weedResult_ ++
       methods.foldLeft(WeedOk(): WeedResult)((wr, m) => wr ++ (m match {
-             case MethodDeclaration(_,_,modifiers,_,impl) =>
+             case MethodDeclaration(_,_,modifiers,_,impl,_) =>
                WeedResult(impl.isDefined == (!modifiers.contains(Modifier.abstractModifier) && !modifiers.contains(Modifier.nativeModifier)),
                    "method must have a body if and only if it is neither abstract nor native")
              case _ => WeedOk()
@@ -129,7 +131,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, override val modifiers: List[Modifier],
-  parameters: List[Parameter], implementation: Option[Block]) extends MemberDeclaration(modifiers) with VariableDeclaration with AstNode {
+  parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal]) extends MemberDeclaration(modifiers) with VariableDeclaration with AstNode {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Method declaration")
@@ -144,6 +146,10 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     Logger.debug("*" * 20)
     Logger.debug("")
     //TODO something about the implementation
+  }
+  def generateCode(rootName: String): List[X86Instruction] = {
+    //TODO: push parameters to the stack!
+    X86Label(rootName+methodName) :: implementation.getOrElse(EmptyStatement).generateCode
   }
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++
@@ -176,7 +182,7 @@ case class FieldDeclaration(fieldName: String, fieldType: Type, override val mod
                             WeedResult(!modifiers.contains(Modifier.finalModifier), "no field can be final")
 }
 
-case class ConstructorDeclaration(name: String, modifiers: List[Modifier], parameters: List[Parameter], implementation: Block) extends AstNode with VariableDeclaration {
+case class ConstructorDeclaration(name: String, modifiers: List[Modifier], parameters: List[Parameter], implementation: Block, localPath: List[PathLocal]) extends AstNode with VariableDeclaration {
   def display: Unit = {
     Logger.debug("*" * 20)
     Logger.debug("Constructor declaration")
