@@ -6,7 +6,6 @@ import typecheck.TypeCheckingError
 import typecheck.TypeCheckingError
 import typecheck.TypeChecker
 import nameResolution.PathField
-import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError
 import typecheck.TypeCheckingError
 import nameResolution._
 import main.Joosc
@@ -20,6 +19,7 @@ trait Expression extends AstNode {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction]
+
   // TEMP!
   def generateCode2 = List(X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5)))
 
