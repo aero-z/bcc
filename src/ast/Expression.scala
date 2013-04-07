@@ -19,7 +19,7 @@ trait Expression extends AstNode {
    */
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
-  def generateCode: List[X86Instruction]
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction]
   // TEMP!
   def generateCode2 = List(X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5)))
 
@@ -28,7 +28,7 @@ trait Expression extends AstNode {
 trait LeftHandSide extends Expression{
   def generateAccess: List[X86Instruction]//Save the register we need in the eax register
   def dest(reg: X86Reg) : X86Dest//The destination of the value in function of a register
-  def generateCode: List[X86Instruction] = generateAccess :+ X86Mov(X86eax, X86RegMemoryAccess(X86eax))
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = generateAccess :+ X86Mov(X86eax, X86RegMemoryAccess(X86eax))
   
 }
 
@@ -128,7 +128,7 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
     }
   }
 
-  def generateCode: List[X86Instruction] =  operation match {
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] =  operation match {
     case InverseOperator => term.generateCode ::: List(X86Cmp( X86eax, X86Number(1)), X86Bcc(X86eax, X86eax))
     case MinusOperator => term.generateCode :+ X86Neg(X86eax)
   }
@@ -168,7 +168,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
       case (x, op, y) => throw new TypeCheckingError(s"no operation $op found for arguments $x and $y")
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
 
 }
 
@@ -183,7 +183,7 @@ case class CastExpression(typeCast: Type, target: Expression) extends Expression
       case (_: IntegerTrait, _: IntegerTrait) => typeCast
       case _ => throw new TypeCheckingError("impossile cast: (" + typeCast + ") " + target.getType)
     }
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
 }
 
 /**
@@ -196,8 +196,8 @@ case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSid
       case (at, it) => throw new TypeCheckingError(s"type error in array access $at[$it]")
     }
 
-  def generateAccess: List[X86Instruction] = ??? //TODO: implementation
-  def dest(reg: X86Reg) = ???
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = ???
 }
 
 /**
@@ -210,7 +210,7 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
       case _ => throw new TypeCheckingError(s"type error in array size ($size)")
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
 
 }
 
@@ -228,7 +228,7 @@ case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) ext
     else leftHandSide.getType
   }
 
-  def generateCode: List[X86Instruction] = leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(X86eax, leftHandSide.dest(X86ebx)))
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(X86eax, leftHandSide.dest(X86ebx)))
 
 }
 
@@ -245,8 +245,8 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($x)")
     }
 
-  def generateAccess: List[X86Instruction] = ??? //TODO: implementation
-  def dest(reg: X86Reg) : X86Dest = ???
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) : X86Dest = ???
 }
 
 /**
@@ -271,7 +271,7 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
     constructor
   }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
 
 }
 
@@ -282,7 +282,7 @@ case class ThisMethodInvocation(thisType: RefType, method: String, arguments: Li
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type =
     ExprMethodInvocation(This(thisType), method, arguments).getType
 
-  def generateCode: List[X86Instruction] = ExprMethodInvocation(This(thisType), method, arguments).generateCode
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ExprMethodInvocation(This(thisType), method, arguments).generateCode
 
 }
 
@@ -298,7 +298,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
       case x => throw new TypeCheckingError(s"trying access member of non-reference type ($accessed of type $x)")
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation When we call a static function static, ebp should be null
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation When we call a static function static, ebp should be null
 
 }
 
@@ -319,7 +319,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
       case _ => throw new TypeCheckingError("cannot instanceof with: " + exp.getType + " instanceof " + typeChecked)
     }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
 
 }
 
@@ -332,7 +332,7 @@ case class This(thisType: RefType) extends Expression {
     thisType
   }
 
-  def generateCode: List[X86Instruction] = ??? //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
 
 
 }
@@ -343,8 +343,8 @@ case class This(thisType: RefType) extends Expression {
 case class VariableAccess(str: String) extends LeftHandSide {
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = sys.error(s"getType is not supposed to be called on type VariableAccess ($str)")
 
-  def generateAccess: List[X86Instruction] = sys.error("Trying to generate the code for an unlinked variable")
-  def dest(reg: X86Reg) = sys.error("Trying to generate the code for an unlinked variable.")
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = sys.error("Trying to generate the code for an unlinked variable")
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = sys.error("Trying to generate the code for an unlinked variable.")
 }
 
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
@@ -358,8 +358,8 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   val children = Nil
 
-  def generateAccess: List[X86Instruction] = ??? //TODO: implementation
-  def dest(reg: X86Reg) = ???
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = ???
 }
 
 case class ParenthesizedExpression(exp: Expression) extends Expression {
@@ -368,5 +368,5 @@ case class ParenthesizedExpression(exp: Expression) extends Expression {
     case _ => exp.getType
   }
   val children = List(exp)
-  def generateCode: List[X86Instruction] = exp.generateCode
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = exp.generateCode
 }
