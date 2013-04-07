@@ -227,7 +227,12 @@ object TypeLinking {
 		  val packageNames = possibleImports.map(_._1).filter(_!=None).map(_.get).map{case Name(list) => list}.filter(_!=Nil).distinct
 		  packageNames.exists(x => x.startsWith(s))
 		}
-		val onDemandImports = (Name("java"::"lang"::Nil) :: packages).distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => if (!isPrefix(p.path)) throw new EnvironmentException("empty import"+p) else Nil case x => x})
+		val stuff =
+		  if (Joosc.addStdLib)
+		    Name("java"::"lang"::Nil) :: packages
+		  else
+		    packages
+		val onDemandImports = stuff.distinct.flatMap(p => possibleImports.filter(_._1 == Some(p)) match { case Nil  => if (!isPrefix(p.path)) throw new EnvironmentException("empty import"+p) else Nil case x => x})
 	
 		val directAccess = possibleList.toMap //all direct accesses: fullName -> tuple
 

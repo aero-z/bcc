@@ -91,43 +91,43 @@ case class X86Neg   (dest: X86Dest)              extends X86Instruction {
   override def toString = s"neg $dest"
 }
 case class X86Mov   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "mov "+dest+", "+src
+  override def toString = "mov $dest, $src"
 }
 case class X86Add   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "add "+dest+", "+src
+  override def toString = "add $dest, $src"
 }
 case class X86Sub   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "sub "+dest+", "+src
+  override def toString = "sub $dest, $src"
 }
 case class X86Mul   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "mul "+dest+", "+src
+  override def toString = "mul $dest, $src"
 }
 case class X86Imul  (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "imul "+dest+", "+src
+  override def toString = "imul $dest, $src"
 }
 case class X86Div   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "div "+dest+", "+src
+  override def toString = "div $dest, $src"
 }
 case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = "idiv "+dest+", "+src
+  override def toString = "idiv $dest, $src"
 }
 case class X86Shl   (dest: X86Dest, src: X86Src) extends X86Instruction {
   override def toString = s"shl $dest, $src"
 }
 case class X86Jmp   (lbl: X86Label)              extends X86Instruction {
-  override def toString = "jmp "+lbl
+  override def toString = "jmp $lbl"
 }
-case class X86Bxor   (a: X86Dest    , b: X86Src)   extends X86Instruction {
-  override def toString = "xor "+a+", "+b
+case class X86Bxor   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
+  override def toString = "xor $dest, $src"
 }
-case class X86Band   (a: X86Dest    , b: X86Src)   extends X86Instruction {
-  override def toString = "and "+a+", "+b
+case class X86Band   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
+  override def toString = "and $dest, $src"
 }
-case class X86Bor   (a: X86Dest    , b: X86Src)   extends X86Instruction {
-  override def toString = "or "+a+", "+b
+case class X86Bor   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
+  override def toString = "or $dest, $src"
 }
-case class X86Cmp   (a: X86Dest    , b: X86Src)   extends X86Instruction {
-  override def toString = "cmp "+a+", "+b //will set some flags -> not eax but other stuff?
+case class X86Cmp   (dest: X86Dest    , src: X86Src)   extends X86Instruction {
+  override def toString = "cmp $dest, $src" //will set some flags -> not eax but other stuff?
 }
 case class X86Je    (lbl: X86Label)              extends X86Instruction {
   override def toString = "je "+lbl.name
@@ -154,13 +154,13 @@ case object X86Ret                               extends X86Instruction {
   override def toString = "ret"
 }
 case class X86Push  (reg: X86Reg)                extends X86Instruction {
-  override def toString = "push "+reg
+  override def toString = "push $reg"
 }
 case class X86Pop   (reg: X86Reg)                extends X86Instruction {
-  override def toString = "pop "+reg
+  override def toString = "pop $reg"
 }
 case class X86Int   (imm: X86Immediate)                extends X86Instruction {
-  override def toString = "int "+imm //system call -> can only be 2 bytes long
+  override def toString = "int $imm" //system call -> can only be 2 bytes long
 }
 
 
