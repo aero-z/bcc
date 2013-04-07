@@ -24,7 +24,8 @@ trait Expression extends AstNode {
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]] , cus:List[CompilationUnit]): List[X86Instruction]
 
   // TEMP!
-  def generateCode2 = List(X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5)))
+  def generateCode2 =     List(X86Comment("DUMMY"), X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5))) // TEMP
+
 }
 
 trait LeftHandSide extends Expression{
