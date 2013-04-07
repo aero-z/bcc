@@ -35,7 +35,7 @@ case class SelectorIndex(c: Class, m: Method, offset: Integer)
 
 object CodeGenerator {
 
-    def iffalse(expr:Expression, label:X86Label):List[X86Instruction] = {
+    def iffalse(expr:Expression, label:X86Label)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
       expr.generateCode ::: (X86Mov(X86ebx, X86Boolean(false)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
     }
   /**

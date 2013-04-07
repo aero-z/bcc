@@ -8,7 +8,7 @@ import typecheck.TypeChecker
 import nameResolution.PathField
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError
 import typecheck.TypeCheckingError
-import nameResolution.PathToDeclaration
+import nameResolution._
 import main.Joosc
 import codegen._
 
@@ -26,8 +26,8 @@ trait Expression extends AstNode {
 }
 
 trait LeftHandSide extends Expression{
-  def generateAccess: List[X86Instruction]//Save the register we need in the eax register
-  def dest(reg: X86Reg) : X86Dest//The destination of the value in function of a register
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction]//Save the register we need in the eax register
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) : X86Dest//The destination of the value in function of a register
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = generateAccess :+ X86Mov(X86eax, X86RegMemoryAccess(X86eax))
   
 }
@@ -360,8 +360,16 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   val children = Nil
 
-  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = ??? //TODO: implementation
-  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = ???
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]]): List[X86Instruction] = variablePath match {
+    case PathField(refType, name) => ???
+    case PathPar(name) => Nil
+    case PathLocal(index) => Nil
+  }
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]]) = variablePath match {
+    case PathField(refType, name) => ???
+    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(params.indexOf(name) + 1))
+    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(- params.indexOf(index) - 1))
+  }
 }
 
 case class ParenthesizedExpression(exp: Expression) extends Expression {

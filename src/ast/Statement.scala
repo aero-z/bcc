@@ -1,7 +1,7 @@
 package ast
 
 import codegen._
-import ast.Literal
+
 import nameResolution._
 
 sealed abstract class Statement extends AstNode {
@@ -23,13 +23,14 @@ case object EmptyStatement extends Statement{
 
 case class ExpressionStatement(expression: Expression) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
-    //val impl = 0 :: current
+    implicit val impl = current
     expression.generateCode 
   }
 }
 
 case class ForStatement(init: Option[Statement], condition: Option[Expression], incrementation: Option[Expression], loop: Statement) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+    implicit val impl = current
     val repeatLabel = LabelGenerator.generate
     val endLabel = LabelGenerator.generate
     X86Comment("for statement") :: repeatLabel :: init.getOrElse(EmptyStatement).generateCode(0 :: current) ::: codegen.CodeGenerator.iffalse(condition.getOrElse(BooleanLiteral(true)), endLabel) ::: loop.generateCode(1 :: current) ::: X86Jmp(repeatLabel) :: endLabel :: Nil
@@ -38,6 +39,7 @@ case class ForStatement(init: Option[Statement], condition: Option[Expression], 
 
 case class IfStatement(condition: Expression, ifStatement: Statement, elseStatement: Option[Statement]) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
+    implicit val impl = current
     elseStatement match {
 	    case None =>
 	      val endLabel = LabelGenerator.generate
@@ -52,6 +54,7 @@ case class IfStatement(condition: Expression, ifStatement: Statement, elseStatem
 
 case class ReturnStatement(returnExpression: Option[Expression]) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction]  = {
+    implicit val impl = current
     returnExpression match {
 	    case None => X86Ret :: Nil //void return?
 	    case Some(expr) => expr.generateCode ::: (X86Ret :: Nil) //TODO: are we sure that eax contains the right stuff?
@@ -61,7 +64,7 @@ case class ReturnStatement(returnExpression: Option[Expression]) extends Stateme
 
 case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
-    val impl = 0 :: current
+    implicit val impl = current
     //to order of the pushes should be the same than expected.
     X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Push(X86eax) :: Nil
     //TODO: Is it needed to remember the name
@@ -70,7 +73,7 @@ case class LocalVariableDeclaration(typeName: Type, identifier: String, initiali
 
 case class WhileStatement(condition: Expression, loop: Statement) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]]):List[X86Instruction] = {
-    val impl = 0 :: current
+    implicit val impl = current
     val repeatLabel = LabelGenerator.generate
     val endLabel = LabelGenerator.generate
     X86Comment("while statement") :: repeatLabel :: codegen.CodeGenerator.iffalse(condition, endLabel) ::: loop.generateCode(impl) ::: endLabel :: Nil
