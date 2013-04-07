@@ -12,11 +12,15 @@ object CodeGenerator {
     expr.generateCode ::: (X86Mov(X86ebx, X86Boolean(false)) :: X86Cmp(X86eax, X86ebx) :: X86Je(label) :: Nil) //TODO:eax contains answer?
   }
   
-  private def makeLabel(p: Option[Name], c: ClassDefinition, s: String) = {
+  def makeLabel(p: Option[Name], c: ClassDefinition, s: String): String = {
+    makeLabel(p, c.className, s)
+  }
+  
+  def makeLabel(p: Option[Name], c: String, s: String): String = {
     (p match {
       case Some(x) => x + "."
       case None => ""
-    }) + c.className + "." + s
+    }) + c + "." + s
   }
   
   def makeFieldLabel(p: Option[Name], c: ClassDefinition, f: FieldDeclaration) = {
