@@ -150,11 +150,10 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
   def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
     //val indexedVariablePath = localPath.zipWithIndex //indexes start at 0!
     //TODO: push parameters to the stack!
-    /*val current:List[Int] = Nil
+    val current:List[Int] = Nil
     implicit val params:List[String] = parameters.map(_.id)
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
-    implementation.getOrElse(EmptyStatement).generateCode(current)*/
-    List(X86Comment("DUMMY"), X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5)), X86Ret) // TEMP
+    implementation.getOrElse(EmptyStatement).generateCode(current)
     //TODO: pop caller saved registers
   }
   override lazy val weedResult =

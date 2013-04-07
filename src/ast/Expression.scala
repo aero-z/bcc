@@ -27,11 +27,7 @@ trait Expression extends AstNode {
   
   protected def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]] , cus:List[CompilationUnit]): List[X86Instruction]
-
-  // TEMP!
-  def generateCode2 =     List(X86Comment("DUMMY"), X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5))) // TEMP
-
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction]
 }
 
 trait LeftHandSide extends Expression{
@@ -141,8 +137,6 @@ case class UnaryOperation(operation: Operator, term: Expression) extends Express
     case InverseOperator => term.generateCode ::: List(X86Cmp( X86eax, X86Number(1)), X86Sbb(X86eax, X86eax))
     case MinusOperator => term.generateCode :+ X86Neg(X86eax)
   }
-
-  
 }
 
 /**
@@ -179,7 +173,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
-    Nil/*(first.getT, operation, second.getT) match {
+    (first.getT, operation, second.getT) match {
       case (t, PlusOperator, Str) => Nil //TODO: String.concat
       case (Str, PlusOperator, t) => Nil //TODO: String concat
       case (_: CharTrait, op: CompareOperator, _: CharTrait) =>
@@ -196,7 +190,6 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
         }) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
       case (_: IntegerTrait, op: ArithmeticOperator, _: IntegerTrait) => 
         second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: 
-        //val operator =
         (op match {
           case PlusOperator => X86Add(X86eax, X86ebx) :: Nil
           case MinusOperator => X86Sub(X86eax, X86ebx) :: Nil
@@ -208,7 +201,6 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
         val endLabel = LabelGenerator.generate
         second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
         (op match {
-          //Is the truelabel needed?
           case SmallerOperator => X86Jge(endLabel) 
           case GreaterOperator => X86Jle(endLabel)
           case EqualOperator => X86Jne(endLabel)
@@ -237,8 +229,14 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
             val trueLabel = LabelGenerator.generate
             X86Cmp(X86eax, X86Number(1)) :: X86Je(trueLabel) :: X86Cmp(X86eax, X86Number(1)) :: X86Je(trueLabel) :: X86Mov(X86eax, X86Number(0)) :: X86Jmp(endLabel) :: trueLabel :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
         })
-      case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(x, y)) =>
-        //TODO
+      case (_, EqualOperator | NotEqualOperator, _) =>
+        val endLabel = LabelGenerator.generate
+        second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
+        (operation match {
+          case EqualOperator => X86Jne(endLabel) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
+          case NotEqualOperator => X86Je(endLabel) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
+        })
+      /* -> TODO we can treat all this the same right?
       case (x: RefType, EqualOperator | NotEqualOperator, y: RefType) if (TypeChecker.checkTypeMatch(y, x)) =>
         
       case (_: RefType, EqualOperator | NotEqualOperator, NullType) =>
@@ -252,7 +250,9 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
       case (NullType, EqualOperator | NotEqualOperator, NullType) =>
 
       case (x, op, y) => throw new TypeCheckingError(s"no operation $op found for arguments $x and $y")
-    }*/
+      * 
+      */
+    }
   }
 }
 
@@ -285,11 +285,11 @@ case class ArrayAccess(array: Expression, index: Expression) extends LeftHandSid
   def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
     val arrComp = array.generateCode ::: (nullCheck(X86eax) :+ X86Push(X86eax))
     val indexComp = index.generateCode 
-    val checkIndex = List(X86Cmp(X86eax, X86Number(0)), X86Jl(X86Exception), X86Pop(X86edx), X86Cmp(X86eax, X86RegOffsetMemoryAccess(X86edx, X86Number(4))), X86Jge(X86Exception))
-    val generateAddr = List(X86Shl(X86eax, X86Number(2)), X86Add(X86eax, X86edx))
+    val checkIndex = List(X86Cmp(X86eax, X86Number(0)), X86Jl(X86Exception), X86Pop(X86edx), X86Cmp(X86eax, X86RegOffsetMemoryAccess(X86edx, 4)), X86Jge(X86Exception))
+    val generateAddr = List(X86Shl(X86eax, 2), X86Add(X86eax, X86edx))
     arrComp ::: indexComp ::: checkIndex ::: generateAddr
   }
-  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = X86RegOffsetMemoryAccess(reg, X86Number(4))
+  def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = X86RegOffsetMemoryAccess(reg, 4)
 }
 
 /**
@@ -303,10 +303,10 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = notImpl //TODO: implementation
-
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    size.generateCode ::: X86Add(X86eax, X86Number(2)) /*3 extra fields*/ :: X86Imul(X86eax, X86Number(4)) /*times bytes*/ :: X86Call(X86Label("__malloc")) :: Nil //eax will contain the error
+  }
 }
-
 
 /**
  * leftHandSide = rightHandSide
@@ -321,7 +321,8 @@ case class Assignment(leftHandSide: LeftHandSide, rightHandSide: Expression) ext
     else leftHandSide.getType
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(X86eax, leftHandSide.dest(X86ebx)))
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] =
+    leftHandSide.generateAccess ::: List(X86Push(X86eax)) :::rightHandSide.generateCode ::: List(X86Pop(X86ebx), X86Mov(X86eax, leftHandSide.dest(X86ebx)))
 
 }
 
@@ -400,7 +401,8 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
       case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
       case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
     }
-    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
+
+    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
     val call = getT.asInstanceOf[RefTypeLinked].getTypeDef match {
       case x: ClassDefinition => notImpl
       case x: InterfaceDefinition => notImpl        
@@ -474,8 +476,8 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = variablePath match {
     case PathField(refType, name) => FieldAccess(This(refType),name).dest(reg)
-    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(params.indexOf(name) + 1)))
-    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(- params.indexOf(index) - 2)))
+    case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, 4*(params.indexOf(name) + 1))
+    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, 4*(- params.indexOf(index) - 2))
   }
 }
 

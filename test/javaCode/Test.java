@@ -6,7 +6,7 @@ public class Test {
 	}
 
 	public static int test() {
-		Test.x = 10;
-		return 0;
+		//Test.x = 10;
+		return 17;
 	}
 }

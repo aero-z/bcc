@@ -27,6 +27,10 @@ object CodeGenerator {
     makeLabel(p, c, m.methodName + "$" +
       m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
   }
+  
+  def getMethods(pkg: Option[Name], cd: ClassDefinition): List[MethodDeclaration] = {
+    ???
+  }
 
   /**
    * generate files in the output/ directory
@@ -81,6 +85,8 @@ object CodeGenerator {
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
+        "extern __exception\n" +
+        "extern __debexit\n" +
         methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
                .map(t => s"extern ${makeMethodLabel(t._1, t._2, t._3)}")
                .mkString("\n") +
@@ -112,29 +118,32 @@ object CodeGenerator {
         "global " + makeLabel(cu.packageName, cd, ".static_init") + "\n" +
         makeLabel(cu.packageName, cd, ".static_init") + ":\n" +
         staticFields.map(f =>
-          "  ; " + f.fieldName + "\n  " +
+          "  ; " + f.fieldName + "\n" +
           (f.initializer match {
-            case Some(expr) => expr.generateCode2.mkString("\n  ") +
+            case Some(expr) => expr.generateCode(List(0), Nil, Nil, cus).mkString("\n") +
                                s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
             case None => ""
           })).mkString("\n") +
-        "\nret\n\n" +	
+        "\n  ret\n\n" +	
         "global " + makeLabel(cu.packageName, cd, ".alloc") + "\n" +
         makeLabel(cu.packageName, cd, ".alloc") + ":\n" +
-        ";mov eax, x\n" +
-        "call __malloc\n" +
-        "mov [eax], dword class ; set pointer to class\n" +
-        "ret\n\n" +
+        "  ;mov eax, x\n" +
+        "  call __malloc\n" +
+        "  mov [eax], dword class ; set pointer to class\n" +
+        "  ret\n\n" +
         cd.methods.map(m => {
           val lbl = makeMethodLabel(cu.packageName, cd, m)
+          val mainFunc = (isFirst && m.methodName == "test" && m.parameters == Nil)
           "global " + lbl + "\n" +
           lbl + ":\n" +
           (
-            if (isFirst && m.methodName == "test" && m.parameters == Nil)
-              "global _start\n_start:\n"
-            else
-              ""
-          ) + "  " + m.generateCode.mkString("\n  ")
+            if (mainFunc) "global _start\n_start:\n"
+            else ""
+          ) +
+          m.generateCode.map(i => i match {
+            case X86Ret => X86Jmp(X86Label("__debexit"))
+            case x => x
+          }).mkString("\n")
         }).mkString("\n\n")
       ///////////////// end of text segment //////////
 
