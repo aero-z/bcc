@@ -21,7 +21,7 @@ trait Expression extends AstNode {
   
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction]
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]] , cus:List[CompilationUnit]): List[X86Instruction]
 
   // TEMP!
   def generateCode2 = List(X86Add(X86eax, X86ebx), X86Mov(X86eax, X86Number(5)))
@@ -391,7 +391,15 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
     }
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation When we call a static function static, ebp should be null
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size))), X86Mov(X86ebp, X86esp))
+    val accessComp = accessed.generateCode ::: List( X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
+    val argumentsComp = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(1 + ind))), X86eax)}
+    val call = ??? //TODO find the definition
+    ???
+
+  }
+ //TODO: implementation When we call a static function static, ebp should be null
 
 }
 
@@ -415,6 +423,7 @@ case class InstanceOfCall(exp: Expression, typeChecked: Type) extends Expression
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = ??? //TODO: implementation
+
 
 }
 
@@ -451,15 +460,16 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   }
   val children = Nil
 
-  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = variablePath match {
-    case PathField(refType, name) => ???
+
+  def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus: List[CompilationUnit]): List[X86Instruction] = variablePath match {
+    case PathField(refType, name) => FieldAccess(This(refType), name).generateAccess
     case PathPar(name) => Nil
     case PathLocal(index) => Nil
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = variablePath match {
-    case PathField(refType, name) => ???
+    case PathField(refType, name) => FieldAccess(This(refType),name).dest(reg)
     case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(params.indexOf(name) + 1)))
-    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(- params.indexOf(index) - 1)))
+    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, X86Number(4*(- params.indexOf(index) - 2)))
   }
 }
 
