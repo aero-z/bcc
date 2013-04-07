@@ -403,9 +403,13 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
     }
 
     val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
-    val call = getT.asInstanceOf[RefTypeLinked].getTypeDef match {
-      case x: ClassDefinition => notImpl
-      case x: InterfaceDefinition => notImpl        
+    val call =  accessed match{
+      case _: RefTypeLinked => notImpl
+      case _ => accessed.getT.asInstanceOf[RefTypeLinked].getTypeDef match {
+        case x: ClassDefinition => val  index = CodeGenerator.getMethods(getT.asInstanceOf[RefTypeLinked].pckName, x).indexWhere(meth => meth.methodName == method && meth.parameters.map(_.paramType) == arguments.map(_.getT))
+          List(X86Mov(X86eax, X86RegMemoryAccess(X86ebp)), X86Call(X86RegOffsetMemoryAccess(X86eax, 4 * (index + 1))))
+        case x: InterfaceDefinition => notImpl
+      }
     }
     val cleanUp  =  List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
     allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
