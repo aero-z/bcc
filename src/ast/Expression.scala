@@ -412,51 +412,26 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
-    val numParams = 5 //give as parameter in EAX
-    val before =
-	    X86Mov(X86eax, X86Number(numParams)) ::
-	    X86Imul(X86eax, X86Number(4)) :: Nil
-	    //X86Call(__epiologeu)
-    val prologue = 
-	    X86Label("__prologue") ::
-	    //X86Push(X86esp) :: //save stack -> is this any usefull?
-	    X86Push(X86ebp) :: //frame pointer
-	    X86Push(X86ebx) ::
-	    X86Push(X86esi) ::
-	    X86Push(X86edi) ::
-	    X86Sub(X86esp, X86eax) :: //eax contains size of parameters
-	    X86Mov(X86ebp, X86esp) :: Nil //frame pointer = stack pointer
-    //the call happends after here
-    
-    val after =
-    	X86Mov(X86eax, X86Number(numParams)) ::
-    	X86Imul(X86eax, X86Number(4)) :: Nil
-    val epilogue = 
-	    X86Label("__epilogue") ::
-	    X86Add(X86esp, X86eax) ::
-	    X86Pop(X86edi) ::
-	    X86Pop(X86esi) ::
-	    X86Pop(X86ebx) ::
-	    X86Pop(X86ebp) :: Nil//frame pointer
-	    //X86Pop(X86esp) :: Nil//restore stack -> does this make any sense?
-    
-    
-    val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size))), X86Mov(X86ebp, X86esp))
     val accessComp = accessed match {
-      case _: Type => List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
+      case _: Type => Nil // List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
       case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
     }
 
     val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
-    val call = getT.asInstanceOf[RefTypeLinked].getTypeDef match {
-      case x: ClassDefinition => notImpl
-      case x: InterfaceDefinition => notImpl        
+    val call = accessed match {
+      case r: RefTypeLinked =>
+        val classDef = r.getTypeDef.asInstanceOf[ClassDefinition] // if it is a static method we know we are in a class
+        X86Call(X86Label(CodeGenerator.makeMethodLabel(r.pkgName, classDef, classDef.methods.find(
+            md => (md.methodName == method) && (md.parameters.map(_.paramType) == arguments.map(_.getT))
+        ).get))) :: Nil
+      case _ => 
+      accessed.getT.asInstanceOf[RefTypeLinked].getTypeDef match {
+        case _: ClassDefinition => notImpl
+        case _: InterfaceDefinition => notImpl
+      }
     }
-    val cleanUp  =  List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
-    allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
+    accessComp ::: argumentsComp ::: call
   }
- //TODO: implementation When we call a static function static, ebp should be null
-
 }
 
 /**

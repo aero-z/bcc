@@ -5,6 +5,9 @@ import java.io.BufferedWriter
 import java.io.FileOutputStream
 import java.io.FileWriter
 import java.io.File
+import main.CompilerError
+
+class CodeGenError(str: String) extends CompilerError(str, "code generation")
 
 object CodeGenerator {
 
@@ -67,7 +70,7 @@ object CodeGenerator {
    */
   def makeAssembly(cus: List[CompilationUnit]): Unit = {
     // DUMMY CODE
-	/*
+    /*
 	val writer = new BufferedWriter(new FileWriter(new File("output/simple.s")))
 	writer.write("""
 	
@@ -82,8 +85,23 @@ object CodeGenerator {
 	""")
 	writer.close
 	*/
+
+    val firstCu = cus.head
+    val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test$")
+    val writer = new BufferedWriter(new FileWriter(new File("output/$main.s")))
+    writer.write(
+s"""
+extern $mainFuncLabel
+extern __debexit
+        
+global _start:
+_start:
+  call $mainFuncLabel
+  jmp __debexit
+""")
+	writer.close
     
-    def generate(cu: CompilationUnit, cd: ClassDefinition, isFirst: Boolean)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
+    def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
             
@@ -138,17 +156,9 @@ object CodeGenerator {
         "  ret\n\n" +
         cd.methods.map(m => {
           val lbl = makeMethodLabel(cu.packageName, cd, m)
-          val mainFunc = (isFirst && m.methodName == "test" && m.parameters == Nil)
           "global " + lbl + "\n" +
           lbl + ":\n" +
-          (
-            if (mainFunc) "global _start\n_start:\n"
-            else ""
-          ) +
-          m.generateCode.map(i => i match {
-            case X86Ret => X86Jmp(X86Label("__debexit"))
-            case x => x
-          }).mkString("\n")
+          m.generateCode.mkString("\n")
         }).mkString("\n\n")
       ///////////////// end of text segment //////////
 
@@ -161,7 +171,7 @@ object CodeGenerator {
     .collect { case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
       val writer = new BufferedWriter(new FileWriter(new File("output/"+cu.typeName+".s")))
         //println("class: " + cu.typeName)
-      val code = generate(cu, d, isFirst = (cu == cus.head))(cus)
+      val code = generate(cu, d)(cus)
       writer.write(code)
       writer.close
     }
