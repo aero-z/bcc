@@ -135,20 +135,19 @@ private object Function {
     implicit val params:List[String] = parameters.map(_.id)
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
     val numParams = parameters.length
-    val endLabel = LabelGenerator.generate("end")
     implementation.toList.flatMap(impl => {
-      val code = impl.generateCode(current)
+      val endLabel = LabelGenerator.generate("end")
+      val code = impl.generateCode(current).map(_ match {
+        case X86Ret =>
+          X86Jmp(endLabel)
+        case x => x
+      })
       X86Push(X86ebp) ::
       X86Push(X86ebx) ::
       X86Sub(X86esp, X86Number(numParams * 4)) ::
       X86Mov(X86ebp, X86esp) ::
-      code/*.dropRight(1)*/.map(_ match {
-        case X86Ret =>
-          X86Jmp(endLabel)
-        case x => x
-      }) :::
-      //(if (code.count(_ == X86Ret) > 1) endLabel :: Nil else Nil) :::
-      endLabel ::
+      code :::
+      (if (code.exists(_.isInstanceOf[X86Jmp])) endLabel :: Nil else Nil) :::
       X86Add(X86esp, X86Number(numParams * 4)) ::
       X86Pop(X86ebx) ::
       X86Pop(X86ebp) ::

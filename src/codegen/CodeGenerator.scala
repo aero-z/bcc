@@ -129,15 +129,11 @@ java.io.PrintStream.nativeWrite$int:
   call NATIVEjava.io.OutputStream.nativeWrite
 """)
 	writer.close
-	
-    //val include = new BufferedWriter(new FileWriter(new File("output/asm.inc")))
-    
+	    
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
       
-      //include.write(cd.methods.map(m => "extern " + makeMethodLabel(cu.packageName, cd, m)).mkString("\n") + "\n")
-
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
@@ -239,13 +235,11 @@ java.io.PrintStream.nativeWrite$int:
     //leave the java lib files out for the moment! -> makes testing easier
     //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
     .collect { case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
-      val writer = new BufferedWriter(new FileWriter(new File("output/"+cu.typeName+".s")))
+      val writer = new BufferedWriter(new FileWriter(new File("output/"+makeLabel(cu.packageName, d, "s"))))
         //println("class: " + cu.typeName)
       val code = generate(cu, d)(cus)
       writer.write(code)
       writer.close
-    }
-    
-    //include.close
+    }    
   }
 }
