@@ -6,6 +6,7 @@ public class Test {
 	}
 
 	public static int test() {
+
 		int z =5;
 		for (int x =2 ; z<4; z=z+1 ) {
 			int t = 8;
