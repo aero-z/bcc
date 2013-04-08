@@ -5,6 +5,9 @@ import java.io.BufferedWriter
 import java.io.FileOutputStream
 import java.io.FileWriter
 import java.io.File
+import main.CompilerError
+
+class CodeGenError(str: String) extends CompilerError(str, "code generation")
 
 object CodeGenerator {
 
@@ -31,9 +34,49 @@ object CodeGenerator {
     makeLabel(p, c, m.methodName + "$" +
       m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
   }
+
+  def makeConstructorLabel(p: Option[Name], c: ClassDefinition, cons: ConstructorDeclaration) = {
+    makeLabel(p, c, "$constructor$" +
+      cons.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
+  }
   
-  def getMethods(pkg: Option[Name], cd: ClassDefinition): List[MethodDeclaration] = {
-    ???
+  def getMethods(pkg: Option[Name], cd: ClassDefinition, cus: List[CompilationUnit]): List[MethodDeclaration] = {
+    getMethods(pkg, cd, Nil, cus).map(_._3)
+  }
+  
+  def getFields(cd: ClassDefinition, cus: List[CompilationUnit]): List[FieldDeclaration] = {
+    cd.fields.filterNot(_.modifiers.contains(Modifier.staticModifier)) :::
+    (cd.parent match {
+      case None => Nil
+      case Some(p) =>
+        getFields(p.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[ClassDefinition], cus)
+    })   
+  }
+
+  private def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)], cus: List[CompilationUnit]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+
+    def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
+      m1.methodName == m2.methodName && m1.parameters == m2.parameters
+    }
+
+    def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+      ms match {
+        case Nil => ts
+        case m :: mss =>
+          mergeMethods(mss, ts.find(t => methodsMatch(m, t._3)) match {
+            case None => (pkg, cd, m) :: ts
+            case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
+          })
+      }
+    }
+
+    val replaced = mergeMethods(cd.methods.filterNot(_.modifiers.contains(Modifier.staticModifier)), parentMethods)
+    cd.parent match {
+      case None => replaced
+      case Some(p) =>
+        val linked = p.asInstanceOf[RefTypeLinked]
+        getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced, cus)
+    }
   }
 
   /**
@@ -41,7 +84,7 @@ object CodeGenerator {
    */
   def makeAssembly(cus: List[CompilationUnit]): Unit = {
     // DUMMY CODE
-	/*
+    /*
 	val writer = new BufferedWriter(new FileWriter(new File("output/simple.s")))
 	writer.write("""
 	
@@ -56,35 +99,25 @@ object CodeGenerator {
 	""")
 	writer.close
 	*/
-    
-    def generate(cu: CompilationUnit, cd: ClassDefinition, isFirst: Boolean)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
-      
-      def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
 
-		def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
-		  m1.methodName == m2.methodName && m1.parameters == m2.parameters
-		}
-
-        def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
-          ms match {
-            case Nil => ts
-            case m :: mss =>
-              mergeMethods(mss, ts.find(t => methodsMatch(m, t._3)) match {
-                case None => (pkg, cd, m) :: ts
-                case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
-              })   
-          }
-        }
+    val firstCu = cus.head
+    val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test$")
+    val writer = new BufferedWriter(new FileWriter(new File("output/$main.s")))
+    writer.write(
+s"""
+extern $mainFuncLabel
+extern __debexit
         
-        val replaced = mergeMethods(cd.methods, parentMethods)
-        cd.parent match {
-          case None => replaced
-          case Some(p) => 
-            val linked = p.asInstanceOf[RefTypeLinked]
-            getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced)
-        }
-      }
-      val methods = getMethods(cu.packageName, cd, Nil)
+global _start:
+_start:
+  call $mainFuncLabel
+  jmp __debexit
+""")
+	writer.close
+    
+    def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
+      
+      val methods = getMethods(cu.packageName, cd, Nil, cus)
             
       ///////////////// header ///////////////////////
       val header =
@@ -117,40 +150,56 @@ object CodeGenerator {
       ///////////////// end of bss segment //////////
   
       ///////////////// text segment /////////////////
-      val text =
+      val fields = getFields(cd, cus)
+      val text = (
         "section .text\n\n" +
-        "global " + makeLabel(cu.packageName, cd, ".static_init") + "\n" +
-        makeLabel(cu.packageName, cd, ".static_init") + ":\n" +
+        // === static initialization ===
+        "global " + makeLabel(cu.packageName, cd, "$static_init") + "\n" +
+        makeLabel(cu.packageName, cd, "$static_init") + ":\n" +
         staticFields.map(f =>
           "  ; " + f.fieldName + "\n" +
           (f.initializer match {
             case Some(expr) => expr.generateCode(List(0), Nil, Nil, cus).mkString("\n") +
                                s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
-            case None => ""
+            case None => s"  mov [${makeFieldLabel(cu.packageName, cd, f)}], dword 0"
           })).mkString("\n") +
         "\n  ret\n\n" +	
-        "global " + makeLabel(cu.packageName, cd, ".alloc") + "\n" +
-        makeLabel(cu.packageName, cd, ".alloc") + ":\n" +
-        "  ;mov eax, x\n" +
+        // === instance allocation ===
+        "global " + makeLabel(cu.packageName, cd, "$alloc") + "\n" +
+        makeLabel(cu.packageName, cd, "$alloc") + ":\n" +
+        "  mov eax, " + ((fields.length + 1) * 4) + "\n" +
         "  call __malloc\n" +
-        "  mov [eax], dword class ; set pointer to class\n" +
+        "  mov ebx, eax\n" +
+        "  push ebx\n" +
+        "  mov [ebx], dword class ; set pointer to class\n" +
+        fields.zipWithIndex.map(z =>
+          "  ; initializing " + z._1.fieldName + "\n" +
+          (z._1.initializer match {
+            case Some(expr) => "  mov ebx, [esp]\n" +
+                               expr.generateCode(List(0), Nil, Nil, cus).mkString("\n") +
+                               s"\n  mov [ebx + ${(z._2 + 1)*4}], eax\n"
+            case None => s"  mov [eax + ${(z._2 + 1)*4}], dword 0\n"
+          })).mkString("\n") +
+        "  pop eax\n" +
         "  ret\n\n" +
-        cd.methods.map(m => {
-          val lbl = makeMethodLabel(cu.packageName, cd, m)
-          val mainFunc = (isFirst && m.methodName == "test" && m.parameters == Nil)
+        // === constructors ===
+        cd.constructors.map(c => {
+          val lbl = makeConstructorLabel(cu.packageName, cd, c)
           "global " + lbl + "\n" +
           lbl + ":\n" +
-          (
-            if (mainFunc) "global _start\n_start:\n"
-            else ""
-          ) +
-          m.generateCode.map(i => i match {
-            case X86Ret => X86Jmp(X86Label("__debexit"))
-            case x => x
-          }).mkString("\n")
+          c.generateCode.mkString("\n")
+        }).mkString("\n\n") +
+        "\n\n" +
+        // === methods ===
+        cd.methods.map(m => {
+          val lbl = makeMethodLabel(cu.packageName, cd, m)
+          "global " + lbl + "\n" +
+          lbl + ":\n" +
+          m.generateCode.mkString("\n")
         }).mkString("\n\n")
+      )
       ///////////////// end of text segment //////////
-
+       
       "; === " + cd.className + "===\n" + header + data + bss + text
     }
     
@@ -160,7 +209,7 @@ object CodeGenerator {
     .collect { case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
       val writer = new BufferedWriter(new FileWriter(new File("output/"+cu.typeName+".s")))
         //println("class: " + cu.typeName)
-      val code = generate(cu, d, isFirst = (cu == cus.head))(cus)
+      val code = generate(cu, d)(cus)
       writer.write(code)
       writer.close
     }

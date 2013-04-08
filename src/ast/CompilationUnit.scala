@@ -128,6 +128,33 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
       })) ++ WeedResult(!constructors.exists(_.name != className), "constructors must have same name as the class")
 }
 
+private object Function {
+  
+  def generateCode(parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal])(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
+    val current:List[Int] = Nil
+    implicit val params:List[String] = parameters.map(_.id)
+    implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
+    val numParams = parameters.length
+    val endLabel = LabelGenerator.generate
+    implementation.toList.flatMap(impl => {
+      val code = impl.generateCode(current)
+      X86Push(X86ebp) ::
+      X86Push(X86ebx) ::
+      X86Sub(X86esp, X86Number(numParams * 4)) ::
+      X86Mov(X86ebp, X86esp) ::
+      code.dropRight(1).map(_ match {
+        case X86Ret =>
+          X86Jmp(endLabel)
+        case x => x
+      }) :::
+      (if (code.count(_ == X86Ret) > 1) endLabel :: Nil else Nil) :::
+      X86Add(X86esp, X86Number(numParams * 4)) ::
+      X86Pop(X86ebx) ::
+      X86Pop(X86ebp) ::
+      X86Ret :: Nil
+    })
+  }
+}
 
 //What can be put in a class
 case class MethodDeclaration(methodName: String, returnType: Type, override val modifiers: List[Modifier],
@@ -147,15 +174,10 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     Logger.debug("")
     //TODO something about the implementation
   }
-  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
-    //val indexedVariablePath = localPath.zipWithIndex //indexes start at 0!
-    //TODO: push parameters to the stack!
-    val current:List[Int] = Nil
-    implicit val params:List[String] = parameters.map(_.id)
-    implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
-    implementation.getOrElse(EmptyStatement).generateCode(current)
-    //TODO: pop caller saved registers
-  }
+  
+  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] =
+    Function.generateCode(parameters, implementation, localPath)
+    
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++
       Weed.checkPublicProtectedModifier(modifiers) ++
@@ -200,6 +222,10 @@ case class ConstructorDeclaration(name: String, modifiers: List[Modifier], param
     Logger.debug("")
     //TODO something fancy about the implementation
   }
+  
+  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] =
+    Function.generateCode(parameters, Some(implementation), localPath)
+  
   override lazy val weedResult = Weed.checkDuplicateModifiers(modifiers)
 }
 
