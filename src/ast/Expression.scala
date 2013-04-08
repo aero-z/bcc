@@ -198,8 +198,8 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
           case PlusOperator => X86Add(X86eax, X86ebx) :: Nil
           case MinusOperator => X86Sub(X86eax, X86ebx) :: Nil
           case StarOperator => X86Imul(X86eax, X86ebx) :: Nil
-          case DivOperator => X86Idiv(X86eax, X86ebx) :: Nil
-          case ModOperator => X86Idiv(X86eax, X86ebx) :: X86Mov(X86eax, X86edx) :: Nil
+          case DivOperator => X86Div(X86ebx) :: Nil
+          case ModOperator => X86Div(X86ebx) :: X86Mov(X86eax, X86edx) :: Nil
         })
       case (left: IntegerTrait , op: CompareOperator, right: IntegerTrait) => //copy from character comparison
         val endLabel = LabelGenerator.generate()
@@ -388,8 +388,13 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
     val ref = constructor.asInstanceOf[RefTypeLinked]
     val classDef = ref.getTypeDef.asInstanceOf[ClassDefinition] // can only instantiate classes
     val consDef = classDef.constructors.find(_.parameters.map(_.paramType) == arguments.map(_.getT)).get
-    X86Call(X86Label(CodeGenerator.makeLabel(ref.pkgName, classDef, "$alloc"))) ::
-    X86Call(X86Label(CodeGenerator.makeConstructorLabel(ref.pkgName, classDef, consDef))) :: Nil
+    
+    val lbl1 = CodeGenerator.makeLabel(ref.pkgName, classDef, "$alloc")
+    val lbl2 = CodeGenerator.makeConstructorLabel(ref.pkgName, classDef, consDef)
+    CodeGenerator.addExtern(lbl1)
+    CodeGenerator.addExtern(lbl2)
+    X86Call(X86Label(lbl1)) ::
+    X86Call(X86Label(lbl2)) :: Nil
 
   }
 }
@@ -444,6 +449,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
         }
         val classDef = r.getTypeDef.asInstanceOf[ClassDefinition] // if it is a static method we know we are in a class
         val lbl = CodeGenerator.makeMethodLabel(r.pkgName, classDef, findMethod(classDef))
+        CodeGenerator.addExtern(lbl)
         X86Call(X86Label(lbl)) :: Nil
       case _ =>
         accessed.getT.asInstanceOf[RefTypeLinked].getTypeDef match {

@@ -79,9 +79,13 @@ object CodeGenerator {
     }
   }
   
-  private var includeList: List[String] = Nil
-  def addInclude(include: String) = {
-    includeList = include :: includeList
+  private var externList: List[String] = Nil
+  def addExtern(extern: String) = {
+    externList = extern :: externList
+  }
+  private var globalList: List[String] = Nil
+  private def addGlobal(global: String) = {
+    globalList = global :: globalList
   }
 
   /**
@@ -107,16 +111,22 @@ object CodeGenerator {
 
     val firstCu = cus.head
     val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test$")
-    val writer = new BufferedWriter(new FileWriter(new File("output/$main.s")))
+    val writer = new BufferedWriter(new FileWriter(new File("output/static.s")))
     writer.write(
 s"""
 extern $mainFuncLabel
 extern __debexit
-        
+extern NATIVEjava.io.OutputStream.nativeWrite
+
 global _start:
 _start:
   call $mainFuncLabel
   jmp __debexit
+""" +
+"""
+global java.io.PrintStream.nativeWrite$int:
+java.io.PrintStream.nativeWrite$int:
+  call NATIVEjava.io.OutputStream.nativeWrite
 """)
 	writer.close
 	
@@ -161,11 +171,16 @@ _start:
   
       ///////////////// text segment /////////////////
       val fields = getFields(cd, cus)
+      val lbl_static_init = makeLabel(cu.packageName, cd, "$static_init")
+      addGlobal(lbl_static_init)
+      val lbl_alloc = makeLabel(cu.packageName, cd, "$alloc")
+      addGlobal(lbl_alloc)
+
       val text = (
         "section .text\n\n" +
         // === static initialization ===
-        "global " + makeLabel(cu.packageName, cd, "$static_init") + "\n" +
-        makeLabel(cu.packageName, cd, "$static_init") + ":\n" +
+        "global " + lbl_static_init + "\n" +
+        lbl_static_init + ":\n" +
         staticFields.map(f =>
           "  ; " + f.fieldName + "\n" +
           (f.initializer match {
@@ -175,8 +190,8 @@ _start:
           })).mkString("\n") +
         "\n  ret\n\n" +	
         // === instance allocation ===
-        "global " + makeLabel(cu.packageName, cd, "$alloc") + "\n" +
-        makeLabel(cu.packageName, cd, "$alloc") + ":\n" +
+        "global " + lbl_alloc + "\n" +
+        lbl_alloc + ":\n" +
         "  mov eax, " + ((fields.length + 1) * 4) + "\n" +
         "  call __malloc\n" +
         "  mov ebx, eax\n" +
@@ -195,6 +210,7 @@ _start:
         // === constructors ===
         cd.constructors.map(c => {
           val lbl = makeConstructorLabel(cu.packageName, cd, c)
+          addGlobal(lbl)
           "global " + lbl + "\n" +
           lbl + ":\n" +
           c.generateCode.mkString("\n")
@@ -203,6 +219,7 @@ _start:
         // === methods ===
         cd.methods.map(m => {
           val lbl = makeMethodLabel(cu.packageName, cd, m)
+          addGlobal(lbl)
           "global " + lbl + "\n" +
           lbl + ":\n" +
           m.generateCode.mkString("\n")
@@ -210,9 +227,12 @@ _start:
       )
       ///////////////// end of text segment //////////
       
-      //val includes = includeList.map("extern")
+      val externs = externList.filterNot(globalList.contains(_)).map("extern " + _).mkString("\n") + "\n\n"
        
-      "; === " + cd.className + "===\n" + header + data + bss + text
+      externList = Nil
+      globalList = Nil
+      
+      "; === " + cd.className + "===\n" + header + externs + data + bss + text
     }
     
     cus
