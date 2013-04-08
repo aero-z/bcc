@@ -6,20 +6,17 @@ public class Test {
 	}
 
 	public static int test() {
-		int x = 1;
-		while (7 >6) {
-			int i = 9;
-		}
-		for (int nan = 1; nan == 8 ; ) {
-			int u = 9;
-		}
-		if (true) {
-			int y = 2;
-			if (true) {
-				int z = 3;
+		int z =5;
+		for (int x =2 ; z<4; z=z+1 ) {
+			int t = 8;
+			if (z < 6) {
+				int  s = 8;
+			}
+			while (x > 6) {
+				int i = 9;
 			}
 		}
-		int a = 7;
+		int x = 8;
 		return 1010;
 	}
 }

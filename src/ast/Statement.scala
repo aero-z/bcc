@@ -10,7 +10,7 @@ sealed abstract class Statement extends AstNode {
 
 case class Block (statements : List[Statement]) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
-    statements.zipWithIndex.flatMap(x => x._1.generateCode(x._2 :: 0 ::current))
+    statements.zipWithIndex.flatMap(x => x._1.generateCode(x._2 ::current))
   }
   //case Block(stmts) =>  stmts.foldLeft((acc, 0 :: curPath)){ case ((acc, pos), stmt) => (getLocalPath(stmt, acc, pos), pos.head + 1 :: pos.tail)}._1
 }
