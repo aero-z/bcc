@@ -32,8 +32,34 @@ object CodeGenerator {
       m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
   }
   
-  def getMethods(pkg: Option[Name], cd: ClassDefinition): List[MethodDeclaration] = {
-    ???
+  def getMethods(pkg: Option[Name], cd: ClassDefinition, cus: List[CompilationUnit]): List[MethodDeclaration] = {
+    getMethods(pkg, cd, Nil, cus).map(_._3)
+  }
+
+  private def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)], cus: List[CompilationUnit]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+
+    def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
+      m1.methodName == m2.methodName && m1.parameters == m2.parameters
+    }
+
+    def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
+      ms match {
+        case Nil => ts
+        case m :: mss =>
+          mergeMethods(mss, ts.find(t => methodsMatch(m, t._3)) match {
+            case None => (pkg, cd, m) :: ts
+            case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
+          })
+      }
+    }
+
+    val replaced = mergeMethods(cd.methods.filterNot(_.modifiers.contains(Modifier.staticModifier)), parentMethods)
+    cd.parent match {
+      case None => replaced
+      case Some(p) =>
+        val linked = p.asInstanceOf[RefTypeLinked]
+        getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced, cus)
+    }
   }
 
   /**
@@ -59,32 +85,7 @@ object CodeGenerator {
     
     def generate(cu: CompilationUnit, cd: ClassDefinition, isFirst: Boolean)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
-      def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
-
-		def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
-		  m1.methodName == m2.methodName && m1.parameters == m2.parameters
-		}
-
-        def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
-          ms match {
-            case Nil => ts
-            case m :: mss =>
-              mergeMethods(mss, ts.find(t => methodsMatch(m, t._3)) match {
-                case None => (pkg, cd, m) :: ts
-                case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
-              })   
-          }
-        }
-        
-        val replaced = mergeMethods(cd.methods, parentMethods)
-        cd.parent match {
-          case None => replaced
-          case Some(p) => 
-            val linked = p.asInstanceOf[RefTypeLinked]
-            getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced)
-        }
-      }
-      val methods = getMethods(cu.packageName, cd, Nil)
+      val methods = getMethods(cu.packageName, cd, Nil, cus)
             
       ///////////////// header ///////////////////////
       val header =
