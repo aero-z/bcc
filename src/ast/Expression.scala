@@ -355,7 +355,9 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest =  {
     accessed match {
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
-        X86LblMemoryAccess(X86Label(CodeGenerator.makeLabel(pkgName, className, field)))
+        val lbl = CodeGenerator.makeLabel(pkgName, className, field)
+        CodeGenerator.addExtern(lbl)        
+        X86LblMemoryAccess(X86Label(lbl))
       case a: ArrayType if (field == "length") => X86RegOffsetMemoryAccess(reg, 4)
       case x => X86eax
     }

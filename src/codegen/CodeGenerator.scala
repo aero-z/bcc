@@ -163,7 +163,10 @@ java.io.PrintStream.nativeWrite$int:
       val bss =
         "section .bss\n\n" +
         "; static fields\n" +
-        staticFields.map(f => s"${makeFieldLabel(cu.packageName, cd, f)}: resb 4").mkString("\n") + "\n\n"
+        staticFields.map(f => { val lbl = makeFieldLabel(cu.packageName, cd, f)
+                                s"global $lbl\n" +
+                                s"$lbl: resb 4" })
+                    .mkString("\n") + "\n\n"
       ///////////////// end of bss segment //////////
   
       ///////////////// text segment /////////////////
@@ -179,11 +182,14 @@ java.io.PrintStream.nativeWrite$int:
         lbl_static_init + ":\n" +
         staticFields.map(f =>
           "  ; " + f.fieldName + "\n" +
-          (f.initializer match {
-            case Some(expr) => expr.generateCode(List(0), Nil, Nil, cus).mkString("\n") +
-                               s"\n  mov [${makeFieldLabel(cu.packageName, cd, f)}], eax"
-            case None => s"  mov [${makeFieldLabel(cu.packageName, cd, f)}], dword 0"
-          })).mkString("\n") +
+          {
+            val lbl = makeFieldLabel(cu.packageName, cd, f)
+            f.initializer match {
+              case Some(expr) => expr.generateCode(List(0), Nil, Nil, cus).mkString("\n") +
+                                 s"\n  mov [$lbl], eax"
+              case None => s"  mov [$lbl], dword 0"
+            }
+          }).mkString("\n") +
         "\n  ret\n\n" +	
         // === instance allocation ===
         "global " + lbl_alloc + "\n" +
