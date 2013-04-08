@@ -124,7 +124,7 @@ _start:
   jmp __debexit
 """ +
 """
-global java.io.PrintStream.nativeWrite$int:
+global java.io.PrintStream.nativeWrite$int
 java.io.PrintStream.nativeWrite$int:
   call NATIVEjava.io.OutputStream.nativeWrite
 """)
