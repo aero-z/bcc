@@ -133,7 +133,8 @@ java.io.PrintStream.nativeWrite$int:
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
-      
+      val fields = getFields(cd, cus)
+
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
@@ -166,7 +167,6 @@ java.io.PrintStream.nativeWrite$int:
       ///////////////// end of bss segment //////////
   
       ///////////////// text segment /////////////////
-      val fields = getFields(cd, cus)
       val lbl_static_init = makeLabel(cu.packageName, cd, "$static_init")
       addGlobal(lbl_static_init)
       val lbl_alloc = makeLabel(cu.packageName, cd, "$alloc")
@@ -188,6 +188,7 @@ java.io.PrintStream.nativeWrite$int:
         // === instance allocation ===
         "global " + lbl_alloc + "\n" +
         lbl_alloc + ":\n" +
+        "  push ebx\n" +
         "  mov eax, " + ((fields.length + 1) * 4) + "\n" +
         "  call __malloc\n" +
         "  mov ebx, eax\n" +
@@ -202,6 +203,7 @@ java.io.PrintStream.nativeWrite$int:
             case None => s"  mov [eax + ${(z._2 + 1)*4}], dword 0\n"
           })).mkString("\n") +
         "  pop eax\n" +
+        "  pop ebx\n" +
         "  ret\n\n" +
         // === constructors ===
         cd.constructors.map(c => {
