@@ -308,7 +308,7 @@ case class ArrayCreation(typeName: Type, size: Expression) extends Expression {
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
-    size.generateCode ::: List(X86Push(X86eax), X86Add(X86eax, X86Number(2)) /*3 extra fields*/, X86Imul(X86eax, X86Number(4)) /*times bytes*/, X86Call(X86Label("__malloc"))) ::: nullCheck(X86eax)  //eax will contain the error need to fill the length field
+    size.generateCode ::: List(X86Push(X86eax), X86Add(X86eax, X86Number(2)) /*3 extra fields*/, X86Imul(X86eax, X86Number(4)) /*times bytes*/, X86Call(X86Label("__malloc"))) ::: nullCheck(X86eax) ::: List(X86Pop(X86ebx), X86Mov(X86RegOffsetMemoryAccess(X86eax, 4), X86ebx))  //We still need to link the Vtable which does not exist yet.
   }
 }
 
