@@ -380,8 +380,14 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
     constructor
   }
 
-  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = notImpl //TODO: implementation
+  def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
+    val ref = constructor.asInstanceOf[RefTypeLinked]
+    val classDef = ref.getTypeDef.asInstanceOf[ClassDefinition] // can only instantiate classes
+    val consDef = classDef.constructors.find(_.parameters.map(_.paramType) == arguments.map(_.getT)).get
+    X86Call(X86Label(CodeGenerator.makeLabel(ref.pkgName, classDef, "$alloc"))) ::
+    X86Call(X86Label(CodeGenerator.makeConstructorLabel(ref.pkgName, classDef, consDef))) :: Nil
 
+  }
 }
 
 /**

@@ -128,27 +128,9 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
       })) ++ WeedResult(!constructors.exists(_.name != className), "constructors must have same name as the class")
 }
 
-
-//What can be put in a class
-case class MethodDeclaration(methodName: String, returnType: Type, override val modifiers: List[Modifier],
-  parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal]) extends MemberDeclaration(modifiers) with VariableDeclaration with AstNode {
-  def display: Unit = {
-    Logger.debug("*" * 20)
-    Logger.debug("Method declaration")
-    Logger.debug("*" * 20)
-    Logger.debug(s"Method name: $methodName")
-    Logger.debug(s"Return type: ${returnType.typeName}")
-    Logger.debug(s"Number of modifiers: ${modifiers.size}")
-    for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
-    Logger.debug(s"Number of parameters: ${parameters.size}")
-    for(Parameter(x, y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
-    Logger.debug(s"Is defined: ${implementation.isDefined}")
-    Logger.debug("*" * 20)   
-    Logger.debug("")
-    //TODO something about the implementation
-  }
-  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
-    //val indexedVariablePath = localPath.zipWithIndex //indexes start at 0!
+private object Function {
+  
+  def generateCode(parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal])(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
     val current:List[Int] = Nil
     implicit val params:List[String] = parameters.map(_.id)
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
@@ -172,6 +154,30 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
       X86Ret :: Nil
     })
   }
+}
+
+//What can be put in a class
+case class MethodDeclaration(methodName: String, returnType: Type, override val modifiers: List[Modifier],
+  parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal]) extends MemberDeclaration(modifiers) with VariableDeclaration with AstNode {
+  def display: Unit = {
+    Logger.debug("*" * 20)
+    Logger.debug("Method declaration")
+    Logger.debug("*" * 20)
+    Logger.debug(s"Method name: $methodName")
+    Logger.debug(s"Return type: ${returnType.typeName}")
+    Logger.debug(s"Number of modifiers: ${modifiers.size}")
+    for(x <- modifiers) Logger.debug(s"Modifier: ${Modifier.fromModifier(x)}")
+    Logger.debug(s"Number of parameters: ${parameters.size}")
+    for(Parameter(x, y) <- parameters) Logger.debug(s"Parameter type : ${x.typeName}\n          name: $y")
+    Logger.debug(s"Is defined: ${implementation.isDefined}")
+    Logger.debug("*" * 20)   
+    Logger.debug("")
+    //TODO something about the implementation
+  }
+  
+  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] =
+    Function.generateCode(parameters, implementation, localPath)
+    
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++
       Weed.checkPublicProtectedModifier(modifiers) ++
@@ -216,6 +222,10 @@ case class ConstructorDeclaration(name: String, modifiers: List[Modifier], param
     Logger.debug("")
     //TODO something fancy about the implementation
   }
+  
+  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] =
+    Function.generateCode(parameters, Some(implementation), localPath)
+  
   override lazy val weedResult = Weed.checkDuplicateModifiers(modifiers)
 }
 
