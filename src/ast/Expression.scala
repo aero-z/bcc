@@ -432,7 +432,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
-    val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size))), X86Mov(X86ebp, X86esp))
+    val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size+1))), X86Mov(X86ebp, X86esp))
     val accessComp = accessed match {
       case _: Type => Nil // List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
       case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
@@ -462,7 +462,7 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
           case _: InterfaceDefinition => notImpl
         }
     }
-    val cleanUp = List(X86Add(X86esp, X86Number(4*(arguments.size))), X86Pop(X86ebp))
+    val cleanUp = List(X86Add(X86esp, X86Number(4*(arguments.size+1))), X86Pop(X86ebp))
     allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
     
   }
@@ -533,7 +533,7 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = variablePath match {
     case PathField(refType, name) => FieldAccess(fakeThis,name).dest(reg)
     case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, 4*(params.indexOf(name) + 1))
-    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, 4*(- params.indexOf(index) - 2))
+    case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, -Function.getLocalVariableOffset(pathList.indexOf(index)))
   }
 }
 
