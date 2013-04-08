@@ -348,7 +348,7 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     accessed match {
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
         Nil
-      case a: ArrayType if (field == "length") => access.generateCode
+      case a: ArrayType if (field == "length") => accessed.generateCode
       case x => notImpl
     }
   }
@@ -356,7 +356,7 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     accessed match {
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
         X86LblMemoryAccess(X86Label(CodeGenerator.makeLabel(pkgName, className, field)))
-      case a: ArrayType if (field == "length") => X86RegOffsetMemoryAccess(X86Reg, X86Number(4))
+      case a: ArrayType if (field == "length") => X86RegOffsetMemoryAccess(reg, 4)
       case x => X86eax
     }
   }
@@ -503,8 +503,9 @@ case class VariableAccess(str: String) extends LeftHandSide {
 }
 
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
-  val fakeThis = This(myType)
+  private var fakeThis = null: Expression
   def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
+    fakeThis = This(myType)
     variablePath match {
       case _: PathField => FieldAccess(fakeThis, name).getType
       case _ => varType

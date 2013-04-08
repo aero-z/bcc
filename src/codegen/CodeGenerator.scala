@@ -78,6 +78,11 @@ object CodeGenerator {
         getMethods(linked.pkgName, linked.getTypeDef(cus).asInstanceOf[ClassDefinition], replaced, cus)
     }
   }
+  
+  private var includeList: List[String] = Nil
+  def addInclude(include: String) = {
+    includeList = include :: includeList
+  }
 
   /**
    * generate files in the output/ directory
@@ -115,23 +120,23 @@ _start:
 """)
 	writer.close
 	
-    val include = new BufferedWriter(new FileWriter(new File("output/asm.inc")))
+    //val include = new BufferedWriter(new FileWriter(new File("output/asm.inc")))
     
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
       
-      include.write(cd.methods.map(m => "extern " + makeMethodLabel(cu.packageName, cd, m)).mkString("\n") + "\n")
+      //include.write(cd.methods.map(m => "extern " + makeMethodLabel(cu.packageName, cd, m)).mkString("\n") + "\n")
 
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
         "extern __exception\n" +
         "extern __debexit\n" +
-        /*methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
+        methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
                .map(t => s"extern ${makeMethodLabel(t._1, t._2, t._3)}")
-               .mkString("\n") +*/
-        "%include \"asm.inc\"\n"
+               .mkString("\n") +
+        //"%include \"asm.inc\"\n"
         "\n\n"
       ///////////////// end of header/////////////////
       
@@ -204,6 +209,8 @@ _start:
         }).mkString("\n\n")
       )
       ///////////////// end of text segment //////////
+      
+      //val includes = includeList.map("extern")
        
       "; === " + cd.className + "===\n" + header + data + bss + text
     }
@@ -219,6 +226,6 @@ _start:
       writer.close
     }
     
-    include.close
+    //include.close
   }
 }
