@@ -17,7 +17,7 @@ __malloc:
     jne ok
     mov eax, 22
     call __debexit
-xbok:
+ok:
     mov eax, ebx
     ret
 
