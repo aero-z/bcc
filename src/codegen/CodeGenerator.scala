@@ -118,7 +118,7 @@ extern $mainFuncLabel
 extern __debexit
 extern NATIVEjava.io.OutputStream.nativeWrite
 
-global _start:
+global _start
 _start:
   call $mainFuncLabel
   jmp __debexit
