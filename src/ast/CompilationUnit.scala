@@ -179,8 +179,8 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
   }
   
   def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
-    println("CU MethodDeclaration localPath:")
-    localPath.foreach(println(_))
+    //println("CU MethodDeclaration localPath:")
+    //localPath.foreach(println(_))
     Function.generateCode(parameters, implementation, localPath)
   }
     

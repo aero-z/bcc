@@ -65,8 +65,8 @@ case class ReturnStatement(returnExpression: Option[Expression]) extends Stateme
 
 case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
-    println("stat LocalVariableDeclaration: "+identifier)
-    println(current)
+    //println("stat LocalVariableDeclaration: "+identifier)
+    //println(current)
     implicit val impl = current
     val index = pathList.indexOf(current)
     X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, (index-2)*4), X86eax) :: Nil
