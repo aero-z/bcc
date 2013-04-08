@@ -31,13 +31,13 @@ object CodeGenerator {
   }
 
   def makeMethodLabel(p: Option[Name], c: ClassDefinition, m: MethodDeclaration) = {
-    makeLabel(p, c, m.methodName + "$" +
-      m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
+    makeLabel(p, c, m.methodName + "." +
+      m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", ".")).mkString("_"))
   }
 
   def makeConstructorLabel(p: Option[Name], c: ClassDefinition, cons: ConstructorDeclaration) = {
-    makeLabel(p, c, "$constructor$" +
-      cons.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
+    makeLabel(p, c, ".constructor." +
+      cons.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", ".")).mkString("_"))
   }
   
   def getVtable(pkg: Option[Name], cd: ClassDefinition, cus: List[CompilationUnit]): List[MethodDeclaration] = {
@@ -110,7 +110,7 @@ object CodeGenerator {
 	*/
 
     val firstCu = cus.head
-    val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test$")
+    val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test.")
     val writer = new BufferedWriter(new FileWriter(new File("output/static.s")))
     writer.write(
 s"""
@@ -124,8 +124,8 @@ _start:
   jmp __debexit
 """ +
 """
-global java.io.PrintStream.nativeWrite$int:
-java.io.PrintStream.nativeWrite$int:
+global java.io.PrintStream.nativeWrite.int:
+java.io.PrintStream.nativeWrite.int:
   call NATIVEjava.io.OutputStream.nativeWrite
 """)
 	writer.close
@@ -167,9 +167,9 @@ java.io.PrintStream.nativeWrite$int:
   
       ///////////////// text segment /////////////////
       val fields = getFields(cd, cus)
-      val lbl_static_init = makeLabel(cu.packageName, cd, "$static_init")
+      val lbl_static_init = makeLabel(cu.packageName, cd, ".static_init")
       addGlobal(lbl_static_init)
-      val lbl_alloc = makeLabel(cu.packageName, cd, "$alloc")
+      val lbl_alloc = makeLabel(cu.packageName, cd, ".alloc")
       addGlobal(lbl_alloc)
 
       val text = (
