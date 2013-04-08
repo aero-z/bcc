@@ -154,20 +154,23 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
     val numParams = parameters.length
     val endLabel = LabelGenerator.generate
-    implementation.toList.flatMap(
+    implementation.toList.flatMap(impl => {
+      val code = impl.generateCode(current)
       X86Push(X86ebp) ::
       X86Push(X86ebx) ::
       X86Sub(X86esp, X86Number(numParams * 4)) ::
       X86Mov(X86ebp, X86esp) ::
-      _.generateCode(current).map(_ match {
-        case X86Ret => X86Jmp(endLabel)
+      code.dropRight(1).map(_ match {
+        case X86Ret =>
+          X86Jmp(endLabel)
         case x => x
       }) :::
-      endLabel ::
+      (if (code.count(_ == X86Ret) > 1) endLabel :: Nil else Nil) :::
       X86Add(X86esp, X86Number(numParams * 4)) ::
       X86Pop(X86ebx) ::
       X86Pop(X86ebp) ::
-      X86Ret :: Nil)
+      X86Ret :: Nil
+    })
   }
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++
