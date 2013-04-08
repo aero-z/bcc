@@ -114,11 +114,11 @@ case class X86Mul   (dest: X86Dest, src: X86Src) extends X86Instruction {
 case class X86Imul  (dest: X86Dest, src: X86Src) extends X86Instruction {
   override def toString = s"  imul $dest, $src"
 }
-case class X86Div   (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = s"  div $dest, $src"
+case class X86Div   (src: X86Src) extends X86Instruction {
+  override def toString = s"  div $src"
 }
-case class X86Idiv  (dest: X86Dest, src: X86Src) extends X86Instruction {
-  override def toString = s"  idiv $dest, $src"
+case class X86Idiv  (src: X86Src) extends X86Instruction {
+  override def toString = s"  idiv $src"
 }
 case class X86Shl   (dest: X86Dest, src: Int) extends X86Instruction {
   override def toString = s"  shl $dest, $src"

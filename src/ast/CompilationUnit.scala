@@ -142,12 +142,13 @@ private object Function {
       X86Push(X86ebx) ::
       X86Sub(X86esp, X86Number(numParams * 4)) ::
       X86Mov(X86ebp, X86esp) ::
-      code.dropRight(1).map(_ match {
+      code/*.dropRight(1)*/.map(_ match {
         case X86Ret =>
           X86Jmp(endLabel)
         case x => x
       }) :::
-      (if (code.count(_ == X86Ret) > 1) endLabel :: Nil else Nil) :::
+      //(if (code.count(_ == X86Ret) > 1) endLabel :: Nil else Nil) :::
+      endLabel ::
       X86Add(X86esp, X86Number(numParams * 4)) ::
       X86Pop(X86ebx) ::
       X86Pop(X86ebp) ::
