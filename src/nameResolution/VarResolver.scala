@@ -27,6 +27,7 @@ object VarResolver{
     case ForStatement(Some(_ :  LocalVariableDeclaration), _, _, loop) => getLocalPath(loop, PathLocal(0 :: curPath) :: acc, 1 :: curPath)
     case ForStatement(_, _, _, loop) => getLocalPath(loop, acc, 1 :: curPath)
     case IfStatement(_, ifStmt, Some(elseStmt)) => getLocalPath(elseStmt, getLocalPath(ifStmt, acc, 0 :: curPath), 1 :: curPath)
+    case IfStatement(_, ifStmt, _) => getLocalPath(ifStmt, acc, 0::curPath)
     case _: LocalVariableDeclaration => PathLocal(curPath) :: acc
     case WhileStatement(_, loop) => getLocalPath(loop, acc, 0 :: curPath)
     case _ => acc
