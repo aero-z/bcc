@@ -111,8 +111,8 @@ object CodeGenerator {
 
     val firstCu = cus.head
     val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test$")
-    val writer = new BufferedWriter(new FileWriter(new File("output/static.s")))
-    writer.write(
+    val staticWriter = new BufferedWriter(new FileWriter(new File("output/static.s")))
+    staticWriter.write(
 s"""
 extern $mainFuncLabel
 extern __debexit
@@ -120,6 +120,7 @@ extern NATIVEjava.io.OutputStream.nativeWrite
 
 global _start
 _start:
+  call _staticInit
   call $mainFuncLabel
   jmp __debexit
 """ +
@@ -127,8 +128,9 @@ _start:
 global java.io.PrintStream.nativeWrite$int
 java.io.PrintStream.nativeWrite$int:
   call NATIVEjava.io.OutputStream.nativeWrite
+
+_staticInit:
 """)
-	writer.close
 	    
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
@@ -174,6 +176,11 @@ java.io.PrintStream.nativeWrite$int:
       addGlobal(lbl_static_init)
       val lbl_alloc = makeLabel(cu.packageName, cd, "$alloc")
       addGlobal(lbl_alloc)
+      
+      staticWriter.write(
+        s"  extern $lbl_static_init\n" +
+        s"  call $lbl_static_init\n"
+      )
 
       val text = (
         "section .text\n\n" +
@@ -248,6 +255,9 @@ java.io.PrintStream.nativeWrite$int:
       val code = generate(cu, d)(cus)
       writer.write(code)
       writer.close
-    }    
+    }
+    
+    staticWriter.write("\n  ret")
+	staticWriter.close
   }
 }
