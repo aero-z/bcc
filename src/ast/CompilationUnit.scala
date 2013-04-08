@@ -135,7 +135,7 @@ private object Function {
     implicit val params:List[String] = parameters.map(_.id)
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
     val numParams = parameters.length
-    val endLabel = LabelGenerator.generate
+    val endLabel = LabelGenerator.generate("end")
     implementation.toList.flatMap(impl => {
       val code = impl.generateCode(current)
       X86Push(X86ebp) ::

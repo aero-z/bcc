@@ -17,7 +17,11 @@ trait Expression extends AstNode {
    * get type of expression AND check for type errors
    */
   private var myT: Type = null
-  def getT = myT
+  def getT = {
+    if (myT == null) println(this)
+    assert(myT != null) // checkAndSetType() must be called before this
+    myT
+  }
   
   def getType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     if (myT == null)
@@ -177,7 +181,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
       case (t, PlusOperator, Str) => Nil //TODO: String.concat
       case (Str, PlusOperator, t) => Nil //TODO: String concat
       case (_: CharTrait, op: CompareOperator, _: CharTrait) =>
-        val endLabel = LabelGenerator.generate
+        val endLabel = LabelGenerator.generate()
         second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
         (op match {
           //Is the truelabel needed?
@@ -198,7 +202,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
           case ModOperator => X86Idiv(X86eax, X86ebx) :: X86Mov(X86eax, X86edx) :: Nil
         })
       case (left: IntegerTrait , op: CompareOperator, right: IntegerTrait) => //copy from character comparison
-        val endLabel = LabelGenerator.generate
+        val endLabel = LabelGenerator.generate()
         second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
         (op match {
           case SmallerOperator => X86Jge(endLabel) 
@@ -209,7 +213,7 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
           case GreaterEqualOperator => X86Jl(endLabel)
         }) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
       case (BooleanType, op: BooleanOperator, BooleanType) =>
-        val endLabel = LabelGenerator.generate
+        val endLabel = LabelGenerator.generate()
         second.generateCode ::: X86Push(X86eax) :: first.generateCode :::
         (op match {
           case BitXorOperator =>
@@ -223,14 +227,14 @@ case class BinaryOperation(first: Expression, operation: Operator, second: Expre
           case NotEqualOperator =>
             X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ :: X86Je(endLabel) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
           case AndOperator =>
-            val falseLabel = LabelGenerator.generate
+            val falseLabel = LabelGenerator.generate()
             X86Cmp(X86eax, X86Number(0)) :: X86Je(falseLabel) :: X86Cmp(X86ebx, X86Number(0)) :: X86Je(falseLabel) :: X86Mov(X86eax, X86Number(1)) :: X86Jmp(endLabel) :: falseLabel :: X86Mov(X86eax, X86Number(0)) :: endLabel :: Nil
           case OrOperator =>
-            val trueLabel = LabelGenerator.generate
+            val trueLabel = LabelGenerator.generate()
             X86Cmp(X86eax, X86Number(1)) :: X86Je(trueLabel) :: X86Cmp(X86eax, X86Number(1)) :: X86Je(trueLabel) :: X86Mov(X86eax, X86Number(0)) :: X86Jmp(endLabel) :: trueLabel :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
         })
       case (_, EqualOperator | NotEqualOperator, _) =>
-        val endLabel = LabelGenerator.generate
+        val endLabel = LabelGenerator.generate()
         second.generateCode ::: X86Push(X86eax) :: first.generateCode ::: X86Pop(X86ebx) :: X86Cmp(X86eax, X86ebx) :: X86Mov(X86eax, X86Number(0)) /*false by default*/ ::
         (operation match {
           case EqualOperator => X86Jne(endLabel) :: X86Mov(X86eax, X86Number(1)) :: endLabel :: Nil
@@ -353,7 +357,7 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
         X86LblMemoryAccess(X86Label(CodeGenerator.makeLabel(pkgName, className, field)))
       //case a: ArrayType if (field == "length") => IntType
-      case x => ???
+      case x => reg // TODO!!!
     }
   }
 }
@@ -394,12 +398,15 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
  * method(arguments)
  */
 case class ThisMethodInvocation(thisType: RefType, method: String, arguments: List[Expression]) extends Expression {
+  private val t = This(thisType)
+
   def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
-    ExprMethodInvocation(This(thisType), method, arguments).getType
+    t.getType
+    ExprMethodInvocation(t, method, arguments).getType
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
-    ExprMethodInvocation(This(thisType), method, arguments).generateCode
+    ExprMethodInvocation(t, method, arguments).generateCode
   }
 
 }
@@ -426,16 +433,25 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
     val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
     val call = accessed match {
       case r: RefTypeLinked =>
-        val classDef = r.getTypeDef.asInstanceOf[ClassDefinition] // if it is a static method we know we are in a class
-        X86Call(X86Label(CodeGenerator.makeMethodLabel(r.pkgName, classDef, classDef.methods.find(
+        // static methods
+        def findMethod(cd: ClassDefinition): MethodDeclaration = {
+          cd.methods.find(
             md => (md.methodName == method) && (md.parameters.map(_.paramType) == arguments.map(_.getT))
-        ).get))) :: Nil
-      case _ => 
-      accessed.getT.asInstanceOf[RefTypeLinked].getTypeDef match {
-        case _: ClassDefinition => val  index = CodeGenerator.getMethods(getT.asInstanceOf[RefTypeLinked].pkgName, x).indexWhere(meth => meth.methodName == method && meth.parameters.map(_.paramType) == arguments.map(_.getT))
-          List(X86Mov(X86eax, X86RegMemoryAccess(X86ebp)), X86Call(X86RegOffsetMemoryAccess(X86eax, 4 * (index + 1))))
-        case _: InterfaceDefinition => notImpl
-      }
+          ) match {
+            case Some(m) => m
+            case None => findMethod(cd.parent.get.asInstanceOf[RefTypeLinked].getTypeDef.asInstanceOf[ClassDefinition])
+          }
+        }
+        val classDef = r.getTypeDef.asInstanceOf[ClassDefinition] // if it is a static method we know we are in a class
+        val lbl = CodeGenerator.makeMethodLabel(r.pkgName, classDef, findMethod(classDef))
+        X86Call(X86Label(lbl)) :: Nil
+      case _ =>
+        accessed.getT.asInstanceOf[RefTypeLinked].getTypeDef match {
+          case cd: ClassDefinition =>
+            val index = CodeGenerator.getVtable(accessed.getT.asInstanceOf[RefTypeLinked].pkgName, cd, cus).indexWhere(meth => meth.methodName == method && meth.parameters.map(_.paramType) == arguments.map(_.getT))
+            List(X86Mov(X86eax, X86RegMemoryAccess(X86ebp)), X86Call(X86RegOffsetMemoryAccess(X86eax, 4 * (index + 1))))
+          case _: InterfaceDefinition => notImpl
+        }
     }
     accessComp ::: argumentsComp ::: call
   }

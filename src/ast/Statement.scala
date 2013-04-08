@@ -24,15 +24,15 @@ case object EmptyStatement extends Statement{
 case class ExpressionStatement(expression: Expression) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current //TODO: do we nee to increment this?
-    expression.generateCode 
+    X86Comment("expression statement (" + expression.getClass.getSimpleName + ")") :: expression.generateCode 
   }
 }
 
 case class ForStatement(init: Option[Statement], condition: Option[Expression], incrementation: Option[Expression], loop: Statement) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current
-    val repeatLabel = LabelGenerator.generate
-    val endLabel = LabelGenerator.generate
+    val repeatLabel = LabelGenerator.generate()
+    val endLabel = LabelGenerator.generate()
     X86Comment("for statement") :: repeatLabel :: init.getOrElse(EmptyStatement).generateCode(0 :: current) ::: codegen.CodeGenerator.iffalse(condition.getOrElse(BooleanLiteral(true)), endLabel) ::: loop.generateCode(1 :: current) ::: X86Jmp(repeatLabel) :: endLabel :: Nil
   }
 }
@@ -42,11 +42,11 @@ case class IfStatement(condition: Expression, ifStatement: Statement, elseStatem
     implicit val impl = current
     elseStatement match {
 	    case None =>
-	      val endLabel = LabelGenerator.generate
+	      val endLabel = LabelGenerator.generate()
 	      X86Comment("IfStatement") :: codegen.CodeGenerator.iffalse(condition, endLabel) ::: ifStatement.generateCode(0 :: current) ::: endLabel :: Nil
 	    case Some(stat) => 
-	      val elseLabel = LabelGenerator.generate
-	      val endLabel = LabelGenerator.generate
+	      val elseLabel = LabelGenerator.generate()
+	      val endLabel = LabelGenerator.generate()
 	      X86Comment("if statement") :: codegen.CodeGenerator.iffalse(condition, elseLabel) ::: ifStatement.generateCode(0 :: current) ::: X86Jmp(endLabel) :: elseLabel :: stat.generateCode(1 :: current) ::: endLabel :: Nil
     }
   }
@@ -74,8 +74,8 @@ case class LocalVariableDeclaration(typeName: Type, identifier: String, initiali
 case class WhileStatement(condition: Expression, loop: Statement) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
     implicit val impl = current
-    val repeatLabel = LabelGenerator.generate
-    val endLabel = LabelGenerator.generate
+    val repeatLabel = LabelGenerator.generate()
+    val endLabel = LabelGenerator.generate()
     X86Comment("while statement") :: repeatLabel :: codegen.CodeGenerator.iffalse(condition, endLabel) ::: loop.generateCode(impl) ::: endLabel :: Nil
   }
 }

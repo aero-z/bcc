@@ -40,7 +40,7 @@ object CodeGenerator {
       cons.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
   }
   
-  def getMethods(pkg: Option[Name], cd: ClassDefinition, cus: List[CompilationUnit]): List[MethodDeclaration] = {
+  def getVtable(pkg: Option[Name], cd: ClassDefinition, cus: List[CompilationUnit]): List[MethodDeclaration] = {
     getMethods(pkg, cd, Nil, cus).map(_._3)
   }
   
@@ -114,19 +114,24 @@ _start:
   jmp __debexit
 """)
 	writer.close
+	
+    val include = new BufferedWriter(new FileWriter(new File("output/asm.inc")))
     
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
-            
+      
+      include.write(cd.methods.map(m => "extern " + makeMethodLabel(cu.packageName, cd, m)).mkString("\n") + "\n")
+
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
         "extern __exception\n" +
         "extern __debexit\n" +
-        methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
+        /*methods.filterNot(t => t._1 == cu.packageName && t._2 == cd)
                .map(t => s"extern ${makeMethodLabel(t._1, t._2, t._3)}")
-               .mkString("\n") +
+               .mkString("\n") +*/
+        "%include \"asm.inc\"\n"
         "\n\n"
       ///////////////// end of header/////////////////
       
@@ -135,7 +140,7 @@ _start:
         "section .data\n\n" +
         "; VTABLE\n" +
         "class:\n" + 
-        "dd 0 ; TODO: pointer to SIT\n" +
+        "  dd 0 ; TODO: pointer to SIT\n  " +
         methods.map(t => s"dd ${makeMethodLabel(t._1, t._2, t._3)}")
                .mkString("\n  ") +
         "\n\n"
@@ -213,5 +218,7 @@ _start:
       writer.write(code)
       writer.close
     }
+    
+    include.close
   }
 }
