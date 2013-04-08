@@ -129,12 +129,13 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 }
 
 private object Function {
-  
+  def getLocalVariableOffset(index: Int):Int = {
+    (index+3)*4 //jump over eip and ebx
+  }
   def generateCode(parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal])(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
     val current:List[Int] = Nil
     implicit val params:List[String] = parameters.map(_.id)
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
-    val numParams = parameters.length
     val numLocals = localPath.length
     implementation.toList.flatMap(impl => {
       val endLabel = LabelGenerator.generate("end")
@@ -143,17 +144,14 @@ private object Function {
           X86Jmp(endLabel)
         case x => x
       })
-      X86Push(X86ebp) ::
+      //the ebp is already on the stack
+      //the esp points currently to the eip on the stack
       X86Push(X86ebx) ::
-      X86Sub(X86esp, X86Number(numParams * 4)) ::
-      X86Mov(X86ebp, X86esp) ::
-      X86Sub(X86esp, X86Number(numLocals * 4)) :: //+1 here?
+      X86Sub(X86esp, X86Number(numLocals * 4)) :: //if we use "push" the index of the esp should be okay
       code :::
       (if (code.exists(_.isInstanceOf[X86Jmp])) endLabel :: Nil else Nil) :::
       X86Add(X86esp, X86Number(numLocals * 4)) :: //jump over local variables
-      X86Add(X86esp, X86Number(numParams * 4)) ::
       X86Pop(X86ebx) ::
-      X86Pop(X86ebp) ::
       X86Ret :: Nil
     })
   }

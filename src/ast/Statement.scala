@@ -48,7 +48,7 @@ case class IfStatement(condition: Expression, ifStatement: Statement, elseStatem
 	    case Some(stat) => 
 	      val elseLabel = LabelGenerator.generate()
 	      val endLabel = LabelGenerator.generate()
-	      X86Comment("if statement") :: codegen.CodeGenerator.iffalse(condition, elseLabel) ::: ifStatement.generateCode(0 :: current) ::: X86Jmp(endLabel) :: elseLabel :: stat.generateCode(1 :: current) ::: endLabel :: Nil
+	      X86Comment("if statement") :: codegen.CodeGenerator.iffalse(condition, elseLabel) ::: ifStatement.generateCode(0 :: current) ::: X86Jmp(endLabel) :: X86Comment("else statement") :: elseLabel :: stat.generateCode(1 :: current) ::: endLabel :: Nil
     }
   }
 }
@@ -69,7 +69,7 @@ case class LocalVariableDeclaration(typeName: Type, identifier: String, initiali
     //println(current)
     implicit val impl = current
     val index = pathList.indexOf(current)
-    X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, (index-2)*4), X86eax) :: Nil
+    X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, -(index+1)*4), X86eax) :: Nil
   }
 }
 
