@@ -25,8 +25,8 @@ ok:
 ; eax as the exit code.
     global __debexit
 __debexit:
-    push eax	
-    mov eax, 1   ; sys_exit system call
+    mov ebx, eax		
+    mov eax, 1			; sys_exit system call
     int 0x80
 
 ; Exceptional exit: ends the process with exit code 13.
