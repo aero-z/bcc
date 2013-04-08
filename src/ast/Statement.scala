@@ -10,20 +10,21 @@ sealed abstract class Statement extends AstNode {
 
 case class Block (statements : List[Statement]) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
-    statements.zipWithIndex.flatMap(x => x._1.generateCode(x._2 :: current))
+    statements.zipWithIndex.flatMap(x => x._1.generateCode(x._2 :: 0 ::current))
   }
+  //case Block(stmts) =>  stmts.foldLeft((acc, 0 :: curPath)){ case ((acc, pos), stmt) => (getLocalPath(stmt, acc, pos), pos.head + 1 :: pos.tail)}._1
 }
 
 case object EmptyStatement extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
-    //val impl = 0 :: current
+    //val impl = 0 :: current //not needed
     X86Comment("-----") :: Nil
   }
 }
 
 case class ExpressionStatement(expression: Expression) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
-    implicit val impl = current //TODO: do we nee to increment this?
+    implicit val impl = current
     X86Comment("expression statement (" + expression.getClass.getSimpleName + ")") :: expression.generateCode 
   }
 }
@@ -64,16 +65,17 @@ case class ReturnStatement(returnExpression: Option[Expression]) extends Stateme
 
 case class LocalVariableDeclaration(typeName: Type, identifier: String, initializer: Option[Expression]) extends Statement with VariableDeclaration{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
+    println("stat LocalVariableDeclaration: "+identifier)
+    println(current)
     implicit val impl = current
-    val path = 0 :: current //TODO: is this correct here?
-    val index = pathList.indexOf(path)
+    val index = pathList.indexOf(current)
     X86Comment("local variable declaration:") :: initializer.getOrElse(NullLiteral).generateCode ::: X86Mov(X86RegOffsetMemoryAccess(X86ebp, (index-2)*4), X86eax) :: Nil
   }
 }
 
 case class WhileStatement(condition: Expression, loop: Statement) extends Statement{
   def generateCode(current:List[Int])(implicit params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]):List[X86Instruction] = {
-    implicit val impl = current
+    implicit val impl = 0 :: current
     val repeatLabel = LabelGenerator.generate()
     val endLabel = LabelGenerator.generate()
     X86Comment("while statement") :: repeatLabel :: codegen.CodeGenerator.iffalse(condition, endLabel) ::: loop.generateCode(impl) ::: endLabel :: Nil

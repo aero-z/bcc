@@ -135,6 +135,7 @@ private object Function {
     implicit val params:List[String] = parameters.map(_.id)
     implicit val pathList:List[List[Int]] = localPath.map(_.statementIndex)
     val numParams = parameters.length
+    val numLocals = localPath.length
     implementation.toList.flatMap(impl => {
       val endLabel = LabelGenerator.generate("end")
       val code = impl.generateCode(current).map(_ match {
@@ -146,8 +147,10 @@ private object Function {
       X86Push(X86ebx) ::
       X86Sub(X86esp, X86Number(numParams * 4)) ::
       X86Mov(X86ebp, X86esp) ::
+      X86Sub(X86esp, X86Number(numLocals * 4)) :: //+1 here?
       code :::
       (if (code.exists(_.isInstanceOf[X86Jmp])) endLabel :: Nil else Nil) :::
+      X86Add(X86esp, X86Number(numLocals * 4)) :: //jump over local variables
       X86Add(X86esp, X86Number(numParams * 4)) ::
       X86Pop(X86ebx) ::
       X86Pop(X86ebp) ::
@@ -175,8 +178,11 @@ case class MethodDeclaration(methodName: String, returnType: Type, override val 
     //TODO something about the implementation
   }
   
-  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] =
+  def generateCode(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
+    println("CU MethodDeclaration localPath:")
+    localPath.foreach(println(_))
     Function.generateCode(parameters, implementation, localPath)
+  }
     
   override lazy val weedResult =
       Weed.checkDuplicateModifiers(modifiers) ++
