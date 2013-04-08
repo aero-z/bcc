@@ -31,13 +31,13 @@ object CodeGenerator {
   }
 
   def makeMethodLabel(p: Option[Name], c: ClassDefinition, m: MethodDeclaration) = {
-    makeLabel(p, c, m.methodName + "$" +
-      m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
+    makeLabel(p, c, m.methodName + "." +
+      m.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", ".")).mkString("_"))
   }
 
   def makeConstructorLabel(p: Option[Name], c: ClassDefinition, cons: ConstructorDeclaration) = {
-    makeLabel(p, c, "$constructor$" +
-      cons.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", "$")).mkString("_"))
+    makeLabel(p, c, ".constructor." +
+      cons.parameters.map(_.paramType.typeName.replaceAllLiterally("[]", ".")).mkString("_"))
   }
   
   def getVtable(pkg: Option[Name], cd: ClassDefinition, cus: List[CompilationUnit]): List[MethodDeclaration] = {
@@ -110,7 +110,7 @@ object CodeGenerator {
 	*/
 
     val firstCu = cus.head
-    val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test$")
+    val mainFuncLabel = makeLabel(firstCu.packageName, firstCu.typeName, "test.")
     val writer = new BufferedWriter(new FileWriter(new File("output/static.s")))
     writer.write(
 s"""
@@ -124,20 +124,16 @@ _start:
   jmp __debexit
 """ +
 """
-global java.io.PrintStream.nativeWrite$int:
-java.io.PrintStream.nativeWrite$int:
+global java.io.PrintStream.nativeWrite.int:
+java.io.PrintStream.nativeWrite.int:
   call NATIVEjava.io.OutputStream.nativeWrite
 """)
 	writer.close
-	
-    //val include = new BufferedWriter(new FileWriter(new File("output/asm.inc")))
-    
+	    
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
       
-      //include.write(cd.methods.map(m => "extern " + makeMethodLabel(cu.packageName, cd, m)).mkString("\n") + "\n")
-
       ///////////////// header ///////////////////////
       val header =
         "extern __malloc\n" +
@@ -171,9 +167,9 @@ java.io.PrintStream.nativeWrite$int:
   
       ///////////////// text segment /////////////////
       val fields = getFields(cd, cus)
-      val lbl_static_init = makeLabel(cu.packageName, cd, "$static_init")
+      val lbl_static_init = makeLabel(cu.packageName, cd, ".static_init")
       addGlobal(lbl_static_init)
-      val lbl_alloc = makeLabel(cu.packageName, cd, "$alloc")
+      val lbl_alloc = makeLabel(cu.packageName, cd, ".alloc")
       addGlobal(lbl_alloc)
 
       val text = (
@@ -239,13 +235,11 @@ java.io.PrintStream.nativeWrite$int:
     //leave the java lib files out for the moment! -> makes testing easier
     //.filter(_.packageName != Some(Name("java"::"lang"::Nil))).filter(_.packageName != Some(Name("java"::"io"::Nil))).filter(_.packageName != Some(Name("java"::"util"::Nil)))
     .collect { case cu @ CompilationUnit(optName, _, Some(d: ClassDefinition), name) =>
-      val writer = new BufferedWriter(new FileWriter(new File("output/"+cu.typeName+".s")))
+      val writer = new BufferedWriter(new FileWriter(new File("output/"+makeLabel(cu.packageName, d, "s"))))
         //println("class: " + cu.typeName)
       val code = generate(cu, d)(cus)
       writer.write(code)
       writer.close
-    }
-    
-    //include.close
+    }    
   }
 }
