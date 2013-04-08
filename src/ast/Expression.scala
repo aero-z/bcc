@@ -344,7 +344,7 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     accessed match {
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
         Nil
-      //case a: ArrayType if (field == "length") => IntType
+      case a: ArrayType if (field == "length") => access.generateCode
       case x => notImpl
     }
   }
@@ -352,8 +352,8 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     accessed match {
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
         X86LblMemoryAccess(X86Label(CodeGenerator.makeLabel(pkgName, className, field)))
-      //case a: ArrayType if (field == "length") => IntType
-      case x => ???
+      case a: ArrayType if (field == "length") => X86RegOffsetMemoryAccess(X86Reg, X86Number(4))
+      case x => X86eax
     }
   }
 }
@@ -487,9 +487,10 @@ case class VariableAccess(str: String) extends LeftHandSide {
 }
 
 case class LinkedVariableOrField(name: String, varType: Type, variablePath: PathToDeclaration) extends LinkedExpression with LeftHandSide {
+  val fakeThis = This(myType)
   def checkAndSetType(implicit cus: List[CompilationUnit], isStatic: Boolean, myType: RefTypeLinked): Type = {
     variablePath match {
-      case _: PathField => FieldAccess(This(myType), name).getType
+      case _: PathField => FieldAccess(fakeThis, name).getType
       case _ => varType
     }
   }
@@ -497,12 +498,12 @@ case class LinkedVariableOrField(name: String, varType: Type, variablePath: Path
 
 
   def generateAccess(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus: List[CompilationUnit]): List[X86Instruction] = variablePath match {
-    case PathField(refType, name) => FieldAccess(This(refType), name).generateAccess
+    case PathField(refType, name) => FieldAccess(fakeThis, name).generateAccess
     case PathPar(name) => Nil
     case PathLocal(index) => Nil
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) = variablePath match {
-    case PathField(refType, name) => FieldAccess(This(refType),name).dest(reg)
+    case PathField(refType, name) => FieldAccess(fakeThis,name).dest(reg)
     case PathPar(name) => X86RegOffsetMemoryAccess(X86ebp, 4*(params.indexOf(name) + 1))
     case PathLocal(index) => X86RegOffsetMemoryAccess(X86ebp, 4*(- params.indexOf(index) - 2))
   }

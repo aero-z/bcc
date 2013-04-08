@@ -17,15 +17,15 @@ __malloc:
     jne ok
     mov eax, 22
     call __debexit
-ok:
+xbok:
     mov eax, ebx
     ret
 
 ; Debugging exit: ends the process, returning the value of
 ; eax as the exit code.
     global __debexit
-__debexit:    
-    mov ebx, eax
+__debexit:
+    push eax	
     mov eax, 1   ; sys_exit system call
     int 0x80
 
