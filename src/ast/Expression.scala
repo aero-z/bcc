@@ -348,8 +348,10 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
     accessed match {
       case RefTypeLinked(pkgName: Option[Name], className:String) =>
         Nil
-      case a: ArrayType if (field == "length") => accessed.generateCode
-      case x => notImpl
+      case _ => accessed.getT match{
+        case a: ArrayType if (field == "length") => accessed.generateCode
+        case x => accessed.generateCode
+      }
     }
   }
   def dest(reg: X86Reg)(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]) : X86Dest =  {
@@ -358,8 +360,10 @@ case class FieldAccess(accessed: Expression, field: String) extends LeftHandSide
         val lbl = CodeGenerator.makeLabel(pkgName, className, field)
         CodeGenerator.addExtern(lbl)        
         X86LblMemoryAccess(X86Label(lbl))
-      case a: ArrayType if (field == "length") => X86RegOffsetMemoryAccess(reg, 4)
-      case x => X86eax
+      case _ => accessed.getT match{
+        case a: ArrayType if (field == "length") => X86RegOffsetMemoryAccess(reg, 4)
+        case x => X86RegOffsetMemoryAccess(reg, CodeGenerator.getObjFields(x.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[ClassDefinition], cus).map(_.fieldName).lastIndexOf(field))
+      }
     }
   }
 }
