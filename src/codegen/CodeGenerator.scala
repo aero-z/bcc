@@ -44,13 +44,13 @@ object CodeGenerator {
     getMethods(pkg, cd, Nil, cus).map(_._3)
   }
   
-  def getFields(cd: ClassDefinition, cus: List[CompilationUnit]): List[FieldDeclaration] = {
-    cd.fields.filterNot(_.modifiers.contains(Modifier.staticModifier)) :::
+  def getObjFields(cd: ClassDefinition, cus: List[CompilationUnit]): List[FieldDeclaration] = {
     (cd.parent match {
       case None => Nil
       case Some(p) =>
-        getFields(p.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[ClassDefinition], cus)
-    })   
+        getObjFields(p.asInstanceOf[RefTypeLinked].getTypeDef(cus).asInstanceOf[ClassDefinition], cus)
+    }) :::
+    cd.fields.filterNot(_.modifiers.contains(Modifier.staticModifier))
   }
 
   private def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)], cus: List[CompilationUnit]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
@@ -136,7 +136,7 @@ _staticInit:
     def generate(cu: CompilationUnit, cd: ClassDefinition)(implicit cus:List[CompilationUnit]): String = { //we just need the CU for the full name
       
       val methods = getMethods(cu.packageName, cd, Nil, cus)
-      val fields = getFields(cd, cus)
+      val fields = getObjFields(cd, cus)
 
       ///////////////// header ///////////////////////
       val header =
