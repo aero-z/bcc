@@ -130,7 +130,7 @@ case class ClassDefinition(className: String, parent: Option[RefType], interface
 
 private object Function {
   def getLocalVariableOffset(index: Int):Int = {
-    (index+3)*4 //jump over eip and ebx
+    (index+4)*4 //jump over eip and ebx
   }
   def generateCode(parameters: List[Parameter], implementation: Option[Block], localPath: List[PathLocal])(implicit cus:List[CompilationUnit]): List[X86Instruction] = {
     val current:List[Int] = Nil

@@ -438,13 +438,14 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
   }
 
   def generateCode(implicit current:List[Int], params:List[String], pathList:List[List[Int]], cus:List[CompilationUnit]): List[X86Instruction] = {
-    val allocPar = List(X86Push(X86ebp), X86Sub(X86esp, X86Number(4*(arguments.size+1))), X86Mov(X86ebp, X86esp))
+    val allocPar = List(X86Sub(X86esp, X86Number(4*(arguments.size+1))))
     val accessComp = accessed match {
       case _: Type => Nil // List(X86Mov(X86RegMemoryAccess(X86ebp), X86Number(0)))
-      case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86ebp), X86eax))
+      case _ => accessed.generateCode ::: (nullCheck(X86eax) :+  X86Mov(X86RegMemoryAccess(X86esp), X86eax))
     }
 
-    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86ebp, 4*(1 + ind)), X86eax)}
+    val argumentsComp  = arguments.zipWithIndex.flatMap{case (exp, ind) => exp.generateCode :+ X86Mov(X86RegOffsetMemoryAccess(X86esp, 4*(1 + ind)), X86eax)}
+    val saveEbp = List(X86Push(X86ebp), X86Mov(X86ebp, X86esp), X86Add(X86ebp, X86Number(4)))
     val call = accessed match {
       case r: RefTypeLinked =>
         // static methods
@@ -468,8 +469,8 @@ case class ExprMethodInvocation(accessed: Expression, method: String, arguments:
           case _: InterfaceDefinition => notImpl
         }
     }
-    val cleanUp = List(X86Add(X86esp, X86Number(4*(arguments.size+1))), X86Pop(X86ebp))
-    allocPar ::: accessComp ::: argumentsComp ::: call ::: cleanUp
+    val cleanUp = List(X86Pop(X86ebp), X86Add(X86esp, X86Number(4*(arguments.size+1))))
+    allocPar ::: accessComp ::: argumentsComp ::: saveEbp ::: call ::: cleanUp
     
   }
 }
