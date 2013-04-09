@@ -54,9 +54,9 @@ object CodeGenerator {
   }
 
   private def getMethods(pkg: Option[Name], cd: ClassDefinition, parentMethods: List[(Option[Name], ClassDefinition, MethodDeclaration)], cus: List[CompilationUnit]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
-
+ 
     def methodsMatch(m1: MethodDeclaration, m2: MethodDeclaration): Boolean = {
-      m1.methodName == m2.methodName && m1.parameters == m2.parameters
+      m1.methodName == m2.methodName && m1.parameters.map(_.paramType) == m2.parameters.map(_.paramType)
     }
 
     def mergeMethods(ms: List[MethodDeclaration], ts: List[(Option[Name], ClassDefinition, MethodDeclaration)]): List[(Option[Name], ClassDefinition, MethodDeclaration)] = {
@@ -65,12 +65,12 @@ object CodeGenerator {
         case m :: mss =>
           mergeMethods(mss, ts.find(t => methodsMatch(m, t._3)) match {
             case None => (pkg, cd, m) :: ts
-            case Some(x) => x :: ts.filter(t => methodsMatch(m, t._3))
+            case Some(x) => x :: ts.filterNot(t => methodsMatch(m, t._3))
           })
       }
     }
 
-    val replaced = mergeMethods(cd.methods.filterNot(_.modifiers.contains(Modifier.staticModifier)), parentMethods)
+    val replaced = mergeMethods(cd.methods.filterNot(_.modifiers.contains(Modifier.staticModifier)).reverse, parentMethods)
     cd.parent match {
       case None => replaced
       case Some(p) =>
