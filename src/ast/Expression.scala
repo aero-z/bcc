@@ -395,12 +395,14 @@ case class ClassCreation(constructor: RefType, arguments: List[Expression]) exte
     val classDef = ref.getTypeDef.asInstanceOf[ClassDefinition] // can only instantiate classes
     val consDef = classDef.constructors.find(_.parameters.map(_.paramType) == arguments.map(_.getT)).get
     
-    val lbl1 = CodeGenerator.makeLabel(ref.pkgName, classDef, "$alloc")
-    val lbl2 = CodeGenerator.makeConstructorLabel(ref.pkgName, classDef, consDef)
-    CodeGenerator.addExtern(lbl1)
-    CodeGenerator.addExtern(lbl2)
-    X86Call(X86Label(lbl1)) ::
-    X86Call(X86Label(lbl2)) :: Nil
+    val allocLbl = CodeGenerator.makeLabel(ref.pkgName, classDef, "$alloc")
+    val consLbl = CodeGenerator.makeConstructorLabel(ref.pkgName, classDef, consDef)
+    CodeGenerator.addExtern(allocLbl)
+    CodeGenerator.addExtern(consLbl)
+    X86Call(X86Label(allocLbl)) ::
+    X86Push(X86eax) ::
+    X86Call(X86Label(consLbl)) :: 
+    X86Pop(X86eax) :: Nil
 
   }
 }
