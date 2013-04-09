@@ -146,12 +146,12 @@ private object Function {
       })
       //the ebp is already on the stack
       //the esp points currently to the eip on the stack
-      X86Push(X86ebx) ::
-      X86Sub(X86esp, X86Number(numLocals * 4)) :: //if we use "push" the index of the esp should be okay
+/*      X86Push(X86ebx) ::*/
+      X86Sub(X86esp, X86Number((numLocals) * 4)) :: //if we use "push" the index of the esp should be okay
       code :::
       (if (code.exists(_.isInstanceOf[X86Jmp])) endLabel :: Nil else Nil) :::
       X86Add(X86esp, X86Number(numLocals * 4)) :: //jump over local variables
-      X86Pop(X86ebx) ::
+/*      X86Pop(X86ebx) ::*/
       X86Ret :: Nil
     })
   }
