@@ -19,6 +19,7 @@ class MarmosetTestA5 extends FunSuite {
   outputDir.listFiles.foreach(src => src.delete)
 
   val marmDir = new File("test/javaCode/a5marmoset")
+  val runtimeObj = new File("test/javaCode/stdlib/5.0/runtime.o")
   val testCaseFiles = getFiles(marmDir, 1)
   testCaseFiles.foreach(file => {
     val testSources = getFiles(file, -1).map(f => (Source.fromFile(f), f.getPath))
@@ -30,7 +31,7 @@ class MarmosetTestA5 extends FunSuite {
 
     test(file.getName) {
       // generate the code...
-      
+            
       assert(Joosc.compile(testSources.toList) === Joosc.errCodeSuccess)
       
       val expectedExitCode =
@@ -42,10 +43,12 @@ class MarmosetTestA5 extends FunSuite {
       //outputDir.listFiles.foreach(file => println(file.getPath))
       try {
         if (System.getProperties.get("os.name") == "Mac OS X") {
+          throw new RuntimeException("Mac OS X not supported ATM")
           outputDir.listFiles.foreach(asm => Seq("nasm", "-f", "macho", asm.getPath).!)
           (Seq("ld", "-macosx_version_min", "10.6", "-e", "_start", "-o", outputDir.getPath + "/main") ++ outputDir.listFiles.map(_.getPath).filter(_.endsWith(".o"))).!
         } else {
           outputDir.listFiles.foreach(asm => Seq("nasm", "-O1", "-f", "elf", "-g", "-F", "dwarf", asm.getPath).!)
+          Seq("cp", runtimeObj.getPath, outputDir.getPath).!
           (Seq("ld", "-melf_i386", "-o", outputDir.getPath + "/main") ++ outputDir.listFiles.map(_.getPath).filter(_.endsWith(".o"))).!
         }
         
