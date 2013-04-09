@@ -120,6 +120,7 @@ extern NATIVEjava.io.OutputStream.nativeWrite
 
 global _start
 _start:
+  mov ebp, esp
   call _staticInit
   call $mainFuncLabel
   jmp __debexit

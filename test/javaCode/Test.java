@@ -1,11 +1,13 @@
 public class Test {
-	
-	//public static int x = 5;
-	
-	public Test() {
+	public Test() {}
+
+	public static int func() {
+		int x = 5;
+		return x + 2;
 	}
 
 	public static int test() {
-		return 7;
+		int x = Test.func();
+		return x;
 	}
 }
